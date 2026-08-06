@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { GraduationCap, LayoutGrid, Plus } from "lucide-react";
+import { GraduationCap, LayoutGrid } from "lucide-react";
 import { LogoLink } from "@/components/brand/logo";
-import { ThemeToggle } from "@/components/app/theme";
-import { Button } from "@/components/ui/button";
-import { MOCK_COURSES } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { MOCK_COURSES } from "@/lib/mock-data";
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
