@@ -528,6 +528,31 @@ function ReviewExtractionScreen() {
               </p>
             ) : null}
           </div>
+
+          {componentUsage.size > 0 ? (
+            <div className="mt-3 space-y-1.5">
+              {[...componentUsage.entries()].map(([name, entry]) => {
+                const remaining = Math.round((entry.limit - entry.used) * 10) / 10;
+                const over = remaining < -0.05;
+                return (
+                  <p
+                    key={name}
+                    role={over ? "alert" : undefined}
+                    className={cn(
+                      "flex items-center gap-1.5 text-xs",
+                      over ? "text-destructive" : "text-muted-foreground",
+                    )}
+                  >
+                    {over ? <AlertTriangle className="size-3.5" /> : null}
+                    {over
+                      ? `${name}: assignments add up to ${Math.round(entry.used * 10) / 10}% but the component is only worth ${entry.limit}%. Remove ${Math.abs(remaining)}%.`
+                      : `${name}: ${remaining}% of ${entry.limit}% still available.`}
+                  </p>
+                );
+              })}
+            </div>
+          ) : null}
+
           <Button
             variant="ghost"
             size="sm"
