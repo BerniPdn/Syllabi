@@ -79,10 +79,10 @@ export function GradeStat({
 }: {
   label: string;
   value: string;
-  suffix?: string;
-  sub?: string;
-  emphasis?: boolean;
-  tone?: Tone;
+  suffix?: string | undefined;
+  sub?: string | undefined;
+  emphasis?: boolean | undefined;
+  tone?: Tone | undefined;
 }) {
   return (
     <div>

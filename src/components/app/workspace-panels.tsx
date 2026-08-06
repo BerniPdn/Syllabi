@@ -563,7 +563,7 @@ export function ChatPanel({ course }: { course: Course }) {
           />
           <PromptInputFooter className="justify-end">
             <PromptInputSubmit
-              status={status === "submitted" ? "submitted" : undefined}
+              status={status}
               disabled={!input.trim() || status === "submitted"}
             />
           </PromptInputFooter>
