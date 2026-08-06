@@ -95,11 +95,9 @@ function Dashboard() {
               />
               <div className="-mx-1 flex snap-x gap-2.5 overflow-x-auto px-1 pb-1">
                 {upcoming.map(({ course, assignment }) => (
-                  <Link
+                  <div
                     key={assignment.id}
-                    to="/course/$courseId"
-                    params={{ courseId: course.id }}
-                    className="focus-ring w-[220px] shrink-0 snap-start rounded-xl border border-border bg-card p-3.5 transition-colors hover:border-primary/40"
+                    className="w-[220px] shrink-0 snap-start rounded-xl border border-border bg-card p-3.5"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] font-semibold text-muted-foreground">
@@ -114,9 +112,10 @@ function Dashboard() {
                       <CalendarClock className="size-3" />
                       {formatDate(assignment.dueDate)}
                     </p>
-                  </Link>
+                  </div>
                 ))}
               </div>
+
             </SectionCard>
 
             <div className="grid gap-4 sm:grid-cols-2">
