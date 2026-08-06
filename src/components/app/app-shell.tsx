@@ -5,7 +5,6 @@ import { LogoLink } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
 import { MOCK_COURSES } from "@/lib/mock-data";
 
-
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
 
@@ -15,16 +14,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
           <LogoLink />
           <span className="ml-1 hidden text-xs text-muted-foreground sm:inline">Fall 2026</span>
-          <div className="ml-auto flex items-center gap-1.5">
-            <ThemeToggle />
-            <Button asChild size="sm" className="gap-1.5">
-              <Link to="/upload">
-                <Plus className="size-3.5" />
-                <span className="hidden sm:inline">Add course</span>
-                <span className="sm:hidden">Add</span>
-              </Link>
-            </Button>
-          </div>
         </div>
       </header>
 
