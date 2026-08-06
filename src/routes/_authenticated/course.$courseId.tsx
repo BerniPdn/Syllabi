@@ -24,6 +24,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { courseFromRow } from "@/lib/course-mapping";
 import { computeGrades, toneFor } from "@/lib/grade-engine";
+import { deleteGrade, fetchGrades, saveGrade } from "@/lib/grades";
+
 import { cn } from "@/lib/utils";
 
 const TABS = [
