@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
 import { Route as AuthenticatedCourseCourseIdRouteImport } from './routes/_authenticated/course.$courseId'
 import { Route as AuthenticatedProcessingCourseIdRouteImport } from './routes/_authenticated/processing.$courseId'
@@ -38,11 +37,6 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedUploadRoute = AuthenticatedUploadRouteImport.update({
   id: '/upload',
   path: '/upload',
@@ -62,16 +56,15 @@ const AuthenticatedProcessingCourseIdRoute =
   } as any)
 const AuthenticatedReviewCourseIdRoute =
   AuthenticatedReviewCourseIdRouteImport.update({
-    id: '/$courseId',
-    path: '/$courseId',
-    getParentRoute: () => AuthenticatedReviewRoute,
+    id: '/review/$courseId',
+    path: '/review/$courseId',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/review': typeof AuthenticatedReviewRouteWithChildren
   '/upload': typeof AuthenticatedUploadRoute
   '/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
   '/processing/$courseId': typeof AuthenticatedProcessingCourseIdRoute
@@ -81,7 +74,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/review': typeof AuthenticatedReviewRouteWithChildren
   '/upload': typeof AuthenticatedUploadRoute
   '/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
   '/processing/$courseId': typeof AuthenticatedProcessingCourseIdRoute
@@ -93,7 +85,6 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/review': typeof AuthenticatedReviewRouteWithChildren
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
   '/_authenticated/processing/$courseId': typeof AuthenticatedProcessingCourseIdRoute
@@ -105,7 +96,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
-    | '/review'
     | '/upload'
     | '/course/$courseId'
     | '/processing/$courseId'
@@ -115,7 +105,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
-    | '/review'
     | '/upload'
     | '/course/$courseId'
     | '/processing/$courseId'
@@ -126,7 +115,6 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
-    | '/_authenticated/review'
     | '/_authenticated/upload'
     | '/_authenticated/course/$courseId'
     | '/_authenticated/processing/$courseId'
@@ -169,13 +157,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/review': {
-      id: '/_authenticated/review'
-      path: '/review'
-      fullPath: '/review'
-      preLoaderRoute: typeof AuthenticatedReviewRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/upload': {
       id: '/_authenticated/upload'
       path: '/upload'
@@ -199,39 +180,28 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/review/$courseId': {
       id: '/_authenticated/review/$courseId'
-      path: '/$courseId'
+      path: '/review/$courseId'
       fullPath: '/review/$courseId'
       preLoaderRoute: typeof AuthenticatedReviewCourseIdRouteImport
-      parentRoute: typeof AuthenticatedReviewRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
-interface AuthenticatedReviewRouteChildren {
-  AuthenticatedReviewCourseIdRoute: typeof AuthenticatedReviewCourseIdRoute
-}
-
-const AuthenticatedReviewRouteChildren: AuthenticatedReviewRouteChildren = {
-  AuthenticatedReviewCourseIdRoute: AuthenticatedReviewCourseIdRoute,
-}
-
-const AuthenticatedReviewRouteWithChildren =
-  AuthenticatedReviewRoute._addFileChildren(AuthenticatedReviewRouteChildren)
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedReviewRoute: typeof AuthenticatedReviewRouteWithChildren
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
   AuthenticatedCourseCourseIdRoute: typeof AuthenticatedCourseCourseIdRoute
   AuthenticatedProcessingCourseIdRoute: typeof AuthenticatedProcessingCourseIdRoute
+  AuthenticatedReviewCourseIdRoute: typeof AuthenticatedReviewCourseIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedReviewRoute: AuthenticatedReviewRouteWithChildren,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
   AuthenticatedCourseCourseIdRoute: AuthenticatedCourseCourseIdRoute,
   AuthenticatedProcessingCourseIdRoute: AuthenticatedProcessingCourseIdRoute,
+  AuthenticatedReviewCourseIdRoute: AuthenticatedReviewCourseIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
