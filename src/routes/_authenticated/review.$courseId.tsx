@@ -52,8 +52,10 @@ function ReviewExtractionScreen() {
   const save = useServerFn(saveExtractedCourse);
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<ExtractedSyllabus | null>(null);
+  const [inferredKeys, setInferredKeys] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
 
   const { data: course, isLoading } = useQuery({
     queryKey: ["course", courseId],
