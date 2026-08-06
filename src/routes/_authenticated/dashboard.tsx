@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, CalendarClock, FileText, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowUpRight, CalendarClock, FileText, Loader2, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
 import {
   DeadlinePill,
@@ -12,8 +12,10 @@ import {
   formatDate,
 } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { courseFromRow } from "@/lib/course-mapping";
 import { computeGrades, daysUntil, toneFor } from "@/lib/grade-engine";
-import { MOCK_COURSES } from "@/lib/mock-data";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
