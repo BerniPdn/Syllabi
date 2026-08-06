@@ -226,12 +226,30 @@ function AuthScreen() {
                     <Input
                       id="email"
                       type="email"
+                      inputMode="email"
                       required
                       placeholder="maya@university.edu"
                       autoComplete="email"
+                      aria-invalid={emailError ? true : undefined}
+                      aria-describedby={emailError ? "email-error" : undefined}
+                      className={cn(emailError && "border-destructive focus-visible:ring-destructive/30")}
                       value={email}
-                      onChange={(event) => setEmail(event.target.value)}
+                      onChange={(event) => {
+                        setEmail(event.target.value);
+                        if (emailError) setEmailError(null);
+                        if (error) setError(null);
+                      }}
+                      onBlur={() => {
+                        if (!email) return;
+                        const parsed = emailSchema.safeParse(email);
+                        setEmailError(parsed.success ? null : parsed.error.issues[0]!.message);
+                      }}
                     />
+                    {emailError ? (
+                      <p id="email-error" className="text-xs text-destructive">
+                        {emailError}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="password">Password</Label>
@@ -242,9 +260,21 @@ function AuthScreen() {
                       minLength={6}
                       placeholder="••••••••"
                       autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                      aria-invalid={passwordError ? true : undefined}
+                      aria-describedby={passwordError ? "password-error" : undefined}
+                      className={cn(passwordError && "border-destructive focus-visible:ring-destructive/30")}
                       value={password}
-                      onChange={(event) => setPassword(event.target.value)}
+                      onChange={(event) => {
+                        setPassword(event.target.value);
+                        if (passwordError) setPasswordError(null);
+                        if (error) setError(null);
+                      }}
                     />
+                    {passwordError ? (
+                      <p id="password-error" className="text-xs text-destructive">
+                        {passwordError}
+                      </p>
+                    ) : null}
                   </div>
 
                   {error ? (
@@ -253,7 +283,13 @@ function AuthScreen() {
                     </p>
                   ) : null}
 
-                  <Button type="submit" size="lg" className="w-full gap-2" disabled={pending}>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full gap-2"
+                    disabled={pending || !emailValid || !passwordValid}
+                  >
+
                     {pending ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
