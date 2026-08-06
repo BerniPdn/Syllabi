@@ -88,7 +88,9 @@ function Workspace() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["course-grades", courseId] });
+      queryClient.invalidateQueries({ queryKey: coursesQueryKey });
     },
+
     onError: (error: unknown) => {
       toast.error(error instanceof Error ? error.message : "Could not save that grade.");
     },
