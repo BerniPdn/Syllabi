@@ -647,25 +647,43 @@ export function InsightsPanel({ course }: { course: Course }) {
             body="Enter a few scores or confirm your grading components and insights will appear here."
           />
         ) : (
-          <div className="space-y-2.5">
-            {insights.map((insight) => (
-              <div
-                key={insight.category}
-                className={cn("rounded-xl border-l-2 px-4 py-3.5", INSIGHT_TONES[insight.tone])}
-              >
-                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  {CATEGORY_LABELS[insight.category]}
-                </p>
-                {insight.title ? (
-                  <p className="mt-1 text-sm font-medium">{insight.title}</p>
-                ) : null}
-                <MessageResponse className="mt-1 text-sm leading-relaxed">
-                  {insight.body}
-                </MessageResponse>
-              </div>
-            ))}
+          <div className="space-y-2">
+            {insights.map((insight) => {
+              const style = INSIGHT_STYLES[styleFor(insight)];
+              return (
+                <div
+                  key={insight.category}
+                  className={cn(
+                    "relative overflow-hidden rounded-xl border px-4 py-3",
+                    style.card,
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className={cn("absolute inset-y-0 left-0 w-[3px]", style.accent)}
+                  />
+                  <p
+                    className={cn(
+                      "text-[10px] font-semibold uppercase tracking-[0.09em]",
+                      style.label,
+                    )}
+                  >
+                    {CATEGORY_LABELS[insight.category]}
+                  </p>
+                  {insight.title ? (
+                    <p className="mt-1.5 text-[15px] font-semibold leading-snug tracking-tight">
+                      {insight.title}
+                    </p>
+                  ) : null}
+                  <MessageResponse className="mt-0.5 text-sm leading-snug text-muted-foreground">
+                    {insight.body}
+                  </MessageResponse>
+                </div>
+              );
+            })}
           </div>
         )}
+
       </SectionCard>
     </div>
   );
