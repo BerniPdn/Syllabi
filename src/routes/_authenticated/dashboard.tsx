@@ -80,13 +80,7 @@ function Dashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowEmpty((value) => !value)}
-              className="focus-ring rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {showEmpty ? "Show sample data" : "Preview empty state"}
-            </button>
+
             <Button asChild size="sm">
               <Link to="/upload">
                 <FileText className="size-4" />
