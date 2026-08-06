@@ -181,7 +181,17 @@ function Workspace() {
         </div>
 
         {tab === "overview" ? <OverviewPanel course={course} /> : null}
-        {tab === "assignments" ? <AssignmentsPanel course={course} /> : null}
+        {tab === "assignments" ? (
+          <AssignmentsPanel
+            course={course}
+            savingKey={gradeMutation.isPending ? gradeMutation.variables?.assignmentId : null}
+            onSaveScore={(assignmentId, score) => gradeMutation.mutate({ assignmentId, score })}
+            onDeleteScore={(assignmentId) =>
+              gradeMutation.mutate({ assignmentId, score: null })
+            }
+          />
+        ) : null}
+
         {tab === "simulator" ? <SimulatorPanel course={course} /> : null}
         {tab === "insights" ? <InsightsPanel course={course} /> : null}
         {tab === "assistant" ? <ChatPanel course={course} /> : null}
