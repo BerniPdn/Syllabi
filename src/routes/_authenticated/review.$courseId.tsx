@@ -552,13 +552,33 @@ function ReviewExtractionScreen() {
                         ...assignment,
                         weight: event.target.value === "" ? null : Number(event.target.value),
                       };
+                      const key = assignmentKey(assignment);
+                      setInferredKeys((current) => {
+                        if (!current.has(key)) return current;
+                        const updated = new Set(current);
+                        updated.delete(key);
+                        return updated;
+                      });
                       patch({ assignments: next });
                     }}
                     className="numeric h-8"
                   />
                 </div>
+                {missingComponent ? (
+                  <p
+                    role="alert"
+                    className="mt-2 flex items-center gap-1.5 text-xs text-destructive"
+                  >
+                    <AlertTriangle className="size-3.5" />
+                    Select a grading component for this assignment before saving.
+                  </p>
+                ) : isInferred ? (
+                  <p className="mt-2 text-xs text-muted-foreground">{INFERRED_WEIGHT_NOTE}</p>
+                ) : null}
               </div>
-            ))}
+              );
+            })}
+
             {draft.assignments.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No individual assignments were listed in the syllabus.
