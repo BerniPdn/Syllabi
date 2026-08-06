@@ -117,6 +117,8 @@ function ReviewExtractionScreen() {
   }
 
 
+  const isEditing = course?.status === "ready";
+
   const patch = (values: Partial<ExtractedSyllabus>) =>
     setDraft((current) => (current ? { ...current, ...values } : current));
 
@@ -164,10 +166,10 @@ function ReviewExtractionScreen() {
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-[11px] font-semibold text-success">
             <Check className="size-3" strokeWidth={3} />
-            {course.status === "ready" ? "Course saved" : "Syllabus analyzed"}
+            {isEditing ? "Course saved" : "Syllabus analyzed"}
           </span>
           <h1 className="mt-3 font-display text-2xl font-semibold tracking-tight">
-            {course.status === "ready" ? "Edit course details" : "Review what we found"}
+            {isEditing ? "Edit course details" : "Review what we found"}
           </h1>
           <p className="mt-1.5 max-w-lg text-sm text-muted-foreground">
             Only what your syllabus actually states was extracted — blank fields mean the document
@@ -579,7 +581,7 @@ function ReviewExtractionScreen() {
 
         <div className="flex flex-col gap-3 pb-4 sm:flex-row sm:justify-end">
           <Button variant="ghost" asChild>
-            {course.status === "ready" ? (
+            {isEditing ? (
               <Link to="/course/$courseId" params={{ courseId }}>
                 Cancel
               </Link>
@@ -590,7 +592,7 @@ function ReviewExtractionScreen() {
           <Button size="lg" disabled={saving} onClick={handleSave}>
             {saving
               ? "Saving…"
-              : course.status === "ready"
+              : isEditing
                 ? "Save changes"
                 : "Confirm and save course"}
           </Button>
