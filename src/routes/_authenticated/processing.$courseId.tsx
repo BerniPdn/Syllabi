@@ -6,7 +6,13 @@ import { AlertTriangle, Check, FileText, Loader2 } from "lucide-react";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { SYLLABUS_STAGES } from "@/lib/mock-data";
+const SYLLABUS_STAGES: string[] = [
+  "Reading your syllabus",
+  "Extracting course details",
+  "Mapping grading components",
+  "Finding assignments and dates",
+  "Preparing your workspace",
+];
 import { deleteCourse, extractSyllabus } from "@/lib/syllabus.functions";
 import { cn } from "@/lib/utils";
 
