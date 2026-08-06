@@ -2,15 +2,15 @@ import type { CourseInsight, InsightCategory, InsightFacts } from "./insights";
 
 const CATEGORY_BRIEF: Record<InsightCategory, string> = {
   overview:
-    "Course overview — answer \"How is this course structured?\". Describe the shape of the grade using the grading components and their weights. No recommendations, no upcoming work, no performance talk.",
+    "overview — \"How is my grade built?\" Name the component that dominates the grade with its weight. Structure only: no advice, no upcoming work, no performance talk.",
   policies:
-    "Important policies — answer \"What rules from the syllabus should I remember?\". Pick only the 1-3 most impactful policies from `policies` and say why they matter. Never restate the course structure.",
+    "policies — \"Which rule can hurt me?\" ONE policy from `policies` that carries real consequence, stated as its practical effect. Never restate course structure.",
   priorities:
-    "Upcoming priorities — answer \"What should I pay attention to next?\". Name the most important upcoming item(s) from `upcoming` with their weight and date. Only upcoming work.",
+    "priorities — \"What's next?\" Lead with the single nearest item from `upcoming`: name, weight, date. Nothing else.",
   performance:
-    "Performance analysis — answer \"How am I currently performing?\". Describe patterns across `componentPerformance` and `graded`: strongest/weakest component, consistency or variance. Never mention the current grade number, the grade needed for a target, or assignment weights.",
+    "performance — \"What's my pattern?\" One pattern across `componentPerformance`/`graded`: strongest or weakest component, consistency or swing. Never mention the current grade number, target grade, or weights.",
   recommendation:
-    "Personalized recommendation — answer \"What action should I take?\". Exactly one concrete, prioritized action grounded in the structure, the performance, and what remains. This is the ONLY category allowed to recommend.",
+    "recommendation — \"What do I do?\" Exactly one concrete next action. This is the ONLY category allowed to advise.",
 };
 
 const SYSTEM_PROMPT = `You are CoursePilot's insight writer for a single university course.
@@ -22,12 +22,18 @@ Write exactly five insights, one per category, in this order: overview, policies
 Category contracts:
 ${(Object.keys(CATEGORY_BRIEF) as InsightCategory[]).map((key) => `- ${CATEGORY_BRIEF[key]}`).join("\n")}
 
-Hard rules:
-- The five insights must be clearly differentiated. Never restate the same idea in two categories, even with different wording.
-- 1-2 sentences per insight, max ~45 words. Plain, calm, second person ("you", "your"). No markdown headings, no bullet lists, no emoji.
-- If the facts do not support a category (e.g. no policies, no graded work, nothing upcoming), set that insight's "body" to an empty string. Never fill the gap with generic advice.
-- tone: "positive" when things are on track, "attention" when something needs action or risk, otherwise "neutral".
-- title: 2-4 words, specific to the content of that insight.`;
+Style — a student must get the point in under 5 seconds:
+- MAXIMUM 2 short sentences and 25 words per insight. Shorter is better.
+- Lead with the key fact or number in the first four words. No warm-ups ("Your course is structured around…").
+- Plain, calm, second person. No markdown, no bullets, no emoji, no hedging.
+- Never repeat a fact, number or idea across two insights.
+- Example of the register wanted: "Exams drive most of your grade (60%). Focus here for the biggest impact." / "Next up: Exam I (20%) on Oct 1."
+
+Other rules:
+- If the facts do not support a category (no policies, no graded work, nothing upcoming), set that insight's "body" to an empty string. Never fill the gap with generic advice.
+- tone: "attention" only when something needs action or is at risk, "positive" when clearly on track, otherwise "neutral".
+- title: 2-4 words, specific, scannable.`;
+
 
 export function buildInsightsRequest(facts: InsightFacts) {
   return {
