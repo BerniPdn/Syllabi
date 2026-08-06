@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "CoursePilot — Your AI academic copilot" },
       {
         property: "og:description",
-        content: "Every course's grade and next deadline, in one calm workspace.",
+        content: "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an assistant that knows your class.",
       },
     ],
   }),

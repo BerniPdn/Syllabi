@@ -83,10 +83,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an AI assistant that knows your class.",
+          "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an assistant that knows your class.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "CoursePilot — Your AI academic copilot" },
+      { name: "twitter:title", content: "CoursePilot — Your AI academic copilot" },
+      { property: "og:description", content: "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an assistant that knows your class." },
+      { name: "twitter:description", content: "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an assistant that knows your class." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3db72a8a-5ee1-41df-9b49-b9bfc19a3370/id-preview-6789bf58--228fc7bd-8159-465f-b5b7-3377404ce36f.lovable.app-1786035354971.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3db72a8a-5ee1-41df-9b49-b9bfc19a3370/id-preview-6789bf58--228fc7bd-8159-465f-b5b7-3377404ce36f.lovable.app-1786035354971.png" },
     ],
     links: [
       {
