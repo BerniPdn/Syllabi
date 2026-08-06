@@ -90,7 +90,12 @@ function Dashboard() {
           </div>
         </div>
 
-        {courses.length === 0 ? (
+        {isLoading ? (
+          <div className="flex min-h-[40vh] items-center justify-center">
+            <Loader2 className="size-6 animate-spin text-primary" />
+          </div>
+        ) : courses.length === 0 ? (
+
           <SectionCard className="p-0">
             <EmptyState
               icon={<Sparkles className="size-5" />}
