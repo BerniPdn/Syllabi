@@ -66,13 +66,21 @@ function Dashboard() {
                 : `${courses.length} active courses · ${upcoming.length} deadlines ahead`}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowEmpty((value) => !value)}
-            className="focus-ring rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {showEmpty ? "Show sample data" : "Preview empty state"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowEmpty((value) => !value)}
+              className="focus-ring rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {showEmpty ? "Show sample data" : "Preview empty state"}
+            </button>
+            <Button asChild size="sm">
+              <Link to="/upload">
+                <FileText className="size-4" />
+                Add course
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {courses.length === 0 ? (
