@@ -20,9 +20,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import {
   emptyExtraction,
+  type ExtractedAssignment,
   type ExtractedSyllabus,
 } from "@/lib/syllabus-extraction";
+import { INFERRED_WEIGHT_NOTE, inferAssignmentWeights } from "@/lib/assignment-weights";
 import { scaleForEditing } from "@/lib/grade-scale";
+
 import { saveExtractedCourse } from "@/lib/syllabus.functions";
 import { coursesQueryKey } from "@/lib/use-courses";
 import { cn } from "@/lib/utils";
