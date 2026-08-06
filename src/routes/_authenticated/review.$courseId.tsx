@@ -6,6 +6,11 @@ import { AlertTriangle, ArrowLeft, Check, ChevronDown, Loader2, Plus, Trash2 } f
 import { AppShell } from "@/components/app/app-shell";
 import { SectionCard, SectionHeading } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
