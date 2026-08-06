@@ -737,11 +737,17 @@ function ReviewExtractionScreen() {
           <p role="alert" className="text-sm text-destructive">
             {componentsOverflow
               ? `Grading components add up to ${Math.round(total * 10) / 10}%. Bring the total to 100% or less to save.`
-              : `Assignment weights exceed their component total for ${overAllocated
-                  .map((item) => item.name)
-                  .join(", ")}. Adjust them to save.`}
+              : overAllocated.length > 0
+                ? overAllocated
+                    .map(
+                      (item) =>
+                        `These assignments exceed the ${item.name} component by ${Math.round((item.used - item.limit) * 10) / 10}%. Reduce the weights before saving.`,
+                    )
+                    .join(" ")
+                : `${unassignedCount} assignment${unassignedCount === 1 ? "" : "s"} still ${unassignedCount === 1 ? "needs" : "need"} a grading component. Every assignment must belong to one.`}
           </p>
         ) : null}
+
 
         {error ? (
           <p role="alert" className="text-sm text-destructive">
