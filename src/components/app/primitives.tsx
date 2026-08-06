@@ -222,5 +222,10 @@ export function EmptyState({
 
 export function formatDate(iso: string | null) {
   if (!iso) return "No date";
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
 }
+
