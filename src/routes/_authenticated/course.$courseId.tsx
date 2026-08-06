@@ -77,6 +77,22 @@ function Workspace() {
   const { courseId } = Route.useParams();
   const [tab, setTab] = useState<TabId>("overview");
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteCourse(courseId),
+    onSuccess: async () => {
+      queryClient.removeQueries({ queryKey: ["course-workspace", courseId] });
+      queryClient.removeQueries({ queryKey: ["course-grades", courseId] });
+      await queryClient.invalidateQueries({ queryKey: coursesQueryKey });
+      toast.success("Course deleted.");
+      navigate({ to: "/dashboard" });
+    },
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Could not delete this course.");
+    },
+  });
+
 
   const { data: baseCourse, isLoading } = useQuery({
     queryKey: ["course-workspace", courseId],
