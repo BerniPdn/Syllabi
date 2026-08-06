@@ -20,9 +20,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import {
   emptyExtraction,
+  type ExtractedAssignment,
   type ExtractedSyllabus,
 } from "@/lib/syllabus-extraction";
+import { INFERRED_WEIGHT_NOTE, inferAssignmentWeights } from "@/lib/assignment-weights";
 import { scaleForEditing } from "@/lib/grade-scale";
+
 import { saveExtractedCourse } from "@/lib/syllabus.functions";
 import { coursesQueryKey } from "@/lib/use-courses";
 import { cn } from "@/lib/utils";
@@ -52,8 +55,10 @@ function ReviewExtractionScreen() {
   const save = useServerFn(saveExtractedCourse);
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<ExtractedSyllabus | null>(null);
+  const [inferredKeys, setInferredKeys] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
 
   const { data: course, isLoading } = useQuery({
     queryKey: ["course", courseId],
@@ -73,12 +78,19 @@ function ReviewExtractionScreen() {
   useEffect(() => {
     if (draft || !course || !course.extracted) return;
     const stored = course.extracted as ExtractedSyllabus;
-    setDraft({
+    const base = {
       ...emptyExtraction(),
       ...stored,
       grade_scale: scaleForEditing(stored.grade_scale),
-    });
+    };
+    const { assignments, inferredIndexes } = inferAssignmentWeights(
+      base.grading_components,
+      base.assignments,
+    );
+    setDraft({ ...base, assignments });
+    setInferredKeys(new Set(inferredIndexes.map((index) => assignmentKey(assignments[index]!))));
   }, [course, draft]);
+
 
   // No extraction stored yet: the processing screen owns running/retrying it.
   useEffect(() => {
@@ -131,7 +143,19 @@ function ReviewExtractionScreen() {
     [componentUsage],
   );
 
-  const blockedFromSaving = componentsOverflow || overAllocated.length > 0;
+  // Every assignment must belong to exactly one of the course's components.
+  const unassignedCount = useMemo(
+    () =>
+      (draft?.assignments ?? []).filter((assignment) => {
+        const name = assignment.component?.trim();
+        return !name || !componentOptions.includes(name);
+      }).length,
+    [draft, componentOptions],
+  );
+
+  const blockedFromSaving = componentsOverflow || overAllocated.length > 0 || unassignedCount > 0;
+
+
 
 
   if (!isLoading && !course) {
@@ -432,8 +456,21 @@ function ReviewExtractionScreen() {
             hint="Scores stay empty until you enter them"
           />
           <div className="space-y-2">
-            {draft.assignments.map((assignment, index) => (
-              <div key={index} className="rounded-xl border border-border p-3">
+            {draft.assignments.map((assignment, index) => {
+              const componentName = assignment.component?.trim() ?? "";
+              const missingComponent =
+                !componentName || !componentOptions.includes(componentName);
+              const isInferred =
+                inferredKeys.has(assignmentKey(assignment)) && assignment.weight !== null;
+              return (
+              <div
+                key={index}
+                className={cn(
+                  "rounded-xl border p-3",
+                  missingComponent ? "border-destructive/60" : "border-border",
+                )}
+              >
+
                 <div className="flex items-center gap-2">
                   <Input
                     aria-label="Assignment name"
@@ -515,13 +552,33 @@ function ReviewExtractionScreen() {
                         ...assignment,
                         weight: event.target.value === "" ? null : Number(event.target.value),
                       };
+                      const key = assignmentKey(assignment);
+                      setInferredKeys((current) => {
+                        if (!current.has(key)) return current;
+                        const updated = new Set(current);
+                        updated.delete(key);
+                        return updated;
+                      });
                       patch({ assignments: next });
                     }}
                     className="numeric h-8"
                   />
                 </div>
+                {missingComponent ? (
+                  <p
+                    role="alert"
+                    className="mt-2 flex items-center gap-1.5 text-xs text-destructive"
+                  >
+                    <AlertTriangle className="size-3.5" />
+                    Select a grading component for this assignment before saving.
+                  </p>
+                ) : isInferred ? (
+                  <p className="mt-2 text-xs text-muted-foreground">{INFERRED_WEIGHT_NOTE}</p>
+                ) : null}
               </div>
-            ))}
+              );
+            })}
+
             {draft.assignments.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No individual assignments were listed in the syllabus.
@@ -680,11 +737,17 @@ function ReviewExtractionScreen() {
           <p role="alert" className="text-sm text-destructive">
             {componentsOverflow
               ? `Grading components add up to ${Math.round(total * 10) / 10}%. Bring the total to 100% or less to save.`
-              : `Assignment weights exceed their component total for ${overAllocated
-                  .map((item) => item.name)
-                  .join(", ")}. Adjust them to save.`}
+              : overAllocated.length > 0
+                ? overAllocated
+                    .map(
+                      (item) =>
+                        `These assignments exceed the ${item.name} component by ${Math.round((item.used - item.limit) * 10) / 10}%. Reduce the weights before saving.`,
+                    )
+                    .join(" ")
+                : `${unassignedCount} assignment${unassignedCount === 1 ? "" : "s"} still ${unassignedCount === 1 ? "needs" : "need"} a grading component. Every assignment must belong to one.`}
           </p>
         ) : null}
+
 
         {error ? (
           <p role="alert" className="text-sm text-destructive">
@@ -716,7 +779,13 @@ function ReviewExtractionScreen() {
   );
 }
 
+/** Identity for tracking which weights we inferred, stable across reorders. */
+function assignmentKey(assignment: ExtractedAssignment) {
+  return `${assignment.component?.trim() ?? ""}::${assignment.name.trim()}`;
+}
+
 function Field({
+
   label,
   value,
   onChange,

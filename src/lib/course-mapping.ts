@@ -1,6 +1,8 @@
 import { type Assignment, type Category, type Course } from "./types";
 import { emptyExtraction, type ExtractedSyllabus } from "./syllabus-extraction";
+import { inferAssignmentWeights } from "./assignment-weights";
 import { normalizeScale } from "./grade-scale";
+
 
 const slug = (value: string, fallback: string) =>
   value
@@ -33,7 +35,13 @@ export function courseFromRow(row: {
     categories.length === 0 ? { id: "overall", name: "Overall", weight: 100 } : null;
   const allCategories = fallbackCategory ? [fallbackCategory] : categories;
 
-  const assignments: Assignment[] = (extracted.assignments ?? []).map((assignment, index) => {
+  const { assignments: weighted } = inferAssignmentWeights(
+    components,
+    extracted.assignments ?? [],
+  );
+
+  const assignments: Assignment[] = weighted.map((assignment, index) => {
+
     const matched = assignment.component
       ? allCategories.find(
           (category) =>
