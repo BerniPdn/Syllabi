@@ -87,6 +87,44 @@ function ReviewExtractionScreen() {
     [draft],
   );
   const balanced = Math.abs(total - 100) < 0.5;
+  const componentsOverflow = total > 100.5;
+
+  const componentOptions = useMemo(
+    () =>
+      (draft?.grading_components ?? [])
+        .map((component) => component.name.trim())
+        .filter((name, index, all) => name.length > 0 && all.indexOf(name) === index),
+    [draft],
+  );
+
+  // Assignments reference their grading component by name (extraction data model).
+  const componentUsage = useMemo(() => {
+    const usage = new Map<string, { used: number; limit: number }>();
+    for (const component of draft?.grading_components ?? []) {
+      const name = component.name.trim();
+      if (!name) continue;
+      usage.set(name, { used: 0, limit: component.weight ?? 0 });
+    }
+    for (const assignment of draft?.assignments ?? []) {
+      const name = assignment.component?.trim();
+      if (!name) continue;
+      const entry = usage.get(name);
+      if (!entry) continue;
+      entry.used += assignment.weight ?? 0;
+    }
+    return usage;
+  }, [draft]);
+
+  const overAllocated = useMemo(
+    () =>
+      [...componentUsage.entries()]
+        .filter(([, entry]) => entry.used > entry.limit + 0.5)
+        .map(([name, entry]) => ({ name, ...entry })),
+    [componentUsage],
+  );
+
+  const blockedFromSaving = componentsOverflow || overAllocated.length > 0;
+
 
   if (!isLoading && !course) {
     return (
