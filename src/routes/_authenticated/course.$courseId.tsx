@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -10,10 +10,22 @@ import {
   ListChecks,
   Loader2,
   MessageSquare,
+  Trash2,
 } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
 import { EmptyState, GradeBadge } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   AssignmentsPanel,
   ChatPanel,
@@ -23,12 +35,14 @@ import {
 } from "@/components/app/workspace-panels";
 import { supabase } from "@/integrations/supabase/client";
 import { courseFromRow } from "@/lib/course-mapping";
+import { deleteCourse } from "@/lib/delete-course";
 import { computeGrades, toneFor } from "@/lib/grade-engine";
 import { deleteGrade, fetchGrades, saveGrade } from "@/lib/grades";
 import { coursesQueryKey } from "@/lib/use-courses";
 
 
 import { cn } from "@/lib/utils";
+
 
 const TABS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -63,6 +77,22 @@ function Workspace() {
   const { courseId } = Route.useParams();
   const [tab, setTab] = useState<TabId>("overview");
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteCourse(courseId),
+    onSuccess: async () => {
+      queryClient.removeQueries({ queryKey: ["course-workspace", courseId] });
+      queryClient.removeQueries({ queryKey: ["course-grades", courseId] });
+      await queryClient.invalidateQueries({ queryKey: coursesQueryKey });
+      toast.success("Course deleted.");
+      navigate({ to: "/dashboard" });
+    },
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Could not delete this course.");
+    },
+  });
+
 
   const { data: baseCourse, isLoading } = useQuery({
     queryKey: ["course-workspace", courseId],
@@ -160,6 +190,42 @@ function Workspace() {
                 Edit course
               </Link>
             </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-destructive"
+                  disabled={deleteMutation.isPending}
+                >
+                  {deleteMutation.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="size-4" />
+                  )}
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete {course.name}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently removes the course and everything tied to it: its
+                    assignments, saved grades, the extracted syllabus data, and the uploaded
+                    syllabus file. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep course</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => deleteMutation.mutate()}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete course
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <GradeBadge
             score={snapshot.currentGrade}
             scale={course.scale}
