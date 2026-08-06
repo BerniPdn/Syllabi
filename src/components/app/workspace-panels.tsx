@@ -6,6 +6,8 @@ import {
   Lightbulb,
   RotateCcw,
   Send,
+  Trash2,
+
   TriangleAlert,
 } from "lucide-react";
 import {
@@ -183,22 +185,51 @@ export function OverviewPanel({ course }: { course: Course }) {
 
 /* -------------------------------- Assignments -------------------------------- */
 
-export function AssignmentsPanel({ course }: { course: Course }) {
-  const [scores, setScores] = useState<Record<string, string>>({});
+export function AssignmentsPanel({
+  course,
+  onSaveScore,
+  onDeleteScore,
+  savingKey,
+}: {
+  course: Course;
+  onSaveScore?: (assignmentId: string, score: number) => void;
+  onDeleteScore?: (assignmentId: string) => void;
+  savingKey?: string | null;
+}) {
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<"all" | "graded" | "ungraded">("all");
 
   const overrides = useMemo(() => {
     const parsed: Record<string, number | null> = {};
-    for (const [id, value] of Object.entries(scores)) {
-      parsed[id] = value === "" ? null : clampScore(Number(value));
+    for (const [id, value] of Object.entries(drafts)) {
+      parsed[id] = value.trim() === "" ? null : clampScore(Number(value));
     }
     return parsed;
-  }, [scores]);
+  }, [drafts]);
 
   const snapshot = computeGrades(course, overrides);
   const items = snapshot.items.filter((item) =>
     filter === "all" ? true : filter === "graded" ? item.score !== null : item.score === null,
   );
+
+  const commit = (assignmentId: string, saved: number | null) => {
+    const raw = drafts[assignmentId];
+    if (raw === undefined) return;
+    const trimmed = raw.trim();
+
+    if (trimmed === "") {
+      if (saved !== null) onDeleteScore?.(assignmentId);
+    } else {
+      const value = clampScore(Number(trimmed));
+      if (!Number.isNaN(value) && value !== saved) onSaveScore?.(assignmentId, value);
+    }
+
+    setDrafts((prev) => {
+      const next = { ...prev };
+      delete next[assignmentId];
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -262,15 +293,42 @@ export function AssignmentsPanel({ course }: { course: Course }) {
                       placeholder="—"
                       aria-label={`Score for ${item.assignment.name}`}
                       value={
-                        scores[item.assignment.id] ??
+                        drafts[item.assignment.id] ??
                         (item.assignment.score === null ? "" : String(item.assignment.score))
                       }
                       onChange={(event) =>
-                        setScores({ ...scores, [item.assignment.id]: event.target.value })
+                        setDrafts((prev) => ({
+                          ...prev,
+                          [item.assignment.id]: event.target.value,
+                        }))
                       }
+                      onBlur={() => commit(item.assignment.id, item.assignment.score)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") event.currentTarget.blur();
+                      }}
                       className="numeric h-8 w-16 text-right"
                     />
                     <span className="text-xs text-muted-foreground">%</span>
+                    {item.assignment.score !== null && onDeleteScore ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 text-muted-foreground"
+                        aria-label={`Delete grade for ${item.assignment.name}`}
+                        disabled={savingKey === item.assignment.id}
+                        onClick={() => {
+                          setDrafts((prev) => {
+                            const next = { ...prev };
+                            delete next[item.assignment.id];
+                            return next;
+                          });
+                          onDeleteScore(item.assignment.id);
+                        }}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
               ))}
@@ -280,6 +338,7 @@ export function AssignmentsPanel({ course }: { course: Course }) {
       })}
     </div>
   );
+
 }
 
 /* --------------------------------- Simulator --------------------------------- */
