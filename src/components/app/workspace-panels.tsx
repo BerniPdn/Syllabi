@@ -589,10 +589,30 @@ export function InsightsPanel({ course }: { course: Course }) {
   const facts = useMemo(() => buildInsightFacts(course), [course]);
   const enabled = hasInsightData(facts);
   const signature = useMemo(() => insightsSignature(facts), [facts]);
+  const forceRef = useRef(false);
 
   const query = useQuery({
     queryKey: ["course-insights", course.id, signature],
-    queryFn: () => generate({ data: { facts } }),
+    queryFn: async () => {
+      const force = forceRef.current;
+      forceRef.current = false;
+      const stored = await fetchStoredInsights(course.id);
+
+      // Fresh persisted insights: reuse them, never call the AI gateway.
+      if (!force && stored && stored.signature === signature && stored.insights.length > 0) {
+        return stored.insights;
+      }
+
+      try {
+        const fresh = await generate({ data: { facts } });
+        if (fresh.length > 0) await saveStoredInsights(course.id, signature, fresh);
+        return fresh;
+      } catch (error) {
+        // Fall back to whatever we last saved rather than an empty page.
+        if (stored && stored.insights.length > 0) return stored.insights;
+        throw error;
+      }
+    },
     enabled,
     staleTime: Infinity,
     gcTime: Infinity,
@@ -603,6 +623,7 @@ export function InsightsPanel({ course }: { course: Course }) {
   });
 
   const insights = query.data ?? [];
+
 
 
   return (
