@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Check, CheckCircle2, FileText, Loader2 } from "lucide-react";
+import { Check, FileText, Loader2 } from "lucide-react";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,7 +51,6 @@ function ProcessingRoute() {
   }, [stage]);
 
   const fileName = course?.title ? `${course.title}.pdf` : "syllabus.pdf";
-  const isDone = course && course.status !== "processing";
 
   if (isLoading) {
     return (
@@ -66,42 +65,22 @@ function ProcessingRoute() {
     );
   }
 
-  if (isDone) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-hero px-5">
-        <div className="w-full max-w-md">
-          <div className="card-surface p-7 text-center">
-            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-success/10 text-success">
-              <CheckCircle2 className="size-7" />
-            </div>
-            <h1 className="mt-5 font-display text-xl font-semibold tracking-tight">
-              Syllabus uploaded
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {course.title} has been saved. You can continue to the course workspace or go back to
-              the dashboard.
-            </p>
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" className="flex-1" asChild>
-                <Link to="/course/$courseId" params={{ courseId }}>
-                  Go to course
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="flex-1" asChild>
-                <Link to="/dashboard">Back to dashboard</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-hero px-5">
       <div className="w-full max-w-md">
-        <div className="card-surface p-7">
+        <div className="card-surface p-7 text-center">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+            <FileText className="size-6" />
+          </div>
+          <h1 className="mt-4 font-display text-lg font-semibold tracking-tight">
+            Your syllabus has been uploaded successfully.
+          </h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            CoursePilot will analyze your syllabus and extract your course structure.
+          </p>
+        </div>
+
+        <div className="card-surface mt-4 p-7">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-primary-soft text-primary">
               <FileText className="size-5" />
@@ -157,15 +136,20 @@ function ProcessingRoute() {
             />
           </div>
 
-          <div className="mt-6 flex items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">Status: {course?.status ?? "processing"}</p>
-            <Button variant="outline" size="sm" asChild>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <Button size="lg" className="flex-1" asChild>
+              <Link to="/course/$courseId" params={{ courseId }}>
+                Go to course
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" className="flex-1" asChild>
               <Link to="/dashboard">Back to dashboard</Link>
             </Button>
           </div>
         </div>
+
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          Your syllabus is safely stored. We'll notify you here once extraction is available.
+          Your syllabus is safely stored. We’ll notify you here once AI analysis is available.
         </p>
       </div>
     </div>
