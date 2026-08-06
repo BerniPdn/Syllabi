@@ -9,7 +9,6 @@ import {
   Lightbulb,
   ListChecks,
   Loader2,
-  MessageSquare,
   Trash2,
 } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
@@ -28,7 +27,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   AssignmentsPanel,
-  ChatPanel,
   InsightsPanel,
   OverviewPanel,
   SimulatorPanel,
@@ -49,7 +47,6 @@ const TABS = [
   { id: "assignments", label: "Assignments", icon: ListChecks },
   { id: "simulator", label: "Simulator", icon: BarChart3 },
   { id: "insights", label: "Insights", icon: Lightbulb },
-  { id: "assistant", label: "Assistant", icon: MessageSquare },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -271,7 +268,6 @@ function Workspace() {
 
         {tab === "simulator" ? <SimulatorPanel course={course} /> : null}
         {tab === "insights" ? <InsightsPanel course={course} /> : null}
-        {tab === "assistant" ? <ChatPanel course={course} /> : null}
       </div>
     </AppShell>
   );

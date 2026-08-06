@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowRight,
   Check,
@@ -6,7 +8,6 @@ import {
   Info,
   Lightbulb,
   RotateCcw,
-  Send,
   Trash2,
   TriangleAlert,
 } from "lucide-react";
@@ -15,18 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from "@/components/ai-elements/conversation";
-import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
-import {
-  PromptInput,
-  PromptInputFooter,
-  PromptInputSubmit,
-  PromptInputTextarea,
-} from "@/components/ai-elements/prompt-input";
+import { MessageResponse } from "@/components/ai-elements/message";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +32,6 @@ import {
   SectionHeading,
   formatDate,
 } from "@/components/app/primitives";
-import { Logo } from "@/components/brand/logo";
 import {
   clampScore,
   computeGrades,
@@ -51,9 +40,11 @@ import {
   simulate,
   toneFor,
 } from "@/lib/grade-engine";
-import { MOCK_CHATS, MOCK_INSIGHTS, MOCK_REPLY, QUICK_ACTIONS } from "@/lib/mock-data";
-import type { ChatMessage, Course } from "@/lib/types";
+import { CATEGORY_LABELS, buildInsightFacts, hasInsightData } from "@/lib/insights";
+import { generateInsights } from "@/lib/insights.functions";
+import type { Course } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
 
 /* ---------------------------------- Overview --------------------------------- */
 
@@ -555,15 +546,27 @@ export function SimulatorPanel({ course }: { course: Course }) {
 
 /* ---------------------------------- Insights --------------------------------- */
 
-export function InsightsPanel({ course }: { course: Course }) {
-  const [loading, setLoading] = useState(false);
-  const insights = MOCK_INSIGHTS[course.id] ?? [];
+const INSIGHT_TONES = {
+  positive: "border-l-success bg-success-soft/40",
+  neutral: "border-l-primary bg-primary-soft/40",
+  attention: "border-l-warning bg-warning-soft/40",
+} as const;
 
-  const toneStyles = {
-    positive: "border-l-success bg-success-soft/40",
-    neutral: "border-l-primary bg-primary-soft/40",
-    attention: "border-l-warning bg-warning-soft/40",
-  } as const;
+export function InsightsPanel({ course }: { course: Course }) {
+  const generate = useServerFn(generateInsights);
+
+  const facts = useMemo(() => buildInsightFacts(course), [course]);
+  const enabled = hasInsightData(facts);
+
+  const query = useQuery({
+    queryKey: ["course-insights", course.id, facts],
+    queryFn: () => generate({ data: { facts } }),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const insights = query.data ?? [];
 
   return (
     <div className="space-y-4">
@@ -575,37 +578,57 @@ export function InsightsPanel({ course }: { course: Course }) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                setLoading(true);
-                window.setTimeout(() => setLoading(false), 1600);
-              }}
+              disabled={!enabled || query.isFetching}
+              onClick={() => query.refetch()}
             >
               Regenerate
             </Button>
           }
         />
 
-        {loading ? (
-          <div className="space-y-3 py-2">
-            <Shimmer className="text-sm font-medium">Reading your latest grades…</Shimmer>
-            {[0, 1, 2].map((index) => (
-              <div key={index} className="h-16 animate-pulse rounded-xl bg-muted" />
-            ))}
-          </div>
-        ) : insights.length === 0 ? (
+        {!enabled ? (
           <EmptyState
             icon={<Lightbulb className="size-5" />}
             title="No insights yet"
-            body="Enter a few scores and CoursePilot will explain where you stand."
+            body="Add your grading components, assignments, or a few scores and CoursePilot will explain where you stand."
+          />
+        ) : query.isPending || query.isFetching ? (
+          <div className="space-y-3 py-2">
+            <Shimmer className="text-sm font-medium">Reading your latest course data…</Shimmer>
+            {[0, 1, 2, 3, 4].map((index) => (
+              <div key={index} className="h-16 animate-pulse rounded-xl bg-muted" />
+            ))}
+          </div>
+        ) : query.isError ? (
+          <EmptyState
+            icon={<TriangleAlert className="size-5" />}
+            title="Insights unavailable"
+            body={
+              query.error instanceof Error
+                ? query.error.message
+                : "We couldn't generate insights right now. Please try again."
+            }
+          />
+        ) : insights.length === 0 ? (
+          <EmptyState
+            icon={<Lightbulb className="size-5" />}
+            title="Not enough data yet"
+            body="Enter a few scores or confirm your grading components and insights will appear here."
           />
         ) : (
           <div className="space-y-2.5">
             {insights.map((insight) => (
               <div
-                key={insight.id}
-                className={cn("rounded-xl border-l-2 px-4 py-3.5", toneStyles[insight.tone])}
+                key={insight.category}
+                className={cn("rounded-xl border-l-2 px-4 py-3.5", INSIGHT_TONES[insight.tone])}
               >
-                <MessageResponse className="text-sm leading-relaxed">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  {CATEGORY_LABELS[insight.category]}
+                </p>
+                {insight.title ? (
+                  <p className="mt-1 text-sm font-medium">{insight.title}</p>
+                ) : null}
+                <MessageResponse className="mt-1 text-sm leading-relaxed">
                   {insight.body}
                 </MessageResponse>
               </div>
@@ -617,104 +640,5 @@ export function InsightsPanel({ course }: { course: Course }) {
   );
 }
 
-/* ------------------------------------ Chat ----------------------------------- */
+export const PANEL_ICONS = { ArrowRight };
 
-export function ChatPanel({ course }: { course: Course }) {
-  const [messages, setMessages] = useState<ChatMessage[]>(MOCK_CHATS[course.id] ?? []);
-  const [input, setInput] = useState("");
-  const [status, setStatus] = useState<"ready" | "submitted">("ready");
-
-  const send = (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || status === "submitted") return;
-
-    setMessages((current) => [
-      ...current,
-      { id: `u-${Date.now()}`, role: "user", content: trimmed },
-    ]);
-    setInput("");
-    setStatus("submitted");
-
-    window.setTimeout(() => {
-      setMessages((current) => [
-        ...current,
-        { id: `a-${Date.now()}`, role: "assistant", content: MOCK_REPLY },
-      ]);
-      setStatus("ready");
-    }, 1400);
-  };
-
-  return (
-    <SectionCard className="flex h-[min(70vh,640px)] flex-col p-0">
-      <div className="flex items-center gap-2.5 border-b border-border px-5 py-3.5">
-        <Logo size={20} withWordmark={false} />
-        <div>
-          <p className="text-sm font-medium">Course assistant</p>
-          <p className="text-xs text-muted-foreground">
-            Knows {course.code}'s weights, deadlines, and policies
-          </p>
-        </div>
-      </div>
-
-      <Conversation className="flex-1">
-        <ConversationContent className="px-5 py-5">
-          {messages.length === 0 ? (
-            <EmptyState
-              icon={<Logo size={20} withWordmark={false} />}
-              title={`Ask anything about ${course.code}`}
-              body="Grades, deadlines, policies, or what you need on the final — answers come from your own course data."
-            />
-          ) : (
-            messages.map((message) => (
-              <Message from={message.role} key={message.id}>
-                <MessageContent>
-                  <MessageResponse>{message.content}</MessageResponse>
-                </MessageContent>
-              </Message>
-            ))
-          )}
-          {status === "submitted" ? (
-            <Shimmer className="text-sm font-medium">Checking your course data…</Shimmer>
-          ) : null}
-        </ConversationContent>
-        <ConversationScrollButton />
-      </Conversation>
-
-      <div className="border-t border-border px-5 py-4">
-        <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
-          {QUICK_ACTIONS.map((action) => (
-            <button
-              key={action}
-              type="button"
-              onClick={() => send(action)}
-              className="focus-ring shrink-0 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-            >
-              {action}
-            </button>
-          ))}
-        </div>
-
-        <PromptInput
-          onSubmit={(_message, event) => {
-            event.preventDefault();
-            send(input);
-          }}
-        >
-          <PromptInputTextarea
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder={`Ask about ${course.code}…`}
-          />
-          <PromptInputFooter className="justify-end">
-            <PromptInputSubmit
-              status={status}
-              disabled={!input.trim() || status === "submitted"}
-            />
-          </PromptInputFooter>
-        </PromptInput>
-      </div>
-    </SectionCard>
-  );
-}
-
-export const PANEL_ICONS = { ArrowRight, Send };

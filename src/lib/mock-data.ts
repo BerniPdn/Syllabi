@@ -1,4 +1,4 @@
-import { DEFAULT_SCALE, type ChatMessage, type Course, type Insight } from "./types";
+import { DEFAULT_SCALE, type Course } from "./types";
 
 /**
  * Mock data for the UI design pass. Replaced by real data once the backend
@@ -111,62 +111,3 @@ export const MOCK_COURSES: Course[] = [
 ];
 
 export const getCourse = (id: string) => MOCK_COURSES.find((course) => course.id === id);
-
-export const MOCK_INSIGHTS: Record<string, Insight[]> = {
-  algorithms: [
-    { id: "i1", tone: "positive", body: "You're on track for an **A-**. Holding your current average through the remaining work lands you at 91.4." },
-    { id: "i2", tone: "attention", body: "The **final project report** now carries 22% of everything left to earn — more than the final exam." },
-    { id: "i3", tone: "neutral", body: "You need to average **94** across all remaining work to reach your 93 target." },
-    { id: "i4", tone: "attention", body: "Two deadlines land within the next 10 days: Homework 4 and the Project Milestone." },
-    { id: "i5", tone: "neutral", body: "Participation is fully earned and can't move your grade any further." },
-  ],
-  microecon: [
-    { id: "i1", tone: "attention", body: "You're **2.6 points below** your target pace. Problem Set 2 is the main drag." },
-    { id: "i2", tone: "neutral", body: "The **final exam** is 35% of the grade — the single biggest lever you have left." },
-    { id: "i3", tone: "positive", body: "Two problem set grades get dropped, so Problem Set 2 may not count against you." },
-  ],
-  ochem: [
-    { id: "i1", tone: "attention", body: "Current average is **82.1**, below your 87 target. Exam 2 is the turning point." },
-    { id: "i2", tone: "neutral", body: "You need roughly **91** on everything remaining to reach a B+." },
-    { id: "i3", tone: "positive", body: "Your lowest quiz is dropped, which adds about 0.9 points back." },
-  ],
-};
-
-export const MOCK_CHATS: Record<string, ChatMessage[]> = {
-  algorithms: [
-    { id: "c1", role: "user", content: "What do I need on the final to earn an A?" },
-    {
-      id: "c2",
-      role: "assistant",
-      content:
-        "With your graded work so far you're at **90.6%**, and 61.5% of the course is still ungraded.\n\nTo finish at 93 you'd need to average **94.5** across everything remaining. If you hold 92 on the homework and project work, the final exam alone would need about **99** — so the project report is the more realistic lever.\n\nOne thing in your favor: the syllabus drops your lowest homework grade.",
-    },
-    { id: "c3", role: "user", content: "Can I skip Homework 5?" },
-    {
-      id: "c4",
-      role: "assistant",
-      content:
-        "You can, but it costs you. Homework 5 is worth **5% of your final grade**, and your lowest homework is already going to be dropped — right now that's Homework 2 at 88.\n\nSkipping it would make a 0 your dropped score instead, so you'd lose the 88 → the net effect is roughly **-1.2 points** on your final grade. Not fatal, but it moves an A- to a B+ if the rest stays flat.",
-    },
-  ],
-};
-
-export const QUICK_ACTIONS = [
-  "What do I need for an A?",
-  "Upcoming deadlines",
-  "Explain grading policy",
-  "Next assignment",
-  "Course summary",
-];
-
-/** Canned reply used while the UI is still front-end only. */
-export const MOCK_REPLY =
-  "Here's what your course data shows.\n\nYou have **three graded homework assignments** averaging 91.7, a midterm at 84, and the project proposal at 95. That puts your current weighted average at **90.6**.\n\nThe biggest remaining lever is the **final project report** — it carries 22% of everything still ungraded, more than the final exam itself.";
-
-export const SYLLABUS_STAGES = [
-  "Reading your syllabus",
-  "Finding grading components",
-  "Extracting deadlines",
-  "Understanding course policies",
-  "Building your workspace",
-];
