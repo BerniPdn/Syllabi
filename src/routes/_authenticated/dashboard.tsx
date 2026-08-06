@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, CalendarClock, FileText, Loader2, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
 import {
@@ -12,8 +11,7 @@ import {
   formatDate,
 } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { courseFromRow } from "@/lib/course-mapping";
+import { useCourses } from "@/lib/use-courses";
 import { computeGrades, daysUntil, toneFor } from "@/lib/grade-engine";
 
 
