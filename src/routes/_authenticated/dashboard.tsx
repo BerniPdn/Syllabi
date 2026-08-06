@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, CalendarClock, FileText, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowUpRight, CalendarClock, FileText, Loader2, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
 import {
   DeadlinePill,
@@ -12,8 +12,10 @@ import {
   formatDate,
 } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { courseFromRow } from "@/lib/course-mapping";
 import { computeGrades, daysUntil, toneFor } from "@/lib/grade-engine";
-import { MOCK_COURSES } from "@/lib/mock-data";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -36,8 +38,19 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const { user } = Route.useRouteContext();
-  const [showEmpty, setShowEmpty] = useState(false);
-  const courses = showEmpty ? [] : MOCK_COURSES;
+  const { data: courses = [], isLoading } = useQuery({
+    queryKey: ["dashboard-courses", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("id, title, extracted, status")
+        .eq("status", "ready")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map(courseFromRow);
+    },
+  });
+
 
   const firstName =
     ((user?.user_metadata?.["full_name"] as string | undefined) ?? user?.email ?? "there")
@@ -67,13 +80,7 @@ function Dashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowEmpty((value) => !value)}
-              className="focus-ring rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {showEmpty ? "Show sample data" : "Preview empty state"}
-            </button>
+
             <Button asChild size="sm">
               <Link to="/upload">
                 <FileText className="size-4" />
@@ -83,7 +90,12 @@ function Dashboard() {
           </div>
         </div>
 
-        {courses.length === 0 ? (
+        {isLoading ? (
+          <div className="flex min-h-[40vh] items-center justify-center">
+            <Loader2 className="size-6 animate-spin text-primary" />
+          </div>
+        ) : courses.length === 0 ? (
+
           <SectionCard className="p-0">
             <EmptyState
               icon={<Sparkles className="size-5" />}
