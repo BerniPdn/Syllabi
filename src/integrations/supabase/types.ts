@@ -17,6 +17,8 @@ export type Database = {
       courses: {
         Row: {
           created_at: string
+          extracted: Json | null
+          extraction_error: string | null
           file_path: string | null
           id: string
           status: string
@@ -26,6 +28,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          extracted?: Json | null
+          extraction_error?: string | null
           file_path?: string | null
           id?: string
           status?: string
@@ -35,6 +39,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          extracted?: Json | null
+          extraction_error?: string | null
           file_path?: string | null
           id?: string
           status?: string

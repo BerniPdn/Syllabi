@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Check, FileText, Loader2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { AlertTriangle, Check, FileText, Loader2 } from "lucide-react";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { SYLLABUS_STAGES } from "@/lib/mock-data";
+import { deleteCourse, extractSyllabus } from "@/lib/syllabus.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/processing/$courseId")({
@@ -29,26 +31,73 @@ export const Route = createFileRoute("/_authenticated/processing/$courseId")({
 
 function ProcessingRoute() {
   const { courseId } = Route.useParams();
+  const navigate = useNavigate();
+  const runExtraction = useServerFn(extractSyllabus);
+  const removeCourse = useServerFn(deleteCourse);
+  const started = useRef(false);
   const [stage, setStage] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [discarding, setDiscarding] = useState(false);
 
   const { data: course, isLoading } = useQuery({
     queryKey: ["course", courseId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error: queryError } = await supabase
         .from("courses")
-        .select("id, title, status, file_path")
+        .select("id, title, status, file_path, extracted, extraction_error")
         .eq("id", courseId)
         .maybeSingle();
-      if (error) throw error;
+      if (queryError) throw queryError;
       return data;
     },
   });
 
   useEffect(() => {
+    if (isLoading || !course || started.current) return;
+    started.current = true;
+
+    if (course.extraction_error && !course.extracted) {
+      setError(course.extraction_error);
+      return;
+    }
+    if (course.extracted) {
+      navigate({ to: "/review/$courseId", params: { courseId }, replace: true });
+      return;
+    }
+
+    void runExtraction({ data: { courseId } })
+      .then((result) => {
+        if (result.ok) {
+          navigate({ to: "/review/$courseId", params: { courseId }, replace: true });
+        } else {
+          setError(result.error);
+        }
+      })
+      .catch((cause: unknown) => {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "We couldn't analyze that syllabus. Please try again.",
+        );
+      });
+  }, [course, courseId, isLoading, navigate, runExtraction]);
+
+  useEffect(() => {
+    if (error) return;
     if (stage >= SYLLABUS_STAGES.length - 1) return;
-    const timer = window.setTimeout(() => setStage((value) => value + 1), 1400);
+    const timer = window.setTimeout(() => setStage((value) => value + 1), 2200);
     return () => window.clearTimeout(timer);
-  }, [stage]);
+  }, [stage, error]);
+
+  async function uploadAnother() {
+    setDiscarding(true);
+    try {
+      await removeCourse({ data: { courseId } });
+    } catch {
+      // even if cleanup fails, let the user retry
+    }
+    navigate({ to: "/upload", replace: true });
+  }
 
   const fileName = course?.title ? `${course.title}.pdf` : "syllabus.pdf";
 
@@ -65,6 +114,37 @@ function ProcessingRoute() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-hero px-5">
+        <div className="w-full max-w-md">
+          <div className="card-surface p-7 text-center">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-warning-soft text-warning">
+              <AlertTriangle className="size-6" />
+            </div>
+            <h1 className="mt-4 font-display text-lg font-semibold tracking-tight">
+              We need a course syllabus
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">{error}</p>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Button size="lg" className="flex-1" disabled={discarding} onClick={uploadAnother}>
+                {discarding ? "Preparing…" : "Upload another PDF"}
+              </Button>
+              <Button size="lg" variant="outline" className="flex-1" asChild>
+                <Link to="/dashboard">Back to dashboard</Link>
+              </Button>
+            </div>
+          </div>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Nothing was saved to your workspace — CoursePilot never creates a course from an
+            incomplete syllabus.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-hero px-5">
       <div className="w-full max-w-md">
@@ -76,7 +156,7 @@ function ProcessingRoute() {
             Your syllabus has been uploaded successfully.
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            CoursePilot will analyze your syllabus and extract your course structure.
+            CoursePilot is analyzing your syllabus and extracting your course structure.
           </p>
         </div>
 
@@ -135,21 +215,10 @@ function ProcessingRoute() {
               style={{ width: `${((stage + 1) / SYLLABUS_STAGES.length) * 100}%` }}
             />
           </div>
-
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Button size="lg" className="flex-1" asChild>
-              <Link to="/course/$courseId" params={{ courseId }}>
-                Go to course
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="flex-1" asChild>
-              <Link to="/dashboard">Back to dashboard</Link>
-            </Button>
-          </div>
         </div>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          Your syllabus is safely stored. We’ll notify you here once AI analysis is available.
+          This usually takes under a minute. You'll review and confirm everything we find.
         </p>
       </div>
     </div>

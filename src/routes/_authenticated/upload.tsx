@@ -79,7 +79,7 @@ function UploadScreen() {
         .from("courses")
         .insert({
           user_id: user.id,
-          status: "draft",
+          status: "processing",
           file_path: path,
           title: file.name.replace(/\.pdf$/i, ""),
         })
