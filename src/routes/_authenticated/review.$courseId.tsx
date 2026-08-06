@@ -805,7 +805,11 @@ function ReviewExtractionScreen() {
               <Link to="/upload">Start over</Link>
             )}
           </Button>
-          <Button size="lg" disabled={saving || blockedFromSaving} onClick={handleSave}>
+          <Button
+            size="lg"
+            disabled={saving || blockedFromSaving}
+            onClick={() => void handleSave()}
+          >
 
             {saving
               ? "Saving…"
