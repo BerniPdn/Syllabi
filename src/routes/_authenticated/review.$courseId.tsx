@@ -818,7 +818,56 @@ function ReviewExtractionScreen() {
                 : "Confirm and save course"}
           </Button>
         </div>
+
+        <AlertDialog
+          open={duplicates.length > 0}
+          onOpenChange={(open) => {
+            if (!open) setDuplicates([]);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>This course may already exist.</AlertDialogTitle>
+              <AlertDialogDescription>
+                You already have {duplicates.length === 1 ? "a course" : "courses"} that looks
+                like this one. You can open the existing course instead, or continue and create
+                a separate one.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <ul className="space-y-2">
+              {duplicates.map((match) => (
+                <li key={match.id} className="rounded-lg border border-border/70 p-3">
+                  <p className="text-sm font-medium">{match.name}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {[match.code, match.professor, match.semester].filter(Boolean).join(" · ") ||
+                      "No extra details"}
+                  </p>
+                  {match.reason ? (
+                    <p className="mt-1 text-xs text-muted-foreground">Matches on {match.reason}</p>
+                  ) : null}
+                  <Button asChild variant="secondary" size="sm" className="mt-2">
+                    <Link to="/course/$courseId" params={{ courseId: match.id }}>
+                      Use existing course
+                    </Link>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  setDuplicates([]);
+                  void handleSave({ skipDuplicateCheck: true });
+                }}
+              >
+                Create anyway
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
+
     </AppShell>
   );
 }
