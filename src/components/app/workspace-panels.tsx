@@ -546,27 +546,58 @@ export function SimulatorPanel({ course }: { course: Course }) {
 
 /* ---------------------------------- Insights --------------------------------- */
 
-const INSIGHT_TONES = {
-  positive: "border-l-success bg-success-soft/40",
-  neutral: "border-l-primary bg-primary-soft/40",
-  attention: "border-l-warning bg-warning-soft/40",
+/**
+ * One consistent card system. Colour communicates meaning only:
+ * info = neutral structure/facts, attention = risk or a rule to respect,
+ * action = the single thing to do next.
+ */
+const INSIGHT_STYLES = {
+  info: {
+    card: "border-border bg-card",
+    accent: "bg-muted-foreground/30",
+    label: "text-muted-foreground",
+  },
+  attention: {
+    card: "border-warning/30 bg-warning-soft/30",
+    accent: "bg-warning",
+    label: "text-warning",
+  },
+  action: {
+    card: "border-primary/30 bg-primary-soft/30",
+    accent: "bg-primary",
+    label: "text-primary",
+  },
 } as const;
+
+type InsightStyle = keyof typeof INSIGHT_STYLES;
+
+function styleFor(insight: { category: string; tone: string }): InsightStyle {
+  if (insight.category === "recommendation") return "action";
+  if (insight.category === "policies") return "attention";
+  return insight.tone === "attention" ? "attention" : "info";
+}
 
 export function InsightsPanel({ course }: { course: Course }) {
   const generate = useServerFn(generateInsights);
 
   const facts = useMemo(() => buildInsightFacts(course), [course]);
   const enabled = hasInsightData(facts);
+  const signature = useMemo(() => insightsSignature(facts), [facts]);
 
   const query = useQuery({
-    queryKey: ["course-insights", course.id, facts],
+    queryKey: ["course-insights", course.id, signature],
     queryFn: () => generate({ data: { facts } }),
     enabled,
-    staleTime: 5 * 60 * 1000,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     retry: false,
   });
 
   const insights = query.data ?? [];
+
 
   return (
     <div className="space-y-4">
