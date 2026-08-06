@@ -32,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/processing/$courseId")({
 function ProcessingRoute() {
   const { courseId } = Route.useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const runExtraction = useServerFn(extractSyllabus);
   const removeCourse = useServerFn(deleteCourse);
   const started = useRef(false);
@@ -65,10 +66,18 @@ function ProcessingRoute() {
       return;
     }
 
+    const goToReview = async () => {
+      // Refresh the shared course cache so the review screen sees the stored
+      // extraction instead of the stale pre-extraction row (which bounced it
+      // back here and replayed this screen).
+      await queryClient.invalidateQueries({ queryKey: ["course", courseId] });
+      navigate({ to: "/review/$courseId", params: { courseId }, replace: true });
+    };
+
     void runExtraction({ data: { courseId } })
-      .then((result) => {
+      .then(async (result) => {
         if (result.ok) {
-          navigate({ to: "/review/$courseId", params: { courseId }, replace: true });
+          await goToReview();
         } else {
           setError(result.error);
         }
@@ -80,7 +89,7 @@ function ProcessingRoute() {
             : "We couldn't analyze that syllabus. Please try again.",
         );
       });
-  }, [course, courseId, isLoading, navigate, runExtraction]);
+  }, [course, courseId, isLoading, navigate, queryClient, runExtraction]);
 
   useEffect(() => {
     if (error) return;
