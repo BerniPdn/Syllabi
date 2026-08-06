@@ -303,62 +303,73 @@ export function AssignmentsPanel({
             />
             <div className="divide-y divide-border">
               {rows.map((item) => (
-                <div key={item.assignment.id} className="flex items-center gap-3 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{item.assignment.name}</p>
-                    <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{formatDate(item.assignment.dueDate)}</span>
-                      <span className="numeric">
-                        {item.effectiveWeight.toFixed(1)}% of grade
-                      </span>
-                    </p>
-                  </div>
-                  {item.assignment.dueDate && item.score === null ? (
-                    <DeadlinePill dueDate={item.assignment.dueDate} />
-                  ) : null}
-                  <div className="flex items-center gap-1.5">
-                    <Input
-                      inputMode="decimal"
-                      placeholder="—"
-                      aria-label={`Score for ${item.assignment.name}`}
-                      value={
-                        drafts[item.assignment.id] ??
-                        (item.assignment.score === null ? "" : String(item.assignment.score))
-                      }
-                      onChange={(event) =>
-                        setDrafts((prev) => ({
-                          ...prev,
-                          [item.assignment.id]: event.target.value,
-                        }))
-                      }
-                      onBlur={() => commit(item.assignment.id, item.assignment.score)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") event.currentTarget.blur();
-                      }}
-                      className="numeric h-8 w-16 text-right"
-                    />
-                    <span className="text-xs text-muted-foreground">%</span>
-                    {item.assignment.score !== null && onDeleteScore ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 text-muted-foreground"
-                        aria-label={`Delete grade for ${item.assignment.name}`}
-                        disabled={savingKey === item.assignment.id}
-                        onClick={() => {
-                          setDrafts((prev) => {
-                            const next = { ...prev };
-                            delete next[item.assignment.id];
-                            return next;
-                          });
-                          onDeleteScore(item.assignment.id);
-                        }}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
+                <div key={item.assignment.id} className="py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{item.assignment.name}</p>
+                      <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{formatDate(item.assignment.dueDate)}</span>
+                        <span className="numeric">
+                          {item.effectiveWeight.toFixed(1)}% of grade
+                        </span>
+                      </p>
+                    </div>
+                    {item.assignment.dueDate && item.score === null ? (
+                      <DeadlinePill dueDate={item.assignment.dueDate} />
                     ) : null}
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        inputMode="decimal"
+                        placeholder="—"
+                        aria-label={`Score for ${item.assignment.name}`}
+                        aria-invalid={errors[item.assignment.id] ? true : undefined}
+                        value={
+                          drafts[item.assignment.id] ??
+                          (item.assignment.score === null ? "" : String(item.assignment.score))
+                        }
+                        onChange={(event) => handleChange(item.assignment.id, event.target.value)}
+                        onBlur={() => commit(item.assignment.id, item.assignment.score)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") event.currentTarget.blur();
+                        }}
+                        className={cn(
+                          "numeric h-8 w-16 text-right",
+                          errors[item.assignment.id] && "border-destructive",
+                        )}
+                      />
+                      <span className="text-xs text-muted-foreground">%</span>
+                      {item.assignment.score !== null && onDeleteScore ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 text-muted-foreground"
+                          aria-label={`Delete grade for ${item.assignment.name}`}
+                          disabled={savingKey === item.assignment.id}
+                          onClick={() => {
+                            setDrafts((prev) => {
+                              const next = { ...prev };
+                              delete next[item.assignment.id];
+                              return next;
+                            });
+                            setErrors((prev) => {
+                              const next = { ...prev };
+                              delete next[item.assignment.id];
+                              return next;
+                            });
+                            onDeleteScore(item.assignment.id);
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
+                  {errors[item.assignment.id] ? (
+                    <p role="alert" className="mt-1.5 text-right text-xs text-destructive">
+                      {errors[item.assignment.id]}
+                    </p>
+                  ) : null}
                 </div>
               ))}
             </div>
