@@ -11,7 +11,7 @@ import { MOCK_COURSES } from "@/lib/mock-data";
 import { letterFor } from "@/lib/grade-engine";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/review")({
+export const Route = createFileRoute("/_authenticated/review")({
   head: () => ({
     meta: [
       { title: "Review extracted course — CoursePilot" },

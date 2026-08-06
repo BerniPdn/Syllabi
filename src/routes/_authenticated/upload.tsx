@@ -8,7 +8,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { SYLLABUS_STAGES } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/upload")({
+export const Route = createFileRoute("/_authenticated/upload")({
   head: () => ({
     meta: [
       { title: "Upload a syllabus — CoursePilot" },
