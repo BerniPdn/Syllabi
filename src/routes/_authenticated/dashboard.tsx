@@ -35,8 +35,13 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function Dashboard() {
+  const { user } = Route.useRouteContext();
   const [showEmpty, setShowEmpty] = useState(false);
   const courses = showEmpty ? [] : MOCK_COURSES;
+
+  const firstName =
+    ((user?.user_metadata?.["full_name"] as string | undefined) ?? user?.email ?? "there")
+      .split(/[\s@]/)[0] ?? "there";
 
   const upcoming = courses
     .flatMap((course) =>
@@ -53,7 +58,7 @@ function Dashboard() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-[28px]">
-              Good evening, Maya
+              Welcome back, {firstName}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {courses.length === 0
@@ -74,19 +79,20 @@ function Dashboard() {
           <SectionCard className="p-0">
             <EmptyState
               icon={<Sparkles className="size-5" />}
-              title="Upload your first syllabus"
+              title="Add your first course"
               body="CoursePilot reads your syllabus and builds a live workspace — grade weights, deadlines, and policies included. It takes about a minute."
               action={
                 <Button asChild size="lg">
                   <Link to="/upload">
                     <FileText className="size-4" />
-                    Upload syllabus
+                    Add first course
                   </Link>
                 </Button>
               }
             />
           </SectionCard>
         ) : (
+
           <>
             <SectionCard>
               <SectionHeading
