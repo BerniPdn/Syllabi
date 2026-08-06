@@ -38,7 +38,14 @@ import {
   formatDate,
 } from "@/components/app/primitives";
 import { Logo } from "@/components/brand/logo";
-import { clampScore, computeGrades, letterFor, simulate, toneFor } from "@/lib/grade-engine";
+import {
+  clampScore,
+  computeGrades,
+  isValidScoreInput,
+  letterFor,
+  simulate,
+  toneFor,
+} from "@/lib/grade-engine";
 import { MOCK_CHATS, MOCK_INSIGHTS, MOCK_REPLY, QUICK_ACTIONS } from "@/lib/mock-data";
 import type { ChatMessage, Course } from "@/lib/types";
 import { cn } from "@/lib/utils";
