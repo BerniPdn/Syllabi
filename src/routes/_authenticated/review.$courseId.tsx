@@ -198,10 +198,20 @@ function ReviewExtractionScreen() {
   const patch = (values: Partial<ExtractedSyllabus>) =>
     setDraft((current) => (current ? { ...current, ...values } : current));
 
-  async function handleSave() {
+  async function handleSave(options?: { skipDuplicateCheck?: boolean }) {
     if (!draft || blockedFromSaving) return;
     setSaving(true);
     setError(null);
+
+    if (!isEditing && !options?.skipDuplicateCheck) {
+      const matches = await findDuplicateCourses(courseId, draft);
+      if (matches.length > 0) {
+        setDuplicates(matches);
+        setSaving(false);
+        return;
+      }
+    }
+
     try {
       await save({
         data: {
@@ -227,6 +237,7 @@ function ReviewExtractionScreen() {
       setSaving(false);
     }
   }
+
 
   return (
     <AppShell>
