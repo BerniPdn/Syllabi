@@ -75,12 +75,19 @@ function ReviewExtractionScreen() {
   useEffect(() => {
     if (draft || !course || !course.extracted) return;
     const stored = course.extracted as ExtractedSyllabus;
-    setDraft({
+    const base = {
       ...emptyExtraction(),
       ...stored,
       grade_scale: scaleForEditing(stored.grade_scale),
-    });
+    };
+    const { assignments, inferredIndexes } = inferAssignmentWeights(
+      base.grading_components,
+      base.assignments,
+    );
+    setDraft({ ...base, assignments });
+    setInferredKeys(new Set(inferredIndexes.map((index) => assignmentKey(assignments[index]!))));
   }, [course, draft]);
+
 
   // No extraction stored yet: the processing screen owns running/retrying it.
   useEffect(() => {
