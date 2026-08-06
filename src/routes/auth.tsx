@@ -7,6 +7,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
+
+function friendlyAuthError(caught: unknown): string {
+  const raw = caught instanceof Error ? caught.message : "";
+  const message = raw.toLowerCase();
+  if (message.includes("already registered") || message.includes("already been registered")) {
+    return "An account with this email already exists. Sign in instead.";
+  }
+  if (message.includes("invalid login credentials")) {
+    return "That email and password don't match. Check both and try again.";
+  }
+  if (message.includes("email not confirmed")) {
+    return "Confirm your email first — check your inbox for the link we sent.";
+  }
+  if (message.includes("invalid") && message.includes("email")) {
+    return "Enter a valid email address, like maya@university.edu.";
+  }
+  if (message.includes("rate limit") || message.includes("too many")) {
+    return "Too many attempts. Wait a minute and try again.";
+  }
+  return raw || "Something went wrong. Try again.";
+}
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
