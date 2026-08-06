@@ -236,3 +236,26 @@
     outline-offset: 2px;
   }
 }
+
+@utility bg-hero {
+  background-color: var(--color-background);
+  background-image:
+    radial-gradient(
+      120% 90% at 12% 0%,
+      color-mix(in oklab, var(--primary) 9%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      90% 80% at 100% 100%,
+      color-mix(in oklab, var(--primary) 6%, transparent),
+      transparent 65%
+    );
+}
+
+@utility shadow-elevated {
+  box-shadow: var(--shadow-lift);
+}
+
+@utility shadow-subtle {
+  box-shadow: var(--shadow-card);
+}
