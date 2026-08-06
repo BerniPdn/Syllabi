@@ -40,7 +40,13 @@ import {
   simulate,
   toneFor,
 } from "@/lib/grade-engine";
-import { CATEGORY_LABELS, buildInsightFacts, hasInsightData } from "@/lib/insights";
+import {
+  CATEGORY_LABELS,
+  buildInsightFacts,
+  hasInsightData,
+  insightsSignature,
+} from "@/lib/insights";
+
 import { generateInsights } from "@/lib/insights.functions";
 import type { Course } from "@/lib/types";
 import { cn } from "@/lib/utils";
