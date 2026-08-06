@@ -183,14 +183,7 @@ export function OverviewPanel({ course }: { course: Course }) {
 
           <SectionCard className="min-w-0">
             <SectionHeading title="Course policies" hint="Context only — never used in the math" />
-            <ul className="space-y-2">
-              {course.policies.slice(0, 3).map((policy) => (
-                <li key={policy} className="flex gap-2.5 text-sm text-muted-foreground">
-                  <Info className="mt-0.5 size-3.5 shrink-0 text-primary" />
-                  <span>{policy}</span>
-                </li>
-              ))}
-            </ul>
+            <CoursePoliciesList policies={course.policies} />
           </SectionCard>
         </div>
       </div>
