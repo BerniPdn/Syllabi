@@ -38,7 +38,14 @@ import {
   formatDate,
 } from "@/components/app/primitives";
 import { Logo } from "@/components/brand/logo";
-import { clampScore, computeGrades, letterFor, simulate, toneFor } from "@/lib/grade-engine";
+import {
+  clampScore,
+  computeGrades,
+  isValidScoreInput,
+  letterFor,
+  simulate,
+  toneFor,
+} from "@/lib/grade-engine";
 import { MOCK_CHATS, MOCK_INSIGHTS, MOCK_REPLY, QUICK_ACTIONS } from "@/lib/mock-data";
 import type { ChatMessage, Course } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -197,12 +204,14 @@ export function AssignmentsPanel({
   savingKey?: string | null;
 }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<"all" | "graded" | "ungraded">("all");
 
   const overrides = useMemo(() => {
     const parsed: Record<string, number | null> = {};
     for (const [id, value] of Object.entries(drafts)) {
-      parsed[id] = value.trim() === "" ? null : clampScore(Number(value));
+      if (!isValidScoreInput(value)) continue;
+      parsed[id] = value.trim() === "" ? null : clampScore(Number(value.replace(",", ".")));
     }
     return parsed;
   }, [drafts]);
@@ -212,18 +221,38 @@ export function AssignmentsPanel({
     filter === "all" ? true : filter === "graded" ? item.score !== null : item.score === null,
   );
 
+  const handleChange = (assignmentId: string, raw: string) => {
+    setDrafts((prev) => ({ ...prev, [assignmentId]: raw }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (isValidScoreInput(raw)) delete next[assignmentId];
+      else next[assignmentId] = "Enter a number between 0 and 100.";
+      return next;
+    });
+  };
+
   const commit = (assignmentId: string, saved: number | null) => {
     const raw = drafts[assignmentId];
     if (raw === undefined) return;
     const trimmed = raw.trim();
 
+    if (!isValidScoreInput(trimmed)) {
+      setErrors((prev) => ({ ...prev, [assignmentId]: "Enter a number between 0 and 100." }));
+      return;
+    }
+
     if (trimmed === "") {
       if (saved !== null) onDeleteScore?.(assignmentId);
     } else {
-      const value = clampScore(Number(trimmed));
-      if (!Number.isNaN(value) && value !== saved) onSaveScore?.(assignmentId, value);
+      const value = clampScore(Number(trimmed.replace(",", ".")));
+      if (value !== saved) onSaveScore?.(assignmentId, value);
     }
 
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[assignmentId];
+      return next;
+    });
     setDrafts((prev) => {
       const next = { ...prev };
       delete next[assignmentId];
@@ -274,62 +303,73 @@ export function AssignmentsPanel({
             />
             <div className="divide-y divide-border">
               {rows.map((item) => (
-                <div key={item.assignment.id} className="flex items-center gap-3 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{item.assignment.name}</p>
-                    <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{formatDate(item.assignment.dueDate)}</span>
-                      <span className="numeric">
-                        {item.effectiveWeight.toFixed(1)}% of grade
-                      </span>
-                    </p>
-                  </div>
-                  {item.assignment.dueDate && item.score === null ? (
-                    <DeadlinePill dueDate={item.assignment.dueDate} />
-                  ) : null}
-                  <div className="flex items-center gap-1.5">
-                    <Input
-                      inputMode="decimal"
-                      placeholder="—"
-                      aria-label={`Score for ${item.assignment.name}`}
-                      value={
-                        drafts[item.assignment.id] ??
-                        (item.assignment.score === null ? "" : String(item.assignment.score))
-                      }
-                      onChange={(event) =>
-                        setDrafts((prev) => ({
-                          ...prev,
-                          [item.assignment.id]: event.target.value,
-                        }))
-                      }
-                      onBlur={() => commit(item.assignment.id, item.assignment.score)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") event.currentTarget.blur();
-                      }}
-                      className="numeric h-8 w-16 text-right"
-                    />
-                    <span className="text-xs text-muted-foreground">%</span>
-                    {item.assignment.score !== null && onDeleteScore ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 text-muted-foreground"
-                        aria-label={`Delete grade for ${item.assignment.name}`}
-                        disabled={savingKey === item.assignment.id}
-                        onClick={() => {
-                          setDrafts((prev) => {
-                            const next = { ...prev };
-                            delete next[item.assignment.id];
-                            return next;
-                          });
-                          onDeleteScore(item.assignment.id);
-                        }}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
+                <div key={item.assignment.id} className="py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{item.assignment.name}</p>
+                      <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{formatDate(item.assignment.dueDate)}</span>
+                        <span className="numeric">
+                          {item.effectiveWeight.toFixed(1)}% of grade
+                        </span>
+                      </p>
+                    </div>
+                    {item.assignment.dueDate && item.score === null ? (
+                      <DeadlinePill dueDate={item.assignment.dueDate} />
                     ) : null}
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        inputMode="decimal"
+                        placeholder="—"
+                        aria-label={`Score for ${item.assignment.name}`}
+                        aria-invalid={errors[item.assignment.id] ? true : undefined}
+                        value={
+                          drafts[item.assignment.id] ??
+                          (item.assignment.score === null ? "" : String(item.assignment.score))
+                        }
+                        onChange={(event) => handleChange(item.assignment.id, event.target.value)}
+                        onBlur={() => commit(item.assignment.id, item.assignment.score)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") event.currentTarget.blur();
+                        }}
+                        className={cn(
+                          "numeric h-8 w-16 text-right",
+                          errors[item.assignment.id] && "border-destructive",
+                        )}
+                      />
+                      <span className="text-xs text-muted-foreground">%</span>
+                      {item.assignment.score !== null && onDeleteScore ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 text-muted-foreground"
+                          aria-label={`Delete grade for ${item.assignment.name}`}
+                          disabled={savingKey === item.assignment.id}
+                          onClick={() => {
+                            setDrafts((prev) => {
+                              const next = { ...prev };
+                              delete next[item.assignment.id];
+                              return next;
+                            });
+                            setErrors((prev) => {
+                              const next = { ...prev };
+                              delete next[item.assignment.id];
+                              return next;
+                            });
+                            onDeleteScore(item.assignment.id);
+                          }}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
+                  {errors[item.assignment.id] ? (
+                    <p role="alert" className="mt-1.5 text-right text-xs text-destructive">
+                      {errors[item.assignment.id]}
+                    </p>
+                  ) : null}
                 </div>
               ))}
             </div>

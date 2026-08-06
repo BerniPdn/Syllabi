@@ -50,6 +50,21 @@ export function courseFromRow(row: {
     };
   });
 
+  // Grading components with a weight but no listed assignments (Participation,
+  // Attendance, Discussion, ...) are still part of the final grade, so they get a
+  // single gradable row of their own. Stable id so saved grades keep matching.
+  for (const category of allCategories) {
+    if (assignments.some((assignment) => assignment.categoryId === category.id)) continue;
+    assignments.push({
+      id: `component-${category.id}`,
+      categoryId: category.id,
+      name: category.name,
+      weight: null,
+      dueDate: null,
+      score: null,
+    });
+  }
+
   return {
     id: row.id,
     name: extracted.course_name?.trim() || row.title?.trim() || "Untitled course",
