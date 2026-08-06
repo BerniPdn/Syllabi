@@ -46,8 +46,10 @@ import {
   hasInsightData,
   insightsSignature,
 } from "@/lib/insights";
+import { fetchStoredInsights, saveStoredInsights } from "@/lib/insights-store";
 
 import { generateInsights } from "@/lib/insights.functions";
+
 import type { Course } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
