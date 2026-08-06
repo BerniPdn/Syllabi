@@ -1,8 +1,17 @@
 import { useState } from "react";
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import { BarChart3, LayoutDashboard, Lightbulb, ListChecks, MessageSquare } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import {
+  BarChart3,
+  LayoutDashboard,
+  Lightbulb,
+  ListChecks,
+  Loader2,
+  MessageSquare,
+} from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
-import { GradeBadge } from "@/components/app/primitives";
+import { EmptyState, GradeBadge } from "@/components/app/primitives";
+import { Button } from "@/components/ui/button";
 import {
   AssignmentsPanel,
   ChatPanel,
@@ -10,8 +19,9 @@ import {
   OverviewPanel,
   SimulatorPanel,
 } from "@/components/app/workspace-panels";
+import { supabase } from "@/integrations/supabase/client";
+import { courseFromRow } from "@/lib/course-mapping";
 import { computeGrades, toneFor } from "@/lib/grade-engine";
-import { getCourse } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -25,35 +35,67 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 export const Route = createFileRoute("/_authenticated/course/$courseId")({
-  loader: ({ params }) => {
-    const course = getCourse(params.courseId);
-    if (!course) throw notFound();
-    return { course };
-  },
-  head: ({ loaderData }) => {
-    const name = loaderData?.course.name ?? "Course";
-    const code = loaderData?.course.code ?? "";
-    return {
-      meta: [
-        { title: `${code} — ${name} | CoursePilot` },
-        {
-          name: "description",
-          content: `Track grades, simulate outcomes, and ask questions about ${code} ${name} in one workspace.`,
-        },
-        { property: "og:title", content: `${code} — ${name} | CoursePilot` },
-        {
-          property: "og:description",
-          content: `Your live workspace for ${code}: grades, deadlines, and an AI assistant.`,
-        },
-      ],
-    };
-  },
+  head: () => ({
+    meta: [
+      { title: "Course workspace — CoursePilot" },
+      {
+        name: "description",
+        content:
+          "Track grades, simulate outcomes, and ask questions about your course in one workspace.",
+      },
+      { property: "og:title", content: "Course workspace — CoursePilot" },
+      {
+        property: "og:description",
+        content: "Your live workspace: grades, deadlines, and an AI assistant.",
+      },
+    ],
+  }),
   component: Workspace,
 });
 
 function Workspace() {
-  const { course } = Route.useLoaderData();
+  const { courseId } = Route.useParams();
   const [tab, setTab] = useState<TabId>("overview");
+
+  const { data: course, isLoading } = useQuery({
+    queryKey: ["course-workspace", courseId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("id, title, extracted")
+        .eq("id", courseId)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? courseFromRow(data) : null;
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <AppShell>
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <Loader2 className="size-6 animate-spin text-primary" />
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (!course) {
+    return (
+      <AppShell>
+        <EmptyState
+          title="Course not found"
+          body="This course no longer exists, or it belongs to another account."
+          action={
+            <Button asChild>
+              <Link to="/dashboard">Back to dashboard</Link>
+            </Button>
+          }
+        />
+      </AppShell>
+    );
+  }
+
   const snapshot = computeGrades(course);
 
   return (
@@ -62,12 +104,14 @@ function Workspace() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              {course.code} · {course.semester}
+              {[course.code, course.semester].filter(Boolean).join(" · ")}
             </p>
             <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-[26px]">
               {course.name}
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">{course.professor}</p>
+            {course.professor ? (
+              <p className="mt-1 text-sm text-muted-foreground">{course.professor}</p>
+            ) : null}
           </div>
           <GradeBadge
             score={snapshot.currentGrade}
