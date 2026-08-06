@@ -35,18 +35,6 @@ export type Course = {
   policies: string[];
 };
 
-export type Insight = {
-  id: string;
-  body: string;
-  tone: "positive" | "neutral" | "attention";
-};
-
-export type ChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
-
 export const DEFAULT_SCALE: GradeScaleStep[] = [
   { letter: "A", min: 93 },
   { letter: "A-", min: 90 },
