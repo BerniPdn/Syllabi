@@ -676,6 +676,16 @@ function ReviewExtractionScreen() {
           </Button>
         </SectionCard>
 
+        {blockedFromSaving ? (
+          <p role="alert" className="text-sm text-destructive">
+            {componentsOverflow
+              ? `Grading components add up to ${Math.round(total * 10) / 10}%. Bring the total to 100% or less to save.`
+              : `Assignment weights exceed their component total for ${overAllocated
+                  .map((item) => item.name)
+                  .join(", ")}. Adjust them to save.`}
+          </p>
+        ) : null}
+
         {error ? (
           <p role="alert" className="text-sm text-destructive">
             {error}
@@ -692,7 +702,8 @@ function ReviewExtractionScreen() {
               <Link to="/upload">Start over</Link>
             )}
           </Button>
-          <Button size="lg" disabled={saving} onClick={handleSave}>
+          <Button size="lg" disabled={saving || blockedFromSaving} onClick={handleSave}>
+
             {saving
               ? "Saving…"
               : isEditing
