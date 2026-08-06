@@ -1,6 +1,8 @@
 import { type Assignment, type Category, type Course } from "./types";
 import { emptyExtraction, type ExtractedSyllabus } from "./syllabus-extraction";
+import { inferAssignmentWeights } from "./assignment-weights";
 import { normalizeScale } from "./grade-scale";
+
 
 const slug = (value: string, fallback: string) =>
   value
