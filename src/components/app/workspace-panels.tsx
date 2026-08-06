@@ -639,7 +639,11 @@ export function InsightsPanel({ course }: { course: Course }) {
               variant="outline"
               size="sm"
               disabled={!enabled || query.isFetching}
-              onClick={() => query.refetch()}
+              onClick={() => {
+                forceRef.current = true;
+                query.refetch();
+              }}
+
             >
               Regenerate
             </Button>
