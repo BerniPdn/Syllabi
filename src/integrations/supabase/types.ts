@@ -88,6 +88,47 @@ export type Database = {
           },
         ]
       }
+      insights: {
+        Row: {
+          body: Json
+          course_id: string
+          created_at: string
+          generated_at: string
+          id: string
+          signature: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: Json
+          course_id: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          signature: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: Json
+          course_id?: string
+          created_at?: string
+          generated_at?: string
+          id?: string
+          signature?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: true
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
