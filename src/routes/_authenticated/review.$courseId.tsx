@@ -449,17 +449,42 @@ function ReviewExtractionScreen() {
                   </button>
                 </div>
                 <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                  <Input
-                    aria-label="Component"
-                    placeholder="Component"
+                  <Select
                     value={assignment.component ?? ""}
-                    onChange={(event) => {
+                    onValueChange={(value) => {
                       const next = [...draft.assignments];
-                      next[index] = { ...assignment, component: event.target.value || null };
+                      next[index] = { ...assignment, component: value || null };
                       patch({ assignments: next });
                     }}
-                    className="h-8"
-                  />
+                  >
+                    <SelectTrigger
+                      aria-label="Component"
+                      className="h-8"
+                      disabled={componentOptions.length === 0}
+                    >
+                      <SelectValue
+                        placeholder={
+                          componentOptions.length === 0
+                            ? "Add a grading component first"
+                            : "Component"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {componentOptions.map((name) => (
+                        <SelectItem key={name} value={name}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                      {assignment.component &&
+                      !componentOptions.includes(assignment.component.trim()) ? (
+                        <SelectItem value={assignment.component}>
+                          {assignment.component}
+                        </SelectItem>
+                      ) : null}
+                    </SelectContent>
+                  </Select>
+
                   <Input
                     type="date"
                     aria-label="Due date"
