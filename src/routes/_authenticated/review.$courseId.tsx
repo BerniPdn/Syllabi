@@ -2,10 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, ArrowLeft, Check, Loader2, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, ChevronDown, Loader2, Plus, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
 import { SectionCard, SectionHeading } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -68,6 +73,7 @@ function ReviewExtractionScreen() {
   const [draft, setDraft] = useState<ExtractedSyllabus | null>(null);
   const [inferredKeys, setInferredKeys] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [policiesExpanded, setPoliciesExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
 
@@ -730,41 +736,65 @@ function ReviewExtractionScreen() {
             title="Course policies"
             hint="Stored as context — never used in calculations"
           />
-          <div className="space-y-2">
-            {draft.policies.map((policy, index) => (
-              <div key={index} className="flex items-start gap-2">
-                <Textarea
-                  aria-label="Policy"
-                  rows={2}
-                  value={policy}
-                  onChange={(event) => {
-                    const next = [...draft.policies];
-                    next[index] = event.target.value;
-                    patch({ policies: next });
-                  }}
-                  className="flex-1"
-                />
-                <button
-                  type="button"
-                  aria-label="Remove policy"
-                  onClick={() =>
-                    patch({ policies: draft.policies.filter((_, i) => i !== index) })
-                  }
-                  className="focus-ring mt-1 rounded-md p-1.5 text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
-            ))}
-            {draft.policies.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No policies were stated.</p>
-            ) : null}
-          </div>
+          {draft.policies.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No policies were stated.</p>
+          ) : (
+            <Collapsible open={policiesExpanded} onOpenChange={setPoliciesExpanded}>
+              <CollapsibleContent asChild>
+                <div className="space-y-2">
+                  {draft.policies.map((policy, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      <Textarea
+                        aria-label="Policy"
+                        rows={2}
+                        value={policy}
+                        onChange={(event) => {
+                          const next = [...draft.policies];
+                          next[index] = event.target.value;
+                          patch({ policies: next });
+                        }}
+                        className="flex-1"
+                      />
+                      <button
+                        type="button"
+                        aria-label="Remove policy"
+                        onClick={() =>
+                          patch({ policies: draft.policies.filter((_, i) => i !== index) })
+                        }
+                        className="focus-ring mt-1 rounded-md p-1.5 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+              {draft.policies.length > 3 ? (
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="mt-3 gap-1.5">
+                    {policiesExpanded ? (
+                      <>
+                        Show fewer <ChevronDown className="size-3.5 rotate-180" />
+                      </>
+                    ) : (
+                      <>
+                        Show all {draft.policies.length} policies{" "}
+                        <ChevronDown className="size-3.5" />
+                      </>
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              ) : null}
+            </Collapsible>
+          )}
           <Button
             variant="ghost"
             size="sm"
             className="mt-3 gap-1.5"
-            onClick={() => patch({ policies: [...draft.policies, ""] })}
+            onClick={() => {
+              setPoliciesExpanded(true);
+              patch({ policies: [...draft.policies, ""] });
+            }}
           >
             <Plus className="size-3.5" />
             Add policy

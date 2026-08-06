@@ -2,14 +2,19 @@ import { useMemo, useState } from "react";
 import {
   ArrowRight,
   Check,
+  ChevronDown,
   Info,
   Lightbulb,
   RotateCcw,
   Send,
   Trash2,
-
   TriangleAlert,
 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Conversation,
   ConversationContent,
@@ -178,18 +183,55 @@ export function OverviewPanel({ course }: { course: Course }) {
 
           <SectionCard className="min-w-0">
             <SectionHeading title="Course policies" hint="Context only — never used in the math" />
-            <ul className="space-y-2">
-              {course.policies.slice(0, 3).map((policy) => (
-                <li key={policy} className="flex gap-2.5 text-sm text-muted-foreground">
-                  <Info className="mt-0.5 size-3.5 shrink-0 text-primary" />
-                  <span>{policy}</span>
-                </li>
-              ))}
-            </ul>
+            <CoursePoliciesList policies={course.policies} />
           </SectionCard>
         </div>
       </div>
     </div>
+  );
+}
+
+/* --------------------------------- Policies ---------------------------------- */
+
+function CoursePoliciesList({ policies }: { policies: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (policies.length === 0) {
+    return (
+      <p className="py-4 text-sm text-muted-foreground">
+        No policies were extracted from this syllabus.
+      </p>
+    );
+  }
+
+  return (
+    <Collapsible open={expanded} onOpenChange={setExpanded}>
+      <CollapsibleContent asChild>
+        <ul className="space-y-2">
+          {policies.map((policy) => (
+            <li key={policy} className="flex gap-2.5 text-sm text-muted-foreground">
+              <Info className="mt-0.5 size-3.5 shrink-0 text-primary" />
+              <span>{policy}</span>
+            </li>
+          ))}
+        </ul>
+      </CollapsibleContent>
+      {policies.length > 3 ? (
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="sm" className="mt-2 gap-1.5">
+            {expanded ? (
+              <>
+                Show fewer <ChevronDown className="size-3.5 rotate-180" />
+              </>
+            ) : (
+              <>
+                Show all {policies.length} policies <ChevronDown className="size-3.5" />
+              </>
+            )}
+          </Button>
+        </CollapsibleTrigger>
+      ) : null}
+    </Collapsible>
   );
 }
 
