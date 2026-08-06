@@ -253,98 +253,6 @@ function ReviewExtractionScreen() {
 
         <SectionCard>
           <SectionHeading
-            title="Grading components"
-            hint="These drive every number in your workspace"
-            action={
-              <span
-                className={cn(
-                  "numeric rounded-full px-2.5 py-1 text-xs font-semibold",
-                  balanced ? "bg-success-soft text-success" : "bg-warning-soft text-warning",
-                )}
-              >
-                {Math.round(total * 10) / 10}%
-              </span>
-            }
-          />
-          <div className="space-y-2">
-            {draft.grading_components.map((component, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-3 rounded-xl border border-border px-3.5 py-2.5"
-              >
-                <Input
-                  value={component.name}
-                  aria-label="Component name"
-                  onChange={(event) => {
-                    const next = [...draft.grading_components];
-                    next[index] = { ...component, name: event.target.value };
-                    patch({ grading_components: next });
-                  }}
-                  className="h-8 flex-1"
-                />
-                <Input
-                  type="number"
-                  aria-label="Weight"
-                  value={component.weight ?? ""}
-                  onChange={(event) => {
-                    const next = [...draft.grading_components];
-                    next[index] = {
-                      ...component,
-                      weight: event.target.value === "" ? null : Number(event.target.value),
-                    };
-                    patch({ grading_components: next });
-                  }}
-                  className="numeric h-8 w-16 text-right"
-                />
-                <span className="text-xs text-muted-foreground">%</span>
-                <button
-                  type="button"
-                  aria-label={`Remove ${component.name}`}
-                  onClick={() =>
-                    patch({
-                      grading_components: draft.grading_components.filter((_, i) => i !== index),
-                    })
-                  }
-                  className="focus-ring rounded-md p-1.5 text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
-            ))}
-            {draft.grading_components.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No grading breakdown was stated in the syllabus. Add the components yourself.
-              </p>
-            ) : null}
-          </div>
-
-          {draft.grading_components.length > 0 && !balanced ? (
-            <p className="mt-3 flex items-center gap-1.5 text-xs text-warning">
-              <AlertTriangle className="size-3.5" />
-              Weights should add up to 100%. Adjust before saving.
-            </p>
-          ) : null}
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-3 gap-1.5"
-            onClick={() =>
-              patch({
-                grading_components: [
-                  ...draft.grading_components,
-                  { name: "New component", weight: 0 },
-                ],
-              })
-            }
-          >
-            <Plus className="size-3.5" />
-            Add component
-          </Button>
-        </SectionCard>
-
-        <SectionCard>
-          <SectionHeading
             title="Grading scale"
             hint="Letter cutoffs used for every grade shown in your workspace"
           />
@@ -410,6 +318,105 @@ function ReviewExtractionScreen() {
             Add cutoff
           </Button>
         </SectionCard>
+
+        <SectionCard>
+          <SectionHeading
+            title="Grading components"
+            hint="These drive every number in your workspace"
+            action={
+              <span
+                className={cn(
+                  "numeric rounded-full px-2.5 py-1 text-xs font-semibold",
+                  balanced ? "bg-success-soft text-success" : "bg-warning-soft text-warning",
+                )}
+              >
+                {Math.round(total * 10) / 10}%
+              </span>
+            }
+          />
+          <div className="space-y-2">
+            {draft.grading_components.map((component, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 rounded-xl border border-border px-3.5 py-2.5"
+              >
+                <Input
+                  value={component.name}
+                  aria-label="Component name"
+                  onChange={(event) => {
+                    const next = [...draft.grading_components];
+                    next[index] = { ...component, name: event.target.value };
+                    patch({ grading_components: next });
+                  }}
+                  className="h-8 flex-1"
+                />
+                <Input
+                  type="number"
+                  aria-label="Weight"
+                  value={component.weight ?? ""}
+                  onChange={(event) => {
+                    const next = [...draft.grading_components];
+                    next[index] = {
+                      ...component,
+                      weight: event.target.value === "" ? null : Number(event.target.value),
+                    };
+                    patch({ grading_components: next });
+                  }}
+                  className="numeric h-8 w-16 text-right"
+                />
+                <span className="text-xs text-muted-foreground">%</span>
+                <button
+                  type="button"
+                  aria-label={`Remove ${component.name}`}
+                  onClick={() =>
+                    patch({
+                      grading_components: draft.grading_components.filter((_, i) => i !== index),
+                    })
+                  }
+                  className="focus-ring rounded-md p-1.5 text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              </div>
+            ))}
+            {draft.grading_components.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No grading breakdown was stated in the syllabus. Add the components yourself.
+              </p>
+            ) : null}
+          </div>
+
+          {componentsOverflow ? (
+            <p role="alert" className="mt-3 flex items-center gap-1.5 text-xs text-destructive">
+              <AlertTriangle className="size-3.5" />
+              Grading components add up to {Math.round(total * 10) / 10}% — they can never exceed
+              100%. Remove {Math.round((total - 100) * 10) / 10}% before saving.
+            </p>
+          ) : draft.grading_components.length > 0 && !balanced ? (
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-warning">
+              <AlertTriangle className="size-3.5" />
+              Weights should add up to 100%. Adjust before saving.
+            </p>
+          ) : null}
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-3 gap-1.5"
+            onClick={() =>
+              patch({
+                grading_components: [
+                  ...draft.grading_components,
+                  { name: "New component", weight: 0 },
+                ],
+              })
+            }
+          >
+            <Plus className="size-3.5" />
+            Add component
+          </Button>
+        </SectionCard>
+
 
         <SectionCard>
           <SectionHeading
