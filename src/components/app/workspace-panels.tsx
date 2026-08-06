@@ -109,8 +109,8 @@ export function OverviewPanel({ course }: { course: Course }) {
         </div>
       </SectionCard>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <SectionCard>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SectionCard className="min-w-0">
           <SectionHeading title="Category breakdown" hint="Weight and performance per category" />
           <div className="space-y-3.5">
             {course.categories.map((category) => {
@@ -122,9 +122,9 @@ export function OverviewPanel({ course }: { course: Course }) {
                   : null;
 
               return (
-                <div key={category.id}>
-                  <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate font-medium">{category.name}</span>
+                <div key={category.id} className="min-w-0">
+                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
+                    <span className="min-w-0 truncate font-medium">{category.name}</span>
                     <span className="flex shrink-0 items-center gap-2">
                       <span className="numeric text-xs text-muted-foreground">
                         {category.weight}% of grade
@@ -146,8 +146,8 @@ export function OverviewPanel({ course }: { course: Course }) {
           </div>
         </SectionCard>
 
-        <div className="space-y-4">
-          <SectionCard>
+        <div className="min-w-0 space-y-4">
+          <SectionCard className="min-w-0">
             <SectionHeading title="Next up" hint="Ungraded work, soonest first" />
             {next.length === 0 ? (
               <p className="py-4 text-sm text-muted-foreground">
@@ -158,7 +158,7 @@ export function OverviewPanel({ course }: { course: Course }) {
                 {next.map((assignment) => (
                   <div
                     key={assignment.id}
-                    className="flex items-center gap-3 rounded-xl border border-border px-3.5 py-2.5"
+                    className="flex flex-col gap-2 rounded-xl border border-border px-3.5 py-2.5 sm:flex-row sm:items-center sm:gap-3"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{assignment.name}</p>
@@ -166,14 +166,17 @@ export function OverviewPanel({ course }: { course: Course }) {
                         {formatDate(assignment.dueDate)}
                       </p>
                     </div>
-                    <DeadlinePill dueDate={assignment.dueDate!} />
+                    <DeadlinePill
+                      dueDate={assignment.dueDate!}
+                      className="self-start sm:shrink-0"
+                    />
                   </div>
                 ))}
               </div>
             )}
           </SectionCard>
 
-          <SectionCard>
+          <SectionCard className="min-w-0">
             <SectionHeading title="Course policies" hint="Context only — never used in the math" />
             <ul className="space-y-2">
               {course.policies.slice(0, 3).map((policy) => (
