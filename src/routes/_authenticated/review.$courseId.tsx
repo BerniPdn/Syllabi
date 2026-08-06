@@ -169,7 +169,7 @@ function ReviewExtractionScreen() {
     setDraft((current) => (current ? { ...current, ...values } : current));
 
   async function handleSave() {
-    if (!draft) return;
+    if (!draft || blockedFromSaving) return;
     setSaving(true);
     setError(null);
     try {
