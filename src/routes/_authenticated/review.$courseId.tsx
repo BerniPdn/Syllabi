@@ -24,7 +24,18 @@ import {
   type ExtractedSyllabus,
 } from "@/lib/syllabus-extraction";
 import { INFERRED_WEIGHT_NOTE, inferAssignmentWeights } from "@/lib/assignment-weights";
+import { findDuplicateCourses, type DuplicateCandidate } from "@/lib/duplicate-course";
 import { scaleForEditing, validateScaleOrder } from "@/lib/grade-scale";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { saveExtractedCourse } from "@/lib/syllabus.functions";
 import { coursesQueryKey } from "@/lib/use-courses";
