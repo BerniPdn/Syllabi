@@ -6,6 +6,8 @@ import {
   Lightbulb,
   RotateCcw,
   Send,
+  Trash2,
+
   TriangleAlert,
 } from "lucide-react";
 import {
