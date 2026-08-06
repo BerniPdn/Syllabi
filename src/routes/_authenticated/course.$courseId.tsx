@@ -85,7 +85,7 @@ function Workspace() {
       <AppShell>
         <EmptyState
           title="Course not found"
-          description="This course no longer exists, or it belongs to another account."
+          body="This course no longer exists, or it belongs to another account."
           action={
             <Button asChild>
               <Link to="/dashboard">Back to dashboard</Link>
