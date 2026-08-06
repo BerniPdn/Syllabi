@@ -69,6 +69,7 @@ function ReviewExtractionScreen() {
   const [inferredKeys, setInferredKeys] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
 
 
   const { data: course, isLoading } = useQuery({
