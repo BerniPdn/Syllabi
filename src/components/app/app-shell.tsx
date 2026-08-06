@@ -6,7 +6,7 @@ import { LogoLink } from "@/components/brand/logo";
 import { useTheme } from "@/components/app/theme";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { MOCK_COURSES } from "@/lib/mock-data";
+import { useCourses } from "@/lib/use-courses";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
