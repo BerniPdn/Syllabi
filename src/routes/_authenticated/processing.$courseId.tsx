@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Check, FileText, Loader2 } from "lucide-react";
+import { Check, CheckCircle2, FileText, Loader2 } from "lucide-react";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,7 +31,7 @@ function ProcessingRoute() {
   const { courseId } = Route.useParams();
   const [stage, setStage] = useState(0);
 
-  const { data: course } = useQuery({
+  const { data: course, isLoading } = useQuery({
     queryKey: ["course", courseId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -51,6 +51,52 @@ function ProcessingRoute() {
   }, [stage]);
 
   const fileName = course?.title ? `${course.title}.pdf` : "syllabus.pdf";
+  const isDone = course && course.status !== "processing";
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-hero px-5">
+        <div className="w-full max-w-md">
+          <div className="card-surface p-7 text-center">
+            <Loader2 className="mx-auto size-6 animate-spin text-primary" />
+            <p className="mt-4 text-sm text-muted-foreground">Loading course status…</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isDone) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-hero px-5">
+        <div className="w-full max-w-md">
+          <div className="card-surface p-7 text-center">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-success/10 text-success">
+              <CheckCircle2 className="size-7" />
+            </div>
+            <h1 className="mt-5 font-display text-xl font-semibold tracking-tight">
+              Syllabus uploaded
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {course.title} has been saved. You can continue to the course workspace or go back to
+              the dashboard.
+            </p>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Button size="lg" className="flex-1" asChild>
+                <Link to="/course/$courseId" params={{ courseId }}>
+                  Go to course
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" className="flex-1" asChild>
+                <Link to="/dashboard">Back to dashboard</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-hero px-5">
@@ -112,9 +158,7 @@ function ProcessingRoute() {
           </div>
 
           <div className="mt-6 flex items-center justify-between gap-3">
-            <p className="text-xs text-muted-foreground">
-              Status: {course?.status ?? "processing"}
-            </p>
+            <p className="text-xs text-muted-foreground">Status: {course?.status ?? "processing"}</p>
             <Button variant="outline" size="sm" asChild>
               <Link to="/dashboard">Back to dashboard</Link>
             </Button>
