@@ -56,8 +56,9 @@ export const Route = createFileRoute("/_authenticated/course/$courseId")({
 function Workspace() {
   const { courseId } = Route.useParams();
   const [tab, setTab] = useState<TabId>("overview");
+  const queryClient = useQueryClient();
 
-  const { data: course, isLoading } = useQuery({
+  const { data: baseCourse, isLoading } = useQuery({
     queryKey: ["course-workspace", courseId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -69,6 +70,38 @@ function Workspace() {
       return data ? courseFromRow(data) : null;
     },
   });
+
+  const { data: grades } = useQuery({
+    queryKey: ["course-grades", courseId],
+    queryFn: () => fetchGrades(courseId),
+  });
+
+  const gradeMutation = useMutation({
+    mutationFn: async (input: { assignmentId: string; score: number | null }) => {
+      if (input.score === null) await deleteGrade(courseId, input.assignmentId);
+      else await saveGrade(courseId, input.assignmentId, input.score);
+      return input.assignmentId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["course-grades", courseId] });
+    },
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Could not save that grade.");
+    },
+  });
+
+  const course = useMemo(() => {
+    if (!baseCourse) return null;
+    if (!grades) return baseCourse;
+    return {
+      ...baseCourse,
+      assignments: baseCourse.assignments.map((assignment) => ({
+        ...assignment,
+        score: grades[assignment.id] ?? null,
+      })),
+    };
+  }, [baseCourse, grades]);
+
 
   if (isLoading) {
     return (
