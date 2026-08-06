@@ -73,6 +73,7 @@ function ReviewExtractionScreen() {
   const [draft, setDraft] = useState<ExtractedSyllabus | null>(null);
   const [inferredKeys, setInferredKeys] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [policiesExpanded, setPoliciesExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
 
