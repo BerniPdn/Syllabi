@@ -25,6 +25,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { courseFromRow } from "@/lib/course-mapping";
 import { computeGrades, toneFor } from "@/lib/grade-engine";
 import { deleteGrade, fetchGrades, saveGrade } from "@/lib/grades";
+import { coursesQueryKey } from "@/lib/use-courses";
+
 
 import { cn } from "@/lib/utils";
 
@@ -88,7 +90,9 @@ function Workspace() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["course-grades", courseId] });
+      queryClient.invalidateQueries({ queryKey: coursesQueryKey });
     },
+
     onError: (error: unknown) => {
       toast.error(error instanceof Error ? error.message : "Could not save that grade.");
     },
