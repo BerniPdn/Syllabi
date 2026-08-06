@@ -32,6 +32,18 @@ const HIGHLIGHTS = [
   "Ask questions about your own course, not the internet",
 ];
 
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, { message: "Enter your email address." })
+  .max(255, { message: "Email must be less than 255 characters." })
+  .email({ message: "Enter a valid email address, like maya@university.edu." });
+
+const passwordSchema = z
+  .string()
+  .min(6, { message: "Password must be at least 6 characters." })
+  .max(72, { message: "Password must be less than 72 characters." });
+
 function AuthScreen() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signup");
@@ -40,7 +52,12 @@ function AuthScreen() {
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [checkEmail, setCheckEmail] = useState(false);
+
+  const emailValid = emailSchema.safeParse(email).success;
+  const passwordValid = passwordSchema.safeParse(password).success;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -57,33 +74,47 @@ function AuthScreen() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+
+    const parsedEmail = emailSchema.safeParse(email);
+    const parsedPassword = passwordSchema.safeParse(password);
+    setEmailError(parsedEmail.success ? null : parsedEmail.error.issues[0]!.message);
+    setPasswordError(parsedPassword.success ? null : parsedPassword.error.issues[0]!.message);
+    if (!parsedEmail.success || !parsedPassword.success) return;
+
+    const cleanEmail = parsedEmail.data.toLowerCase();
     setPending(true);
 
     try {
       if (mode === "signup") {
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
+          email: cleanEmail,
+          password: parsedPassword.data,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { full_name: name },
+            data: { full_name: name.trim() },
           },
         });
         if (signUpError) throw signUpError;
+        // Supabase returns an obfuscated user with no identities for existing emails.
+        if (data.user && (data.user.identities?.length ?? 0) === 0) {
+          setEmailError("An account with this email already exists. Sign in instead.");
+          return;
+        }
         if (!data.session) setCheckEmail(true);
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: cleanEmail,
+          password: parsedPassword.data,
         });
         if (signInError) throw signInError;
       }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Something went wrong. Try again.");
+      setError(friendlyAuthError(caught));
     } finally {
       setPending(false);
     }
   }
+
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
