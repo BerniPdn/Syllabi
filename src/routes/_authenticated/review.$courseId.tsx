@@ -779,7 +779,13 @@ function ReviewExtractionScreen() {
   );
 }
 
+/** Identity for tracking which weights we inferred, stable across reorders. */
+function assignmentKey(assignment: ExtractedAssignment) {
+  return `${assignment.component?.trim() ?? ""}::${assignment.name.trim()}`;
+}
+
 function Field({
+
   label,
   value,
   onChange,
