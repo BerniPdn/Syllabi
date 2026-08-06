@@ -143,7 +143,19 @@ function ReviewExtractionScreen() {
     [componentUsage],
   );
 
-  const blockedFromSaving = componentsOverflow || overAllocated.length > 0;
+  // Every assignment must belong to exactly one of the course's components.
+  const unassignedCount = useMemo(
+    () =>
+      (draft?.assignments ?? []).filter((assignment) => {
+        const name = assignment.component?.trim();
+        return !name || !componentOptions.includes(name);
+      }).length,
+    [draft, componentOptions],
+  );
+
+  const blockedFromSaving = componentsOverflow || overAllocated.length > 0 || unassignedCount > 0;
+
+
 
 
   if (!isLoading && !course) {
