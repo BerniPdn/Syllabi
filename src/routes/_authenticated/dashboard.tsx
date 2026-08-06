@@ -38,8 +38,19 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const { user } = Route.useRouteContext();
-  const [showEmpty, setShowEmpty] = useState(false);
-  const courses = showEmpty ? [] : MOCK_COURSES;
+  const { data: courses = [], isLoading } = useQuery({
+    queryKey: ["dashboard-courses", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("id, title, extracted, status")
+        .eq("status", "ready")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map(courseFromRow);
+    },
+  });
+
 
   const firstName =
     ((user?.user_metadata?.["full_name"] as string | undefined) ?? user?.email ?? "there")
