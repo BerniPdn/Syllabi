@@ -456,8 +456,21 @@ function ReviewExtractionScreen() {
             hint="Scores stay empty until you enter them"
           />
           <div className="space-y-2">
-            {draft.assignments.map((assignment, index) => (
-              <div key={index} className="rounded-xl border border-border p-3">
+            {draft.assignments.map((assignment, index) => {
+              const componentName = assignment.component?.trim() ?? "";
+              const missingComponent =
+                !componentName || !componentOptions.includes(componentName);
+              const isInferred =
+                inferredKeys.has(assignmentKey(assignment)) && assignment.weight !== null;
+              return (
+              <div
+                key={index}
+                className={cn(
+                  "rounded-xl border p-3",
+                  missingComponent ? "border-destructive/60" : "border-border",
+                )}
+              >
+
                 <div className="flex items-center gap-2">
                   <Input
                     aria-label="Assignment name"
