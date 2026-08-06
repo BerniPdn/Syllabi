@@ -24,7 +24,7 @@ import {
   type ExtractedSyllabus,
 } from "@/lib/syllabus-extraction";
 import { INFERRED_WEIGHT_NOTE, inferAssignmentWeights } from "@/lib/assignment-weights";
-import { scaleForEditing } from "@/lib/grade-scale";
+import { scaleForEditing, validateScaleOrder } from "@/lib/grade-scale";
 
 import { saveExtractedCourse } from "@/lib/syllabus.functions";
 import { coursesQueryKey } from "@/lib/use-courses";
@@ -153,7 +153,13 @@ function ReviewExtractionScreen() {
     [draft, componentOptions],
   );
 
-  const blockedFromSaving = componentsOverflow || overAllocated.length > 0 || unassignedCount > 0;
+  const scaleErrors = useMemo(() => validateScaleOrder(draft?.grade_scale), [draft]);
+
+  const blockedFromSaving =
+    componentsOverflow ||
+    overAllocated.length > 0 ||
+    unassignedCount > 0 ||
+    scaleErrors.length > 0;
 
 
 
@@ -336,6 +342,15 @@ function ReviewExtractionScreen() {
               <p className="text-sm text-muted-foreground">
                 No cutoffs left — the default scale will be used.
               </p>
+            ) : null}
+            {scaleErrors.length > 0 ? (
+              <div role="alert" className="space-y-1 pt-1">
+                {scaleErrors.map((message) => (
+                  <p key={message} className="text-sm text-destructive">
+                    {message}
+                  </p>
+                ))}
+              </div>
             ) : null}
           </div>
           <Button
@@ -735,7 +750,9 @@ function ReviewExtractionScreen() {
 
         {blockedFromSaving ? (
           <p role="alert" className="text-sm text-destructive">
-            {componentsOverflow
+            {scaleErrors.length > 0
+              ? "Fix the grading scale order before saving — higher letter grades must have equal or higher percentage cutoffs."
+              : componentsOverflow
               ? `Grading components add up to ${Math.round(total * 10) / 10}%. Bring the total to 100% or less to save.`
               : overAllocated.length > 0
                 ? overAllocated
