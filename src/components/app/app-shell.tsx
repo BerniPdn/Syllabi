@@ -109,7 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <LayoutGrid className="size-3.5" />
             Dashboard
           </Link>
-          {MOCK_COURSES.map((course) => (
+          {courses.map((course) => (
             <Link
               key={course.id}
               to="/course/$courseId"
@@ -121,7 +121,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   : "text-muted-foreground",
               )}
             >
-              {course.code}
+              {course.code || course.name}
             </Link>
           ))}
         </div>
