@@ -197,12 +197,14 @@ export function AssignmentsPanel({
   savingKey?: string | null;
 }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<"all" | "graded" | "ungraded">("all");
 
   const overrides = useMemo(() => {
     const parsed: Record<string, number | null> = {};
     for (const [id, value] of Object.entries(drafts)) {
-      parsed[id] = value.trim() === "" ? null : clampScore(Number(value));
+      if (!isValidScoreInput(value)) continue;
+      parsed[id] = value.trim() === "" ? null : clampScore(Number(value.replace(",", ".")));
     }
     return parsed;
   }, [drafts]);
@@ -212,18 +214,38 @@ export function AssignmentsPanel({
     filter === "all" ? true : filter === "graded" ? item.score !== null : item.score === null,
   );
 
+  const handleChange = (assignmentId: string, raw: string) => {
+    setDrafts((prev) => ({ ...prev, [assignmentId]: raw }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (isValidScoreInput(raw)) delete next[assignmentId];
+      else next[assignmentId] = "Enter a number between 0 and 100.";
+      return next;
+    });
+  };
+
   const commit = (assignmentId: string, saved: number | null) => {
     const raw = drafts[assignmentId];
     if (raw === undefined) return;
     const trimmed = raw.trim();
 
+    if (!isValidScoreInput(trimmed)) {
+      setErrors((prev) => ({ ...prev, [assignmentId]: "Enter a number between 0 and 100." }));
+      return;
+    }
+
     if (trimmed === "") {
       if (saved !== null) onDeleteScore?.(assignmentId);
     } else {
-      const value = clampScore(Number(trimmed));
-      if (!Number.isNaN(value) && value !== saved) onSaveScore?.(assignmentId, value);
+      const value = clampScore(Number(trimmed.replace(",", ".")));
+      if (value !== saved) onSaveScore?.(assignmentId, value);
     }
 
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[assignmentId];
+      return next;
+    });
     setDrafts((prev) => {
       const next = { ...prev };
       delete next[assignmentId];
