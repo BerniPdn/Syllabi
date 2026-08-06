@@ -7,6 +7,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
+
+function friendlyAuthError(caught: unknown): string {
+  const raw = caught instanceof Error ? caught.message : "";
+  const message = raw.toLowerCase();
+  if (message.includes("already registered") || message.includes("already been registered")) {
+    return "An account with this email already exists. Sign in instead.";
+  }
+  if (message.includes("invalid login credentials")) {
+    return "That email and password don't match. Check both and try again.";
+  }
+  if (message.includes("email not confirmed")) {
+    return "Confirm your email first — check your inbox for the link we sent.";
+  }
+  if (message.includes("invalid") && message.includes("email")) {
+    return "Enter a valid email address, like maya@university.edu.";
+  }
+  if (message.includes("rate limit") || message.includes("too many")) {
+    return "Too many attempts. Wait a minute and try again.";
+  }
+  return raw || "Something went wrong. Try again.";
+}
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -32,6 +54,18 @@ const HIGHLIGHTS = [
   "Ask questions about your own course, not the internet",
 ];
 
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, { message: "Enter your email address." })
+  .max(255, { message: "Email must be less than 255 characters." })
+  .email({ message: "Enter a valid email address, like maya@university.edu." });
+
+const passwordSchema = z
+  .string()
+  .min(6, { message: "Password must be at least 6 characters." })
+  .max(72, { message: "Password must be less than 72 characters." });
+
 function AuthScreen() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signup");
@@ -40,7 +74,12 @@ function AuthScreen() {
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [checkEmail, setCheckEmail] = useState(false);
+
+  const emailValid = emailSchema.safeParse(email).success;
+  const passwordValid = passwordSchema.safeParse(password).success;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -57,33 +96,47 @@ function AuthScreen() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+
+    const parsedEmail = emailSchema.safeParse(email);
+    const parsedPassword = passwordSchema.safeParse(password);
+    setEmailError(parsedEmail.success ? null : parsedEmail.error.issues[0]!.message);
+    setPasswordError(parsedPassword.success ? null : parsedPassword.error.issues[0]!.message);
+    if (!parsedEmail.success || !parsedPassword.success) return;
+
+    const cleanEmail = parsedEmail.data.toLowerCase();
     setPending(true);
 
     try {
       if (mode === "signup") {
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
+          email: cleanEmail,
+          password: parsedPassword.data,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { full_name: name },
+            data: { full_name: name.trim() },
           },
         });
         if (signUpError) throw signUpError;
+        // Supabase returns an obfuscated user with no identities for existing emails.
+        if (data.user && (data.user.identities?.length ?? 0) === 0) {
+          setEmailError("An account with this email already exists. Sign in instead.");
+          return;
+        }
         if (!data.session) setCheckEmail(true);
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: cleanEmail,
+          password: parsedPassword.data,
         });
         if (signInError) throw signInError;
       }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Something went wrong. Try again.");
+      setError(friendlyAuthError(caught));
     } finally {
       setPending(false);
     }
   }
+
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
@@ -173,12 +226,30 @@ function AuthScreen() {
                     <Input
                       id="email"
                       type="email"
+                      inputMode="email"
                       required
                       placeholder="maya@university.edu"
                       autoComplete="email"
+                      aria-invalid={emailError ? true : undefined}
+                      aria-describedby={emailError ? "email-error" : undefined}
+                      className={cn(emailError && "border-destructive focus-visible:ring-destructive/30")}
                       value={email}
-                      onChange={(event) => setEmail(event.target.value)}
+                      onChange={(event) => {
+                        setEmail(event.target.value);
+                        if (emailError) setEmailError(null);
+                        if (error) setError(null);
+                      }}
+                      onBlur={() => {
+                        if (!email) return;
+                        const parsed = emailSchema.safeParse(email);
+                        setEmailError(parsed.success ? null : parsed.error.issues[0]!.message);
+                      }}
                     />
+                    {emailError ? (
+                      <p id="email-error" className="text-xs text-destructive">
+                        {emailError}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="password">Password</Label>
@@ -189,9 +260,21 @@ function AuthScreen() {
                       minLength={6}
                       placeholder="••••••••"
                       autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                      aria-invalid={passwordError ? true : undefined}
+                      aria-describedby={passwordError ? "password-error" : undefined}
+                      className={cn(passwordError && "border-destructive focus-visible:ring-destructive/30")}
                       value={password}
-                      onChange={(event) => setPassword(event.target.value)}
+                      onChange={(event) => {
+                        setPassword(event.target.value);
+                        if (passwordError) setPasswordError(null);
+                        if (error) setError(null);
+                      }}
                     />
+                    {passwordError ? (
+                      <p id="password-error" className="text-xs text-destructive">
+                        {passwordError}
+                      </p>
+                    ) : null}
                   </div>
 
                   {error ? (
@@ -200,7 +283,13 @@ function AuthScreen() {
                     </p>
                   ) : null}
 
-                  <Button type="submit" size="lg" className="w-full gap-2" disabled={pending}>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="w-full gap-2"
+                    disabled={pending || !emailValid || !passwordValid}
+                  >
+
                     {pending ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
@@ -218,6 +307,8 @@ function AuthScreen() {
                     type="button"
                     onClick={() => {
                       setError(null);
+                      setEmailError(null);
+                      setPasswordError(null);
                       setMode(mode === "signup" ? "signin" : "signup");
                     }}
                     className={cn("focus-ring rounded font-medium text-primary hover:underline")}
