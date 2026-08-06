@@ -17,6 +17,7 @@ Rules:
 - grading_components: the graded categories with their percentage weight of the final grade (weight null if not stated).
 - assignments: individual assignments, exams, quizzes, projects with their due date and the grading component they belong to (use the exact component name).
 - important_dates: other dated milestones (exam periods, breaks, drop deadlines) that are not assignments.
+- grade_scale: the letter-grade cutoffs (e.g. A = 93, B+ = 87) ONLY if the syllabus explicitly states them; otherwise return an empty array.
 - policies: short verbatim-ish statements of course policies (late work, attendance, academic honesty, curves, extra credit, etc.).
 - Set is_syllabus to false when the document is not a course syllabus (e.g. a resume, an invoice, a random article, a homework handout). In that case give a one-sentence reason and leave every other field null/empty.`;
 
@@ -194,6 +195,7 @@ export const extractSyllabus = createServerFn({ method: "POST" })
       semester: parsed.semester ?? null,
       description: parsed.description ?? null,
       grading_components: parsed.grading_components ?? [],
+      grade_scale: parsed.grade_scale ?? [],
       assignments: parsed.assignments ?? [],
       important_dates: parsed.important_dates ?? [],
       policies: parsed.policies ?? [],
@@ -228,6 +230,9 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
           grading_components: z.array(
             z.object({ name: z.string(), weight: z.number().nullable() }),
           ),
+          grade_scale: z
+            .array(z.object({ letter: z.string(), min: z.number().nullable() }))
+            .default([]),
           assignments: z.array(
             z.object({
               name: z.string(),

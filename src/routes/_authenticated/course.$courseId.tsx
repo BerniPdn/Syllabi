@@ -154,12 +154,19 @@ function Workspace() {
               <p className="mt-1 text-sm text-muted-foreground">{course.professor}</p>
             ) : null}
           </div>
-          <GradeBadge
+          <div className="flex items-center gap-3">
+            <Button asChild variant="secondary" size="sm">
+              <Link to="/review/$courseId" params={{ courseId }}>
+                Edit course
+              </Link>
+            </Button>
+            <GradeBadge
             score={snapshot.currentGrade}
             scale={course.scale}
             tone={toneFor(snapshot.currentGrade, course.targetGrade)}
             className="px-3 py-1.5 text-sm"
-          />
+            />
+          </div>
         </div>
 
         <div className="-mx-4 border-b border-border px-4 sm:mx-0 sm:px-0">

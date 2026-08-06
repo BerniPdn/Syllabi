@@ -1,5 +1,6 @@
-import { DEFAULT_SCALE, type Assignment, type Category, type Course } from "./types";
+import { type Assignment, type Category, type Course } from "./types";
 import { emptyExtraction, type ExtractedSyllabus } from "./syllabus-extraction";
+import { normalizeScale } from "./grade-scale";
 
 const slug = (value: string, fallback: string) =>
   value
@@ -72,7 +73,7 @@ export function courseFromRow(row: {
     professor: extracted.professor?.trim() || "",
     semester: extracted.semester?.trim() || "",
     targetGrade: 90,
-    scale: DEFAULT_SCALE,
+    scale: normalizeScale(extracted.grade_scale),
     categories: allCategories,
     assignments,
     policies: extracted.policies ?? [],

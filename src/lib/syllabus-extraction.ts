@@ -14,6 +14,11 @@ export type ExtractedAssignment = {
   weight: number | null;
 };
 
+export type ExtractedScaleStep = {
+  letter: string;
+  min: number | null;
+};
+
 export type ExtractedDate = {
   label: string;
   date: string | null;
@@ -26,6 +31,8 @@ export type ExtractedSyllabus = {
   semester: string | null;
   description: string | null;
   grading_components: ExtractedComponent[];
+  /** Letter-grade cutoffs stated in the syllabus. Empty = use the default scale. */
+  grade_scale: ExtractedScaleStep[];
   assignments: ExtractedAssignment[];
   important_dates: ExtractedDate[];
   policies: string[];
@@ -47,6 +54,7 @@ export const EXTRACTION_JSON_SCHEMA = {
     "semester",
     "description",
     "grading_components",
+    "grade_scale",
     "assignments",
     "important_dates",
     "policies",
@@ -68,6 +76,18 @@ export const EXTRACTION_JSON_SCHEMA = {
         properties: {
           name: { type: "string" },
           weight: { type: ["number", "null"] },
+        },
+      },
+    },
+    grade_scale: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["letter", "min"],
+        properties: {
+          letter: { type: "string" },
+          min: { type: ["number", "null"] },
         },
       },
     },
@@ -112,6 +132,7 @@ export function emptyExtraction(): ExtractedSyllabus {
     semester: null,
     description: null,
     grading_components: [],
+    grade_scale: [],
     assignments: [],
     important_dates: [],
     policies: [],
