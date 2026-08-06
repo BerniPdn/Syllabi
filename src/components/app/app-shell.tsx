@@ -6,12 +6,13 @@ import { LogoLink } from "@/components/brand/logo";
 import { useTheme } from "@/components/app/theme";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { MOCK_COURSES } from "@/lib/mock-data";
+import { useCourses } from "@/lib/use-courses";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { data: courses = [], isLoading: coursesLoading } = useCourses();
 
   // Applies the stored/system theme to <html> for the whole app.
   useTheme();
@@ -61,22 +62,31 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Courses
               </p>
               <div className="space-y-0.5">
-                {MOCK_COURSES.map((course) => (
-                  <Link
-                    key={course.id}
-                    to="/course/$courseId"
-                    params={{ courseId: course.id }}
-                    className={cn(
-                      "focus-ring flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
-                      pathname.startsWith(`/course/${course.id}`)
-                        ? "bg-accent font-medium text-accent-foreground"
-                        : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
-                    )}
-                  >
-                    <GraduationCap className="size-4 shrink-0 opacity-70" />
-                    <span className="truncate">{course.code}</span>
-                  </Link>
-                ))}
+                {coursesLoading ? (
+                  <>
+                    <div className="mx-2.5 h-6 animate-pulse rounded-md bg-muted" />
+                    <div className="mx-2.5 h-6 animate-pulse rounded-md bg-muted" />
+                  </>
+                ) : courses.length === 0 ? (
+                  <p className="px-2.5 py-1 text-xs text-muted-foreground">No courses yet</p>
+                ) : (
+                  courses.map((course) => (
+                    <Link
+                      key={course.id}
+                      to="/course/$courseId"
+                      params={{ courseId: course.id }}
+                      className={cn(
+                        "focus-ring flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
+                        pathname.startsWith(`/course/${course.id}`)
+                          ? "bg-accent font-medium text-accent-foreground"
+                          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                      )}
+                    >
+                      <GraduationCap className="size-4 shrink-0 opacity-70" />
+                      <span className="truncate">{course.code || course.name}</span>
+                    </Link>
+                  ))
+                )}
               </div>
             </div>
           </nav>
@@ -99,7 +109,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <LayoutGrid className="size-3.5" />
             Dashboard
           </Link>
-          {MOCK_COURSES.map((course) => (
+          {courses.map((course) => (
             <Link
               key={course.id}
               to="/course/$courseId"
@@ -111,7 +121,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   : "text-muted-foreground",
               )}
             >
-              {course.code}
+              {course.code || course.name}
             </Link>
           ))}
         </div>
