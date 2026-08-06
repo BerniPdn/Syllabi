@@ -153,7 +153,13 @@ function ReviewExtractionScreen() {
     [draft, componentOptions],
   );
 
-  const blockedFromSaving = componentsOverflow || overAllocated.length > 0 || unassignedCount > 0;
+  const scaleErrors = useMemo(() => validateScaleOrder(draft?.grade_scale), [draft]);
+
+  const blockedFromSaving =
+    componentsOverflow ||
+    overAllocated.length > 0 ||
+    unassignedCount > 0 ||
+    scaleErrors.length > 0;
 
 
 
