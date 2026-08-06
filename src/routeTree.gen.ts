@@ -17,6 +17,7 @@ import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
 import { Route as AuthenticatedCourseCourseIdRouteImport } from './routes/_authenticated/course.$courseId'
 import { Route as AuthenticatedProcessingCourseIdRouteImport } from './routes/_authenticated/processing.$courseId'
+import { Route as AuthenticatedReviewCourseIdRouteImport } from './routes/_authenticated/review.$courseId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -59,24 +60,32 @@ const AuthenticatedProcessingCourseIdRoute =
     path: '/processing/$courseId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedReviewCourseIdRoute =
+  AuthenticatedReviewCourseIdRouteImport.update({
+    id: '/$courseId',
+    path: '/$courseId',
+    getParentRoute: () => AuthenticatedReviewRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/review': typeof AuthenticatedReviewRoute
+  '/review': typeof AuthenticatedReviewRouteWithChildren
   '/upload': typeof AuthenticatedUploadRoute
   '/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
   '/processing/$courseId': typeof AuthenticatedProcessingCourseIdRoute
+  '/review/$courseId': typeof AuthenticatedReviewCourseIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/review': typeof AuthenticatedReviewRoute
+  '/review': typeof AuthenticatedReviewRouteWithChildren
   '/upload': typeof AuthenticatedUploadRoute
   '/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
   '/processing/$courseId': typeof AuthenticatedProcessingCourseIdRoute
+  '/review/$courseId': typeof AuthenticatedReviewCourseIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -84,10 +93,11 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/review': typeof AuthenticatedReviewRoute
+  '/_authenticated/review': typeof AuthenticatedReviewRouteWithChildren
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
   '/_authenticated/processing/$courseId': typeof AuthenticatedProcessingCourseIdRoute
+  '/_authenticated/review/$courseId': typeof AuthenticatedReviewCourseIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/course/$courseId'
     | '/processing/$courseId'
+    | '/review/$courseId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/course/$courseId'
     | '/processing/$courseId'
+    | '/review/$courseId'
   id:
     | '__root__'
     | '/'
@@ -118,6 +130,7 @@ export interface FileRouteTypes {
     | '/_authenticated/upload'
     | '/_authenticated/course/$courseId'
     | '/_authenticated/processing/$courseId'
+    | '/_authenticated/review/$courseId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,12 +197,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProcessingCourseIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/review/$courseId': {
+      id: '/_authenticated/review/$courseId'
+      path: '/$courseId'
+      fullPath: '/review/$courseId'
+      preLoaderRoute: typeof AuthenticatedReviewCourseIdRouteImport
+      parentRoute: typeof AuthenticatedReviewRoute
+    }
   }
 }
 
+interface AuthenticatedReviewRouteChildren {
+  AuthenticatedReviewCourseIdRoute: typeof AuthenticatedReviewCourseIdRoute
+}
+
+const AuthenticatedReviewRouteChildren: AuthenticatedReviewRouteChildren = {
+  AuthenticatedReviewCourseIdRoute: AuthenticatedReviewCourseIdRoute,
+}
+
+const AuthenticatedReviewRouteWithChildren =
+  AuthenticatedReviewRoute._addFileChildren(AuthenticatedReviewRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
+  AuthenticatedReviewRoute: typeof AuthenticatedReviewRouteWithChildren
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
   AuthenticatedCourseCourseIdRoute: typeof AuthenticatedCourseCourseIdRoute
   AuthenticatedProcessingCourseIdRoute: typeof AuthenticatedProcessingCourseIdRoute
@@ -197,7 +228,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedReviewRoute: AuthenticatedReviewRoute,
+  AuthenticatedReviewRoute: AuthenticatedReviewRouteWithChildren,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
   AuthenticatedCourseCourseIdRoute: AuthenticatedCourseCourseIdRoute,
   AuthenticatedProcessingCourseIdRoute: AuthenticatedProcessingCourseIdRoute,
