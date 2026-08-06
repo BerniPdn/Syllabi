@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -10,10 +10,22 @@ import {
   ListChecks,
   Loader2,
   MessageSquare,
+  Trash2,
 } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
 import { EmptyState, GradeBadge } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   AssignmentsPanel,
   ChatPanel,
@@ -23,12 +35,14 @@ import {
 } from "@/components/app/workspace-panels";
 import { supabase } from "@/integrations/supabase/client";
 import { courseFromRow } from "@/lib/course-mapping";
+import { deleteCourse } from "@/lib/delete-course";
 import { computeGrades, toneFor } from "@/lib/grade-engine";
 import { deleteGrade, fetchGrades, saveGrade } from "@/lib/grades";
 import { coursesQueryKey } from "@/lib/use-courses";
 
 
 import { cn } from "@/lib/utils";
+
 
 const TABS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
