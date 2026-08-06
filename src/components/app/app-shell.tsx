@@ -12,6 +12,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { data: courses = [], isLoading: coursesLoading } = useCourses();
 
   // Applies the stored/system theme to <html> for the whole app.
   useTheme();
