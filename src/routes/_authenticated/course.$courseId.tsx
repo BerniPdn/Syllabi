@@ -24,7 +24,7 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-export const Route = createFileRoute("/course/$courseId")({
+export const Route = createFileRoute("/_authenticated/course/$courseId")({
   loader: ({ params }) => {
     const course = getCourse(params.courseId);
     if (!course) throw notFound();

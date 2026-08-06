@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { computeGrades, daysUntil, toneFor } from "@/lib/grade-engine";
 import { MOCK_COURSES } from "@/lib/mock-data";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
       { title: "Dashboard — CoursePilot" },

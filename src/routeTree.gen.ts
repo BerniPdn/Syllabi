@@ -9,85 +9,86 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as ReviewRouteImport } from './routes/review'
-import { Route as UploadRouteImport } from './routes/upload'
-import { Route as CourseCourseIdRouteImport } from './routes/course.$courseId'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedReviewRouteImport } from './routes/_authenticated/review'
+import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
+import { Route as AuthenticatedCourseCourseIdRouteImport } from './routes/_authenticated/course.$courseId'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ReviewRoute = ReviewRouteImport.update({
-  id: '/review',
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/_authenticated/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedReviewRoute = AuthenticatedReviewRouteImport.update({
+  id: '/_authenticated/review',
   path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UploadRoute = UploadRouteImport.update({
-  id: '/upload',
+const AuthenticatedUploadRoute = AuthenticatedUploadRouteImport.update({
+  id: '/_authenticated/upload',
   path: '/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CourseCourseIdRoute = CourseCourseIdRouteImport.update({
-  id: '/course/$courseId',
-  path: '/course/$courseId',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const AuthenticatedCourseCourseIdRoute =
+  AuthenticatedCourseCourseIdRouteImport.update({
+    id: '/_authenticated/course/$courseId',
+    path: '/course/$courseId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/review': typeof ReviewRoute
-  '/upload': typeof UploadRoute
-  '/course/$courseId': typeof CourseCourseIdRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/review': typeof AuthenticatedReviewRoute
+  '/upload': typeof AuthenticatedUploadRoute
+  '/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/review': typeof ReviewRoute
-  '/upload': typeof UploadRoute
-  '/course/$courseId': typeof CourseCourseIdRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/review': typeof AuthenticatedReviewRoute
+  '/upload': typeof AuthenticatedUploadRoute
+  '/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/review': typeof ReviewRoute
-  '/upload': typeof UploadRoute
-  '/course/$courseId': typeof CourseCourseIdRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/review': typeof AuthenticatedReviewRoute
+  '/_authenticated/upload': typeof AuthenticatedUploadRoute
+  '/_authenticated/course/$courseId': typeof AuthenticatedCourseCourseIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/review' | '/upload' | '/course/$courseId'
+  fullPaths:
+    '/auth' | '/dashboard' | '/review' | '/upload' | '/course/$courseId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/review' | '/upload' | '/course/$courseId'
-  id: '__root__' | '/' | '/auth' | '/review' | '/upload' | '/course/$courseId'
+  to: '/auth' | '/dashboard' | '/review' | '/upload' | '/course/$courseId'
+  id:
+    | '__root__'
+    | '/auth'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/review'
+    | '/_authenticated/upload'
+    | '/_authenticated/course/$courseId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
-  ReviewRoute: typeof ReviewRoute
-  UploadRoute: typeof UploadRoute
-  CourseCourseIdRoute: typeof CourseCourseIdRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedReviewRoute: typeof AuthenticatedReviewRoute
+  AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
+  AuthenticatedCourseCourseIdRoute: typeof AuthenticatedCourseCourseIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -95,37 +96,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/review': {
-      id: '/review'
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/review': {
+      id: '/_authenticated/review'
       path: '/review'
       fullPath: '/review'
-      preLoaderRoute: typeof ReviewRouteImport
+      preLoaderRoute: typeof AuthenticatedReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/upload': {
-      id: '/upload'
+    '/_authenticated/upload': {
+      id: '/_authenticated/upload'
       path: '/upload'
       fullPath: '/upload'
-      preLoaderRoute: typeof UploadRouteImport
+      preLoaderRoute: typeof AuthenticatedUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/course/$courseId': {
-      id: '/course/$courseId'
+    '/_authenticated/course/$courseId': {
+      id: '/_authenticated/course/$courseId'
       path: '/course/$courseId'
       fullPath: '/course/$courseId'
-      preLoaderRoute: typeof CourseCourseIdRouteImport
+      preLoaderRoute: typeof AuthenticatedCourseCourseIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
-  ReviewRoute: ReviewRoute,
-  UploadRoute: UploadRoute,
-  CourseCourseIdRoute: CourseCourseIdRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedReviewRoute: AuthenticatedReviewRoute,
+  AuthenticatedUploadRoute: AuthenticatedUploadRoute,
+  AuthenticatedCourseCourseIdRoute: AuthenticatedCourseCourseIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
