@@ -121,3 +121,22 @@ export function hasInsightData(facts: InsightFacts) {
     facts.policies.length > 0
   );
 }
+
+/**
+ * Stable cache key for insights: only the course data that should trigger a
+ * regeneration (components, scale/target, assignments, grades, policies).
+ * Deliberately excludes time-derived values like `daysUntilDue` so simply
+ * opening the page on a later day does not re-generate.
+ */
+export function insightsSignature(facts: InsightFacts) {
+  return JSON.stringify({
+    target: [facts.course.targetGrade, facts.course.targetLetter],
+    components: facts.components,
+    graded: facts.graded.map((item) => [item.name, item.component, item.score, item.weightPercent]),
+    upcoming: facts.upcoming
+      .map((item) => [item.name, item.component, item.weightPercent, item.dueDate])
+      .sort(),
+    policies: facts.policies,
+  });
+}
+
