@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, ArrowLeft, Check, Loader2, Plus, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
@@ -16,6 +16,7 @@ import {
 } from "@/lib/syllabus-extraction";
 import { scaleForEditing } from "@/lib/grade-scale";
 import { saveExtractedCourse } from "@/lib/syllabus.functions";
+import { coursesQueryKey } from "@/lib/use-courses";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/review/$courseId")({
@@ -41,6 +42,7 @@ function ReviewExtractionScreen() {
   const { courseId } = Route.useParams();
   const navigate = useNavigate();
   const save = useServerFn(saveExtractedCourse);
+  const queryClient = useQueryClient();
   const [draft, setDraft] = useState<ExtractedSyllabus | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,6 +138,9 @@ function ReviewExtractionScreen() {
           },
         },
       });
+      await queryClient.invalidateQueries({ queryKey: ["course-workspace", courseId] });
+      await queryClient.invalidateQueries({ queryKey: ["course", courseId] });
+      queryClient.invalidateQueries({ queryKey: coursesQueryKey });
       navigate({ to: "/course/$courseId", params: { courseId } });
     } catch (cause) {
       setError(
@@ -159,10 +164,10 @@ function ReviewExtractionScreen() {
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-[11px] font-semibold text-success">
             <Check className="size-3" strokeWidth={3} />
-            Syllabus analyzed
+            {course.status === "ready" ? "Course saved" : "Syllabus analyzed"}
           </span>
           <h1 className="mt-3 font-display text-2xl font-semibold tracking-tight">
-            Review what we found
+            {course.status === "ready" ? "Edit course details" : "Review what we found"}
           </h1>
           <p className="mt-1.5 max-w-lg text-sm text-muted-foreground">
             Only what your syllabus actually states was extracted — blank fields mean the document
@@ -574,10 +579,20 @@ function ReviewExtractionScreen() {
 
         <div className="flex flex-col gap-3 pb-4 sm:flex-row sm:justify-end">
           <Button variant="ghost" asChild>
-            <Link to="/upload">Start over</Link>
+            {course.status === "ready" ? (
+              <Link to="/course/$courseId" params={{ courseId }}>
+                Cancel
+              </Link>
+            ) : (
+              <Link to="/upload">Start over</Link>
+            )}
           </Button>
           <Button size="lg" disabled={saving} onClick={handleSave}>
-            {saving ? "Saving…" : "Confirm and save course"}
+            {saving
+              ? "Saving…"
+              : course.status === "ready"
+                ? "Save changes"
+                : "Confirm and save course"}
           </Button>
         </div>
       </div>
