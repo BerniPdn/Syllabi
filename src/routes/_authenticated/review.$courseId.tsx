@@ -57,10 +57,18 @@ function ReviewExtractionScreen() {
     },
   });
 
+  const missingExtraction = !isLoading && !!course && !course.extracted;
+
   useEffect(() => {
-    if (draft || !course) return;
-    setDraft({ ...emptyExtraction(), ...((course.extracted ?? {}) as ExtractedSyllabus) });
+    if (draft || !course || !course.extracted) return;
+    setDraft({ ...emptyExtraction(), ...(course.extracted as ExtractedSyllabus) });
   }, [course, draft]);
+
+  // No extraction stored yet: the processing screen owns running/retrying it.
+  useEffect(() => {
+    if (!missingExtraction) return;
+    navigate({ to: "/processing/$courseId", params: { courseId }, replace: true });
+  }, [courseId, missingExtraction, navigate]);
 
   const total = useMemo(
     () =>
@@ -72,6 +80,24 @@ function ReviewExtractionScreen() {
   );
   const balanced = Math.abs(total - 100) < 0.5;
 
+  if (!isLoading && !course) {
+    return (
+      <AppShell>
+        <div className="mx-auto max-w-md space-y-3 py-16 text-center">
+          <h1 className="font-display text-xl font-semibold tracking-tight">
+            We couldn't find that course
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            It may have been deleted, or the link is out of date.
+          </p>
+          <Button asChild variant="secondary">
+            <Link to="/dashboard">Back to dashboard</Link>
+          </Button>
+        </div>
+      </AppShell>
+    );
+  }
+
   if (isLoading || !draft) {
     return (
       <AppShell>
@@ -81,6 +107,7 @@ function ReviewExtractionScreen() {
       </AppShell>
     );
   }
+
 
   const patch = (values: Partial<ExtractedSyllabus>) =>
     setDraft((current) => (current ? { ...current, ...values } : current));
