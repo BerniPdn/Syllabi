@@ -307,6 +307,8 @@ function AuthScreen() {
                     type="button"
                     onClick={() => {
                       setError(null);
+                      setEmailError(null);
+                      setPasswordError(null);
                       setMode(mode === "signup" ? "signin" : "signup");
                     }}
                     className={cn("focus-ring rounded font-medium text-primary hover:underline")}
