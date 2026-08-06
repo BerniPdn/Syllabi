@@ -14,6 +14,7 @@ import {
   emptyExtraction,
   type ExtractedSyllabus,
 } from "@/lib/syllabus-extraction";
+import { scaleForEditing } from "@/lib/grade-scale";
 import { saveExtractedCourse } from "@/lib/syllabus.functions";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +62,12 @@ function ReviewExtractionScreen() {
 
   useEffect(() => {
     if (draft || !course || !course.extracted) return;
-    setDraft({ ...emptyExtraction(), ...(course.extracted as ExtractedSyllabus) });
+    const stored = course.extracted as ExtractedSyllabus;
+    setDraft({
+      ...emptyExtraction(),
+      ...stored,
+      grade_scale: scaleForEditing(stored.grade_scale),
+    });
   }, [course, draft]);
 
   // No extraction stored yet: the processing screen owns running/retrying it.
@@ -124,6 +130,9 @@ function ReviewExtractionScreen() {
             ...draft,
             course_name: draft.course_name?.trim() || null,
             policies: draft.policies.map((policy) => policy.trim()).filter(Boolean),
+            grade_scale: draft.grade_scale
+              .filter((step) => step.letter.trim() && step.min !== null)
+              .map((step) => ({ letter: step.letter.trim(), min: step.min })),
           },
         },
       });
@@ -286,6 +295,74 @@ function ReviewExtractionScreen() {
           >
             <Plus className="size-3.5" />
             Add component
+          </Button>
+        </SectionCard>
+
+        <SectionCard>
+          <SectionHeading
+            title="Grading scale"
+            hint="Letter cutoffs used for every grade shown in your workspace"
+          />
+          <div className="space-y-2">
+            {draft.grade_scale.map((step, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 rounded-xl border border-border px-3.5 py-2.5"
+              >
+                <Input
+                  aria-label="Letter"
+                  value={step.letter}
+                  onChange={(event) => {
+                    const next = [...draft.grade_scale];
+                    next[index] = { ...step, letter: event.target.value };
+                    patch({ grade_scale: next });
+                  }}
+                  className="h-8 w-20"
+                />
+                <span className="flex-1 text-xs text-muted-foreground">at least</span>
+                <Input
+                  type="number"
+                  aria-label="Minimum score"
+                  value={step.min ?? ""}
+                  onChange={(event) => {
+                    const next = [...draft.grade_scale];
+                    next[index] = {
+                      ...step,
+                      min: event.target.value === "" ? null : Number(event.target.value),
+                    };
+                    patch({ grade_scale: next });
+                  }}
+                  className="numeric h-8 w-20 text-right"
+                />
+                <span className="text-xs text-muted-foreground">%</span>
+                <button
+                  type="button"
+                  aria-label={`Remove ${step.letter}`}
+                  onClick={() =>
+                    patch({ grade_scale: draft.grade_scale.filter((_, i) => i !== index) })
+                  }
+                  className="focus-ring rounded-md p-1.5 text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              </div>
+            ))}
+            {draft.grade_scale.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No cutoffs left — the default scale will be used.
+              </p>
+            ) : null}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-3 gap-1.5"
+            onClick={() =>
+              patch({ grade_scale: [...draft.grade_scale, { letter: "", min: null }] })
+            }
+          >
+            <Plus className="size-3.5" />
+            Add cutoff
           </Button>
         </SectionCard>
 
