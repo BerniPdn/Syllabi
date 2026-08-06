@@ -736,41 +736,65 @@ function ReviewExtractionScreen() {
             title="Course policies"
             hint="Stored as context — never used in calculations"
           />
-          <div className="space-y-2">
-            {draft.policies.map((policy, index) => (
-              <div key={index} className="flex items-start gap-2">
-                <Textarea
-                  aria-label="Policy"
-                  rows={2}
-                  value={policy}
-                  onChange={(event) => {
-                    const next = [...draft.policies];
-                    next[index] = event.target.value;
-                    patch({ policies: next });
-                  }}
-                  className="flex-1"
-                />
-                <button
-                  type="button"
-                  aria-label="Remove policy"
-                  onClick={() =>
-                    patch({ policies: draft.policies.filter((_, i) => i !== index) })
-                  }
-                  className="focus-ring mt-1 rounded-md p-1.5 text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
-            ))}
-            {draft.policies.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No policies were stated.</p>
-            ) : null}
-          </div>
+          {draft.policies.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No policies were stated.</p>
+          ) : (
+            <Collapsible open={policiesExpanded} onOpenChange={setPoliciesExpanded}>
+              <CollapsibleContent asChild>
+                <div className="space-y-2">
+                  {draft.policies.map((policy, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      <Textarea
+                        aria-label="Policy"
+                        rows={2}
+                        value={policy}
+                        onChange={(event) => {
+                          const next = [...draft.policies];
+                          next[index] = event.target.value;
+                          patch({ policies: next });
+                        }}
+                        className="flex-1"
+                      />
+                      <button
+                        type="button"
+                        aria-label="Remove policy"
+                        onClick={() =>
+                          patch({ policies: draft.policies.filter((_, i) => i !== index) })
+                        }
+                        className="focus-ring mt-1 rounded-md p-1.5 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+              {draft.policies.length > 3 ? (
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="mt-3 gap-1.5">
+                    {policiesExpanded ? (
+                      <>
+                        Show fewer <ChevronDown className="size-3.5 rotate-180" />
+                      </>
+                    ) : (
+                      <>
+                        Show all {draft.policies.length} policies{" "}
+                        <ChevronDown className="size-3.5" />
+                      </>
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              ) : null}
+            </Collapsible>
+          )}
           <Button
             variant="ghost"
             size="sm"
             className="mt-3 gap-1.5"
-            onClick={() => patch({ policies: [...draft.policies, ""] })}
+            onClick={() => {
+              setPoliciesExpanded(true);
+              patch({ policies: [...draft.policies, ""] });
+            }}
           >
             <Plus className="size-3.5" />
             Add policy
