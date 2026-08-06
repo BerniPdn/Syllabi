@@ -2,14 +2,19 @@ import { useMemo, useState } from "react";
 import {
   ArrowRight,
   Check,
+  ChevronDown,
   Info,
   Lightbulb,
   RotateCcw,
   Send,
   Trash2,
-
   TriangleAlert,
 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   Conversation,
   ConversationContent,
