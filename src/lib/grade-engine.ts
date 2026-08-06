@@ -39,7 +39,19 @@ const round = (value: number, digits = 1) => {
   return Math.round(value * factor) / factor;
 };
 
-export const clampScore = (value: number) => Math.min(150, Math.max(0, value));
+export const MIN_SCORE = 0;
+export const MAX_SCORE = 100;
+
+export const clampScore = (value: number) => Math.min(MAX_SCORE, Math.max(MIN_SCORE, value));
+
+/** True when a raw input string is a number inside the allowed 0-100 range. */
+export const isValidScoreInput = (raw: string) => {
+  const trimmed = raw.trim();
+  if (trimmed === "") return true;
+  if (!/^\d{1,3}([.,]\d{1,2})?$/.test(trimmed)) return false;
+  const value = Number(trimmed.replace(",", "."));
+  return Number.isFinite(value) && value >= MIN_SCORE && value <= MAX_SCORE;
+};
 
 export function letterFor(score: number, scale: GradeScaleStep[]): string {
   const ordered = [...scale].sort((a, b) => b.min - a.min);
