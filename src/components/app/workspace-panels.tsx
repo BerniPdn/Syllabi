@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowRight,
   Check,
@@ -6,7 +8,6 @@ import {
   Info,
   Lightbulb,
   RotateCcw,
-  Send,
   Trash2,
   TriangleAlert,
 } from "lucide-react";
@@ -15,18 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from "@/components/ai-elements/conversation";
-import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
-import {
-  PromptInput,
-  PromptInputFooter,
-  PromptInputSubmit,
-  PromptInputTextarea,
-} from "@/components/ai-elements/prompt-input";
+import { MessageResponse } from "@/components/ai-elements/message";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +32,6 @@ import {
   SectionHeading,
   formatDate,
 } from "@/components/app/primitives";
-import { Logo } from "@/components/brand/logo";
 import {
   clampScore,
   computeGrades,
@@ -51,9 +40,11 @@ import {
   simulate,
   toneFor,
 } from "@/lib/grade-engine";
-import { MOCK_CHATS, MOCK_INSIGHTS, MOCK_REPLY, QUICK_ACTIONS } from "@/lib/mock-data";
-import type { ChatMessage, Course } from "@/lib/types";
+import { CATEGORY_LABELS, buildInsightFacts, hasInsightData } from "@/lib/insights";
+import { generateInsights } from "@/lib/insights.functions";
+import type { Course } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
 
 /* ---------------------------------- Overview --------------------------------- */
 
