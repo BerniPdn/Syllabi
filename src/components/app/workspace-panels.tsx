@@ -555,26 +555,14 @@ export function SimulatorPanel({ course }: { course: Course }) {
 /* ---------------------------------- Insights --------------------------------- */
 
 /**
- * One consistent card system. Colour communicates meaning only:
+ * Restrained accent system. Colour communicates meaning only:
  * info = neutral structure/facts, attention = risk or a rule to respect,
  * action = the single thing to do next.
  */
 const INSIGHT_STYLES = {
-  info: {
-    card: "border-border bg-card",
-    accent: "bg-muted-foreground/30",
-    label: "text-muted-foreground",
-  },
-  attention: {
-    card: "border-warning/30 bg-warning-soft/30",
-    accent: "bg-warning",
-    label: "text-warning",
-  },
-  action: {
-    card: "border-primary/30 bg-primary-soft/30",
-    accent: "bg-primary",
-    label: "text-primary",
-  },
+  info: { label: "text-muted-foreground", rule: "bg-border" },
+  attention: { label: "text-warning", rule: "bg-warning/60" },
+  action: { label: "text-primary", rule: "bg-primary/60" },
 } as const;
 
 type InsightStyle = keyof typeof INSIGHT_STYLES;
@@ -625,45 +613,54 @@ export function InsightsPanel({ course }: { course: Course }) {
   });
 
   const insights = query.data ?? [];
-
-
+  const [lead, ...supporting] = insights;
 
   return (
-    <div className="space-y-4">
-      <SectionCard>
-        <SectionHeading
-          title="AI insights"
-          hint="Written from your numbers — the math is always CoursePilot's"
-          action={
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!enabled || query.isFetching}
-              onClick={() => {
-                forceRef.current = true;
-                query.refetch();
-              }}
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0">
+          <h2 className="font-display text-xl font-semibold tracking-tight">
+            Here's what CoursePilot noticed
+          </h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Written from your numbers — the math is always CoursePilot's.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 transition-colors"
+          disabled={!enabled || query.isFetching}
+          onClick={() => {
+            forceRef.current = true;
+            query.refetch();
+          }}
+        >
+          <RotateCcw className={cn("size-3.5", query.isFetching && "animate-spin")} />
+          Regenerate
+        </Button>
+      </div>
 
-            >
-              Regenerate
-            </Button>
-          }
-        />
-
-        {!enabled ? (
+      {!enabled ? (
+        <SectionCard className="p-0">
           <EmptyState
             icon={<Lightbulb className="size-5" />}
             title="No insights yet"
             body="Add your grading components, assignments, or a few scores and CoursePilot will explain where you stand."
           />
-        ) : query.isPending || query.isFetching ? (
-          <div className="space-y-3 py-2">
-            <Shimmer className="text-sm font-medium">Reading your latest course data…</Shimmer>
-            {[0, 1, 2, 3, 4].map((index) => (
-              <div key={index} className="h-16 animate-pulse rounded-xl bg-muted" />
+        </SectionCard>
+      ) : query.isPending || query.isFetching ? (
+        <div className="space-y-4">
+          <Shimmer className="text-sm font-medium">Reading your latest course data…</Shimmer>
+          <div className="h-28 animate-pulse rounded-xl bg-muted" />
+          <div className="space-y-3 border-t border-border pt-5">
+            {[0, 1, 2, 3].map((index) => (
+              <div key={index} className="h-14 animate-pulse rounded-lg bg-muted" />
             ))}
           </div>
-        ) : query.isError ? (
+        </div>
+      ) : query.isError ? (
+        <SectionCard className="p-0">
           <EmptyState
             icon={<TriangleAlert className="size-5" />}
             title="Insights unavailable"
@@ -673,54 +670,86 @@ export function InsightsPanel({ course }: { course: Course }) {
                 : "We couldn't generate insights right now. Please try again."
             }
           />
-        ) : insights.length === 0 ? (
+        </SectionCard>
+      ) : insights.length === 0 ? (
+        <SectionCard className="p-0">
           <EmptyState
             icon={<Lightbulb className="size-5" />}
             title="Not enough data yet"
             body="Enter a few scores or confirm your grading components and insights will appear here."
           />
-        ) : (
-          <div className="space-y-2">
-            {insights.map((insight) => {
-              const style = INSIGHT_STYLES[styleFor(insight)];
-              return (
-                <div
-                  key={insight.category}
-                  className={cn(
-                    "relative overflow-hidden rounded-xl border px-4 py-3",
-                    style.card,
-                  )}
-                >
-                  <span
-                    aria-hidden
-                    className={cn("absolute inset-y-0 left-0 w-[3px]", style.accent)}
-                  />
-                  <p
-                    className={cn(
-                      "text-[10px] font-semibold uppercase tracking-[0.09em]",
-                      style.label,
-                    )}
-                  >
-                    {CATEGORY_LABELS[insight.category]}
-                  </p>
-                  {insight.title ? (
-                    <p className="mt-1.5 text-[15px] font-semibold leading-snug tracking-tight">
-                      {insight.title}
-                    </p>
-                  ) : null}
-                  <MessageResponse className="mt-0.5 text-sm leading-snug text-muted-foreground">
-                    {insight.body}
-                  </MessageResponse>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        </SectionCard>
+      ) : (
+        <div className="space-y-6">
+          {lead ? <LeadInsight insight={lead} /> : null}
 
-      </SectionCard>
+          {supporting.length > 0 ? (
+            <div className="divide-y divide-border border-t border-border">
+              {supporting.map((insight) => {
+                const style = INSIGHT_STYLES[styleFor(insight)];
+                return (
+                  <div
+                    key={insight.category}
+                    className="grid gap-1.5 py-5 sm:grid-cols-[168px_1fr] sm:gap-6"
+                  >
+                    <p
+                      className={cn(
+                        "text-[10px] font-semibold uppercase tracking-[0.1em] sm:pt-0.5",
+                        style.label,
+                      )}
+                    >
+                      {CATEGORY_LABELS[insight.category]}
+                    </p>
+                    <div className="min-w-0">
+                      {insight.title ? (
+                        <p className="text-[15px] font-semibold leading-snug tracking-tight">
+                          {insight.title}
+                        </p>
+                      ) : null}
+                      <MessageResponse className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                        {insight.body}
+                      </MessageResponse>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LeadInsight({
+  insight,
+}: {
+  insight: { category: keyof typeof CATEGORY_LABELS; title: string; body: string; tone: string };
+}) {
+  const style = INSIGHT_STYLES[styleFor(insight)];
+  return (
+    <div className="card-surface relative overflow-hidden p-6 sm:p-7">
+      <span aria-hidden className={cn("absolute inset-y-0 left-0 w-[3px]", style.rule)} />
+      <p
+        className={cn(
+          "text-[10px] font-semibold uppercase tracking-[0.12em]",
+          style.label,
+        )}
+      >
+        {CATEGORY_LABELS[insight.category]}
+      </p>
+      {insight.title ? (
+        <p className="mt-3 font-display text-lg font-semibold leading-snug tracking-tight sm:text-xl">
+          {insight.title}
+        </p>
+      ) : null}
+      <MessageResponse className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
+        {insight.body}
+      </MessageResponse>
     </div>
   );
 }
 
 export const PANEL_ICONS = { ArrowRight };
+
 
