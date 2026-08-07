@@ -344,9 +344,10 @@ export function AssignmentsPanel({
               hint={`${category.weight}% of the final grade`}
             />
 
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-border border-t border-border">
               {rows.map((item) => (
-                <div key={item.assignment.id} className="py-3">
+                <div key={item.assignment.id} className="py-3.5">
+
                   <div className="flex items-center gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{item.assignment.name}</p>
