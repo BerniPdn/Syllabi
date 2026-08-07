@@ -213,6 +213,22 @@ function Workspace() {
             ) : null}
           </div>
           <div className="flex items-center gap-3">
+            {syllabusPath ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={openSyllabus}
+                disabled={openingSyllabus}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {openingSyllabus ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <FileText className="size-4" />
+                )}
+                View syllabus
+              </Button>
+            ) : null}
             <Button asChild variant="secondary" size="sm">
               <Link to="/review/$courseId" params={{ courseId }}>
                 Edit course
