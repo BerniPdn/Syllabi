@@ -417,7 +417,8 @@ export function AssignmentsPanel({
                 </div>
               ))}
             </div>
-          </SectionCard>
+          </section>
+
         );
       })}
     </div>
