@@ -65,10 +65,10 @@ export function OverviewPanel({ course }: { course: Course }) {
     .slice(0, 3);
 
   return (
-    <div className="space-y-4">
-      <SectionCard>
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="grid flex-1 grid-cols-2 gap-6 sm:grid-cols-4">
+    <div className="space-y-8">
+      <SectionCard className="p-6 sm:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-8">
+          <div className="grid flex-1 grid-cols-2 gap-x-8 gap-y-7 sm:grid-cols-4">
             <GradeStat
               label="Current"
               value={snapshot.currentGrade?.toFixed(1) ?? "—"}
@@ -113,10 +113,11 @@ export function OverviewPanel({ course }: { course: Course }) {
         </div>
       </SectionCard>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <SectionCard className="min-w-0">
+      <div className="grid gap-6 sm:grid-cols-2">
+        <SectionCard className="min-w-0 p-6">
           <SectionHeading title="Category breakdown" hint="Weight and performance per category" />
-          <div className="space-y-3.5">
+          <div className="space-y-4">
+
             {course.categories.map((category) => {
               const items = snapshot.items.filter((item) => item.category.id === category.id);
               const graded = items.filter((item) => item.score !== null);
