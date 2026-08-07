@@ -151,41 +151,38 @@ export function OverviewPanel({ course }: { course: Course }) {
           </div>
         </SectionCard>
 
-        <div className="min-w-0 space-y-4">
-          <SectionCard className="min-w-0">
-            <SectionHeading title="Next up" hint="Ungraded work, soonest first" />
-            {next.length === 0 ? (
-              <p className="py-4 text-sm text-muted-foreground">
-                Nothing left with a due date. Nice.
-              </p>
-            ) : (
-              <div className="space-y-2.5">
-                {next.map((assignment) => (
-                  <div
-                    key={assignment.id}
-                    className="flex flex-col gap-2 rounded-xl border border-border px-3.5 py-2.5 sm:flex-row sm:items-center sm:gap-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{assignment.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(assignment.dueDate)}
-                      </p>
-                    </div>
-                    <DeadlinePill
-                      dueDate={assignment.dueDate!}
-                      className="self-start sm:shrink-0"
-                    />
+        <SectionCard className="min-w-0 p-6">
+          <SectionHeading title="Next up" hint="Ungraded work, soonest first" />
+          {next.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nothing left with a due date. Nice.</p>
+          ) : (
+            <div className="divide-y divide-border">
+              {next.map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="flex flex-col gap-1.5 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:gap-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{assignment.name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {formatDate(assignment.dueDate)}
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </SectionCard>
+                  <DeadlinePill dueDate={assignment.dueDate!} className="self-start sm:shrink-0" />
+                </div>
+              ))}
+            </div>
+          )}
 
-          <SectionCard className="min-w-0">
-            <SectionHeading title="Course policies" hint="Context only — never used in the math" />
+          <div className="mt-7 border-t border-border pt-6">
+            <SectionHeading
+              title="Course policies"
+              hint="Context only — never used in the math"
+            />
             <CoursePoliciesList policies={course.policies} />
-          </SectionCard>
-        </div>
+          </div>
+        </SectionCard>
+
       </div>
     </div>
   );
