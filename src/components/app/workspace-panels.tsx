@@ -491,8 +491,8 @@ export function SimulatorPanel({ course }: { course: Course }) {
           </span>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">Set all remaining to</span>
+        <div className="mt-7 flex flex-wrap items-center gap-2 border-t border-border pt-5">
+          <span className="text-xs font-medium text-muted-foreground">Set all remaining to</span>
           {[70, 80, 90, 100].map((value) => (
             <Button key={value} variant="outline" size="sm" onClick={() => setAll(value)}>
               {value}%
@@ -510,7 +510,8 @@ export function SimulatorPanel({ course }: { course: Course }) {
         </div>
       </SectionCard>
 
-      <SectionCard>
+      <SectionCard className="p-6 sm:p-7">
+
         <SectionHeading
           title="Remaining work"
           hint="Drag a score to see how it moves your final grade"
