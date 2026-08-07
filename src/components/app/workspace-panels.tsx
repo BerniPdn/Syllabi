@@ -481,37 +481,15 @@ export function SimulatorPanel({ course }: { course: Course }) {
 /* ---------------------------------- Insights --------------------------------- */
 
 /**
- * Margin-note card system. Insights read like a professor's pen in the
- * margin of a paper: a hairline rule, not a filled callout, with colour
- * reserved for meaning. info = neutral structure/facts, attention = risk
- * or a rule to respect, action = the single thing to do next — the only
- * category that gets the "correction red" insight accent.
+ * One bold, unified card for every insight — no tone-based color-switching.
+ * Every card shares the same "insight" accent so the panel reads as a
+ * single consistent voice, following the app's existing card-surface style.
  */
-const INSIGHT_STYLES = {
-  info: {
-    card: "border-transparent bg-transparent",
-    accent: "bg-muted-foreground/25",
-    label: "text-muted-foreground",
-  },
-  attention: {
-    card: "border-transparent bg-warning-soft/25",
-    accent: "bg-warning",
-    label: "text-warning",
-  },
-  action: {
-    card: "border-transparent bg-insight-soft/30",
-    accent: "bg-insight",
-    label: "text-insight",
-  },
+const INSIGHT_CARD_STYLE = {
+  card: "card-surface border-insight/20 bg-insight-soft/25",
+  accent: "bg-insight",
+  label: "text-insight",
 } as const;
-
-type InsightStyle = keyof typeof INSIGHT_STYLES;
-
-function styleFor(insight: { category: string; tone: string }): InsightStyle {
-  if (insight.category === "recommendation") return "action";
-  if (insight.category === "policies") return "attention";
-  return insight.tone === "attention" ? "attention" : "info";
-}
 
 export function InsightsPanel({ course }: { course: Course }) {
   const generate = useServerFn(generateInsights);
@@ -577,27 +555,28 @@ export function InsightsPanel({ course }: { course: Course }) {
             body="Enter a few scores or confirm your grading components and insights will appear here."
           />
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {insights.map((insight) => {
-              const style = INSIGHT_STYLES[styleFor(insight)];
               return (
                 <div
                   key={insight.category}
-                  className={cn("relative overflow-hidden rounded-lg border py-2.5 pl-4 pr-3", style.card)}
+                  className={cn("relative overflow-hidden rounded-xl border px-5 py-4", INSIGHT_CARD_STYLE.card)}
                 >
-                  <span
-                    aria-hidden
-                    className={cn("absolute inset-y-0.5 left-0 w-[1.5px] rounded-full", style.accent)}
-                  />
-                  <p className={cn("font-mono text-[10px] font-medium uppercase tracking-[0.14em]", style.label)}>
+                  <span aria-hidden className={cn("absolute inset-y-0 left-0 w-[3px]", INSIGHT_CARD_STYLE.accent)} />
+                  <p
+                    className={cn(
+                      "font-mono text-[10px] font-semibold uppercase tracking-[0.14em]",
+                      INSIGHT_CARD_STYLE.label,
+                    )}
+                  >
                     {CATEGORY_LABELS[insight.category]}
                   </p>
                   {insight.title ? (
-                    <p className="mt-1 font-display text-[15px] font-medium italic leading-snug tracking-tight">
+                    <p className="mt-1.5 font-display text-xl font-bold leading-tight tracking-tight text-foreground">
                       {insight.title}
                     </p>
                   ) : null}
-                  <MessageResponse className="mt-0.5 text-sm italic leading-snug text-muted-foreground">
+                  <MessageResponse className="mt-1 text-[15px] font-semibold leading-snug text-foreground">
                     {insight.body}
                   </MessageResponse>
                 </div>
