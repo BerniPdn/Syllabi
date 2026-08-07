@@ -455,10 +455,11 @@ export function SimulatorPanel({ course }: { course: Course }) {
   }
 
   return (
-    <div className="space-y-4">
-      <SectionCard>
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3">
+    <div className="space-y-6">
+      <SectionCard className="p-6 sm:p-7">
+        <div className="flex flex-wrap items-end justify-between gap-8">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-7 sm:grid-cols-3">
+
             <GradeStat
               label="Simulated final"
               value={simulated.projectedGrade.toFixed(1)}
