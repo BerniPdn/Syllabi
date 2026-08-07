@@ -23,63 +23,20 @@ export function SectionCard({
   );
 }
 
-/** Page-level title block: title → supporting line → actions. */
-export function PageHeader({
-  eyebrow,
-  title,
-  subtitle,
-  actions,
-  className,
-}: {
-  eyebrow?: ReactNode;
-  title: ReactNode;
-  subtitle?: ReactNode;
-  actions?: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex flex-wrap items-end justify-between gap-x-6 gap-y-4",
-        className,
-      )}
-    >
-      <div className="min-w-0">
-        {eyebrow ? (
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            {eyebrow}
-          </p>
-        ) : null}
-        <h1 className="mt-1.5 font-display text-[26px] font-semibold leading-[1.15] tracking-tight sm:text-3xl">
-          {title}
-        </h1>
-        {subtitle ? (
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
-        ) : null}
-      </div>
-      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
-    </div>
-  );
-}
-
 export function SectionHeading({
   title,
   hint,
   action,
-  className,
 }: {
   title: string;
   hint?: string;
   action?: ReactNode;
-  className?: string;
 }) {
   return (
-    <div className={cn("mb-4 flex items-start justify-between gap-4", className)}>
-      <div className="min-w-0">
-        <h2 className="font-display text-[13px] font-semibold uppercase tracking-[0.09em] text-muted-foreground">
-          {title}
-        </h2>
-        {hint ? <p className="mt-1 text-xs text-muted-foreground/80">{hint}</p> : null}
+    <div className="mb-4 flex items-start justify-between gap-4">
+      <div>
+        <h2 className="font-display text-sm font-semibold">{title}</h2>
+        {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
       </div>
       {action}
     </div>
@@ -112,10 +69,6 @@ export function GradeBadge({
   );
 }
 
-/**
- * Number-first stat: the value carries the weight, the label sits under it as
- * quiet metadata.
- */
 export function GradeStat({
   label,
   value,
@@ -132,37 +85,25 @@ export function GradeStat({
   tone?: Tone | undefined;
 }) {
   return (
-    <div className="min-w-0">
+    <div>
+      <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </p>
       <p
         className={cn(
-          "numeric font-display font-semibold leading-none tabular-nums tracking-tight",
-          emphasis ? "text-[34px] sm:text-[40px]" : "text-[22px]",
+          "numeric mt-1 font-display font-semibold tabular-nums",
+          emphasis ? "text-3xl sm:text-4xl" : "text-xl",
           tone === "positive" && "text-success",
           tone === "attention" && "text-warning",
         )}
       >
         {value}
-        {suffix ? (
-          <span
-            className={cn(
-              "ml-0.5 font-medium opacity-40",
-              emphasis ? "text-lg" : "text-sm",
-            )}
-          >
-            {suffix}
-          </span>
-        ) : null}
+        {suffix ? <span className="ml-0.5 text-base font-medium opacity-50">{suffix}</span> : null}
       </p>
-      <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-        {label}
-      </p>
-      {sub ? (
-        <p className="mt-1 text-xs leading-snug text-muted-foreground/80">{sub}</p>
-      ) : null}
+      {sub ? <p className="mt-1 text-xs text-muted-foreground">{sub}</p> : null}
     </div>
   );
 }
-
 
 export function ProgressBar({ value, tone = "neutral" }: { value: number; tone?: Tone }) {
   const fill: Record<Tone, string> = {

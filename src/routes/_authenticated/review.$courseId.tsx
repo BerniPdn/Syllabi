@@ -259,7 +259,7 @@ function ReviewExtractionScreen() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl space-y-8">
+      <div className="mx-auto max-w-3xl space-y-6">
         <Link
           to="/dashboard"
           className="focus-ring inline-flex items-center gap-1.5 rounded text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -273,15 +273,14 @@ function ReviewExtractionScreen() {
             <Check className="size-3" strokeWidth={3} />
             {isEditing ? "Course saved" : "Syllabus analyzed"}
           </span>
-          <h1 className="mt-4 font-display text-[26px] font-semibold leading-[1.15] tracking-tight sm:text-3xl">
+          <h1 className="mt-3 font-display text-2xl font-semibold tracking-tight">
             {isEditing ? "Edit course details" : "Review what we found"}
           </h1>
-          <p className="mt-2.5 max-w-lg text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-1.5 max-w-lg text-sm text-muted-foreground">
             Only what your syllabus actually states was extracted — blank fields mean the document
             didn't say. Everything here is editable.
           </p>
         </div>
-
 
         <SectionCard>
           <SectionHeading title="Course details" />

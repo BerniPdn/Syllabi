@@ -168,51 +168,21 @@ function Workspace() {
 
   return (
     <AppShell>
-      <div className="space-y-8">
-        <header className="space-y-5">
-          <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-5">
-            <div className="min-w-0">
-              <h1 className="font-display text-[26px] font-semibold leading-[1.15] tracking-tight sm:text-3xl">
-                {course.name}
-              </h1>
-              <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-                {[course.code, course.professor, course.semester]
-                  .filter(Boolean)
-                  .map((part, index) => (
-                    <span key={part} className="flex items-center gap-2">
-                      {index > 0 ? (
-                        <span aria-hidden className="text-border">
-                          ·
-                        </span>
-                      ) : null}
-                      {part}
-                    </span>
-                  ))}
-              </p>
-            </div>
-
-            <div className="flex shrink-0 flex-col items-end gap-3">
-              <div className="text-right">
-                <p className="numeric font-display text-[34px] font-semibold leading-none tracking-tight">
-                  {snapshot.currentGrade?.toFixed(1) ?? "—"}
-                  <span className="ml-0.5 text-lg font-medium opacity-40">%</span>
-                </p>
-                <div className="mt-2 flex items-center justify-end gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                    Current grade
-                  </span>
-                  <GradeBadge
-                    score={snapshot.currentGrade}
-                    scale={course.scale}
-                    tone={toneFor(snapshot.currentGrade, course.targetGrade)}
-                  />
-                </div>
-              </div>
-            </div>
+      <div className="space-y-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              {[course.code, course.semester].filter(Boolean).join(" · ")}
+            </p>
+            <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight sm:text-[26px]">
+              {course.name}
+            </h1>
+            {course.professor ? (
+              <p className="mt-1 text-sm text-muted-foreground">{course.professor}</p>
+            ) : null}
           </div>
-
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm">
+          <div className="flex items-center gap-3">
+            <Button asChild variant="secondary" size="sm">
               <Link to="/review/$courseId" params={{ courseId }}>
                 Edit course
               </Link>
@@ -222,7 +192,7 @@ function Workspace() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-muted-foreground transition-colors hover:bg-danger-soft hover:text-destructive"
+                  className="text-muted-foreground hover:text-destructive"
                   disabled={deleteMutation.isPending}
                 >
                   {deleteMutation.isPending ? (
@@ -253,8 +223,14 @@ function Workspace() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            <GradeBadge
+            score={snapshot.currentGrade}
+            scale={course.scale}
+            tone={toneFor(snapshot.currentGrade, course.targetGrade)}
+            className="px-3 py-1.5 text-sm"
+            />
           </div>
-        </header>
+        </div>
 
         <div className="-mx-4 border-b border-border px-4 sm:mx-0 sm:px-0">
           <div className="flex gap-1 overflow-x-auto">
@@ -265,7 +241,7 @@ function Workspace() {
                 onClick={() => setTab(id)}
                 aria-current={tab === id ? "page" : undefined}
                 className={cn(
-                  "focus-ring -mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors duration-200",
+                  "focus-ring -mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors",
                   tab === id
                     ? "border-primary text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground",
@@ -277,7 +253,6 @@ function Workspace() {
             ))}
           </div>
         </div>
-
 
         {tab === "overview" ? <OverviewPanel course={course} /> : null}
         {tab === "assignments" ? (

@@ -104,7 +104,7 @@ function UploadScreen() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-2xl space-y-8">
+      <div className="mx-auto max-w-2xl space-y-6">
         <Link
           to="/dashboard"
           className="focus-ring inline-flex items-center gap-1.5 rounded text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -114,15 +114,12 @@ function UploadScreen() {
         </Link>
 
         <div>
-          <h1 className="font-display text-[26px] font-semibold leading-[1.15] tracking-tight sm:text-3xl">
-            Add a course
-          </h1>
-          <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Add a course</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
             Upload the syllabus PDF. CoursePilot pulls out the grading breakdown, deadlines, and
             policies — you confirm everything before it's saved.
           </p>
         </div>
-
 
         <SectionCard className="p-0">
           <div
