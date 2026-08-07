@@ -303,9 +303,9 @@ export function AssignmentsPanel({
   };
 
   return (
-    <div className="space-y-4">
-      <SectionCard className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-6">
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5 border-b border-border pb-6">
+        <div className="flex items-end gap-10">
           <GradeStat
             label="Current"
             value={snapshot.currentGrade?.toFixed(1) ?? "—"}
@@ -321,28 +321,29 @@ export function AssignmentsPanel({
               type="button"
               onClick={() => setFilter(value)}
               className={cn(
-                "focus-ring rounded-[6px] px-2.5 py-1.5 font-medium capitalize transition-colors",
+                "focus-ring rounded-[6px] px-3 py-1.5 font-medium capitalize transition-colors duration-200",
                 filter === value
                   ? "bg-card text-foreground shadow-subtle"
-                  : "text-muted-foreground",
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {value}
             </button>
           ))}
         </div>
-      </SectionCard>
+      </div>
 
       {course.categories.map((category) => {
         const rows = items.filter((item) => item.category.id === category.id);
         if (rows.length === 0) return null;
 
         return (
-          <SectionCard key={category.id}>
+          <section key={category.id}>
             <SectionHeading
               title={category.name}
               hint={`${category.weight}% of the final grade`}
             />
+
             <div className="divide-y divide-border">
               {rows.map((item) => (
                 <div key={item.assignment.id} className="py-3">
