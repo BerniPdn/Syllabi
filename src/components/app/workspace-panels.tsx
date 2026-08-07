@@ -1,21 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  ArrowRight,
-  Check,
-  ChevronDown,
-  Info,
-  Lightbulb,
-  RotateCcw,
-  Trash2,
-  TriangleAlert,
-} from "lucide-react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { ArrowRight, Check, ChevronDown, Info, Lightbulb, RotateCcw, Trash2, TriangleAlert } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
@@ -32,27 +19,12 @@ import {
   SectionHeading,
   formatDate,
 } from "@/components/app/primitives";
-import {
-  clampScore,
-  computeGrades,
-  isValidScoreInput,
-  letterFor,
-  simulate,
-  toneFor,
-} from "@/lib/grade-engine";
-import {
-  CATEGORY_LABELS,
-  buildInsightFacts,
-  hasInsightData,
-  insightsSignature,
-} from "@/lib/insights";
-import { fetchStoredInsights, saveStoredInsights } from "@/lib/insights-store";
+import { clampScore, computeGrades, isValidScoreInput, letterFor, simulate, toneFor } from "@/lib/grade-engine";
+import { CATEGORY_LABELS, buildInsightFacts, hasInsightData, insightsSignature } from "@/lib/insights";
 
 import { generateInsights } from "@/lib/insights.functions";
-
 import type { Course } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
 
 /* ---------------------------------- Overview --------------------------------- */
 
@@ -74,9 +46,7 @@ export function OverviewPanel({ course }: { course: Course }) {
               value={snapshot.currentGrade?.toFixed(1) ?? "—"}
               suffix="%"
               sub={
-                snapshot.currentGrade === null
-                  ? "Nothing graded yet"
-                  : letterFor(snapshot.currentGrade, course.scale)
+                snapshot.currentGrade === null ? "Nothing graded yet" : letterFor(snapshot.currentGrade, course.scale)
               }
               emphasis
               tone={tone}
@@ -102,11 +72,7 @@ export function OverviewPanel({ course }: { course: Course }) {
                   ? "Above 100 — target out of reach"
                   : "Average across ungraded work"
               }
-              tone={
-                snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining > 100
-                  ? "attention"
-                  : undefined
-              }
+              tone={snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining > 100 ? "attention" : undefined}
             />
           </div>
           <ProgressRing value={snapshot.completion} label="graded" />
@@ -121,18 +87,14 @@ export function OverviewPanel({ course }: { course: Course }) {
               const items = snapshot.items.filter((item) => item.category.id === category.id);
               const graded = items.filter((item) => item.score !== null);
               const average =
-                graded.length > 0
-                  ? graded.reduce((sum, item) => sum + item.score!, 0) / graded.length
-                  : null;
+                graded.length > 0 ? graded.reduce((sum, item) => sum + item.score!, 0) / graded.length : null;
 
               return (
                 <div key={category.id} className="min-w-0">
                   <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
                     <span className="min-w-0 truncate font-medium">{category.name}</span>
                     <span className="flex shrink-0 items-center gap-2">
-                      <span className="numeric text-xs text-muted-foreground">
-                        {category.weight}% of grade
-                      </span>
+                      <span className="numeric text-xs text-muted-foreground">{category.weight}% of grade</span>
                       <GradeBadge
                         score={average === null ? null : Math.round(average * 10) / 10}
                         scale={course.scale}
@@ -154,9 +116,7 @@ export function OverviewPanel({ course }: { course: Course }) {
           <SectionCard className="min-w-0">
             <SectionHeading title="Next up" hint="Ungraded work, soonest first" />
             {next.length === 0 ? (
-              <p className="py-4 text-sm text-muted-foreground">
-                Nothing left with a due date. Nice.
-              </p>
+              <p className="py-4 text-sm text-muted-foreground">Nothing left with a due date. Nice.</p>
             ) : (
               <div className="space-y-2.5">
                 {next.map((assignment) => (
@@ -166,14 +126,9 @@ export function OverviewPanel({ course }: { course: Course }) {
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{assignment.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(assignment.dueDate)}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{formatDate(assignment.dueDate)}</p>
                     </div>
-                    <DeadlinePill
-                      dueDate={assignment.dueDate!}
-                      className="self-start sm:shrink-0"
-                    />
+                    <DeadlinePill dueDate={assignment.dueDate!} className="self-start sm:shrink-0" />
                   </div>
                 ))}
               </div>
@@ -196,11 +151,7 @@ function CoursePoliciesList({ policies }: { policies: string[] }) {
   const [expanded, setExpanded] = useState(false);
 
   if (policies.length === 0) {
-    return (
-      <p className="py-4 text-sm text-muted-foreground">
-        No policies were extracted from this syllabus.
-      </p>
-    );
+    return <p className="py-4 text-sm text-muted-foreground">No policies were extracted from this syllabus.</p>;
   }
 
   return (
@@ -324,9 +275,7 @@ export function AssignmentsPanel({
               onClick={() => setFilter(value)}
               className={cn(
                 "focus-ring rounded-[6px] px-2.5 py-1.5 font-medium capitalize transition-colors",
-                filter === value
-                  ? "bg-card text-foreground shadow-subtle"
-                  : "text-muted-foreground",
+                filter === value ? "bg-card text-foreground shadow-subtle" : "text-muted-foreground",
               )}
             >
               {value}
@@ -341,10 +290,7 @@ export function AssignmentsPanel({
 
         return (
           <SectionCard key={category.id}>
-            <SectionHeading
-              title={category.name}
-              hint={`${category.weight}% of the final grade`}
-            />
+            <SectionHeading title={category.name} hint={`${category.weight}% of the final grade`} />
             <div className="divide-y divide-border">
               {rows.map((item) => (
                 <div key={item.assignment.id} className="py-3">
@@ -353,9 +299,7 @@ export function AssignmentsPanel({
                       <p className="truncate text-sm font-medium">{item.assignment.name}</p>
                       <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
                         <span>{formatDate(item.assignment.dueDate)}</span>
-                        <span className="numeric">
-                          {item.effectiveWeight.toFixed(1)}% of grade
-                        </span>
+                        <span className="numeric">{item.effectiveWeight.toFixed(1)}% of grade</span>
                       </p>
                     </div>
                     {item.assignment.dueDate && item.score === null ? (
@@ -422,7 +366,6 @@ export function AssignmentsPanel({
       })}
     </div>
   );
-
 }
 
 /* --------------------------------- Simulator --------------------------------- */
@@ -439,16 +382,12 @@ export function SimulatorPanel({ course }: { course: Course }) {
   const delta = simulated.projectedGrade - base.projectedGrade;
   const hitsTarget = simulated.projectedGrade >= course.targetGrade;
 
-  const setAll = (value: number) =>
-    setValues(Object.fromEntries(remaining.map((item) => [item.assignment.id, value])));
+  const setAll = (value: number) => setValues(Object.fromEntries(remaining.map((item) => [item.assignment.id, value])));
 
   if (remaining.length === 0) {
     return (
       <SectionCard className="p-0">
-        <EmptyState
-          title="Nothing left to simulate"
-          body="Every assignment in this course already has a score."
-        />
+        <EmptyState title="Nothing left to simulate" body="Every assignment in this course already has a score." />
       </SectionCard>
     );
   }
@@ -496,12 +435,7 @@ export function SimulatorPanel({ course }: { course: Course }) {
               {value}%
             </Button>
           ))}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setAll(course.targetGrade)}
-          >
+          <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => setAll(course.targetGrade)}>
             <RotateCcw className="size-3.5" />
             Reset
           </Button>
@@ -509,10 +443,7 @@ export function SimulatorPanel({ course }: { course: Course }) {
       </SectionCard>
 
       <SectionCard>
-        <SectionHeading
-          title="Remaining work"
-          hint="Drag a score to see how it moves your final grade"
-        />
+        <SectionHeading title="Remaining work" hint="Drag a score to see how it moves your final grade" />
         <div className="space-y-5">
           {remaining.map((item) => {
             const value = values[item.assignment.id] ?? course.targetGrade;
@@ -524,13 +455,10 @@ export function SimulatorPanel({ course }: { course: Course }) {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{item.assignment.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {item.category.name} ·{" "}
-                      <span className="numeric">{Math.round(share * 100)}%</span> of what's left
+                      {item.category.name} · <span className="numeric">{Math.round(share * 100)}%</span> of what's left
                     </p>
                   </div>
-                  <span className="numeric shrink-0 font-display text-sm font-semibold">
-                    {value}%
-                  </span>
+                  <span className="numeric shrink-0 font-display text-sm font-semibold">{value}%</span>
                 </div>
                 <Slider
                   value={[value]}
@@ -538,9 +466,7 @@ export function SimulatorPanel({ course }: { course: Course }) {
                   max={100}
                   step={1}
                   aria-label={`Simulated score for ${item.assignment.name}`}
-                  onValueChange={([next]) =>
-                    setValues({ ...values, [item.assignment.id]: next ?? value })
-                  }
+                  onValueChange={([next]) => setValues({ ...values, [item.assignment.id]: next ?? value })}
                   className="mt-3"
                 />
               </div>
@@ -555,25 +481,27 @@ export function SimulatorPanel({ course }: { course: Course }) {
 /* ---------------------------------- Insights --------------------------------- */
 
 /**
- * One consistent card system. Colour communicates meaning only:
- * info = neutral structure/facts, attention = risk or a rule to respect,
- * action = the single thing to do next.
+ * Margin-note card system. Insights read like a professor's pen in the
+ * margin of a paper: a hairline rule, not a filled callout, with colour
+ * reserved for meaning. info = neutral structure/facts, attention = risk
+ * or a rule to respect, action = the single thing to do next — the only
+ * category that gets the "correction red" insight accent.
  */
 const INSIGHT_STYLES = {
   info: {
-    card: "border-border bg-card",
-    accent: "bg-muted-foreground/30",
+    card: "border-transparent bg-transparent",
+    accent: "bg-muted-foreground/25",
     label: "text-muted-foreground",
   },
   attention: {
-    card: "border-warning/30 bg-warning-soft/30",
+    card: "border-transparent bg-warning-soft/25",
     accent: "bg-warning",
     label: "text-warning",
   },
   action: {
-    card: "border-primary/30 bg-primary-soft/30",
-    accent: "bg-primary",
-    label: "text-primary",
+    card: "border-transparent bg-insight-soft/30",
+    accent: "bg-insight",
+    label: "text-insight",
   },
 } as const;
 
@@ -591,30 +519,10 @@ export function InsightsPanel({ course }: { course: Course }) {
   const facts = useMemo(() => buildInsightFacts(course), [course]);
   const enabled = hasInsightData(facts);
   const signature = useMemo(() => insightsSignature(facts), [facts]);
-  const forceRef = useRef(false);
 
   const query = useQuery({
     queryKey: ["course-insights", course.id, signature],
-    queryFn: async () => {
-      const force = forceRef.current;
-      forceRef.current = false;
-      const stored = await fetchStoredInsights(course.id);
-
-      // Fresh persisted insights: reuse them, never call the AI gateway.
-      if (!force && stored && stored.signature === signature && stored.insights.length > 0) {
-        return stored.insights;
-      }
-
-      try {
-        const fresh = await generate({ data: { facts } });
-        if (fresh.length > 0) await saveStoredInsights(course.id, signature, fresh);
-        return fresh;
-      } catch (error) {
-        // Fall back to whatever we last saved rather than an empty page.
-        if (stored && stored.insights.length > 0) return stored.insights;
-        throw error;
-      }
-    },
+    queryFn: () => generate({ data: { facts } }),
     enabled,
     staleTime: Infinity,
     gcTime: Infinity,
@@ -626,8 +534,6 @@ export function InsightsPanel({ course }: { course: Course }) {
 
   const insights = query.data ?? [];
 
-
-
   return (
     <div className="space-y-4">
       <SectionCard>
@@ -635,16 +541,7 @@ export function InsightsPanel({ course }: { course: Course }) {
           title="AI insights"
           hint="Written from your numbers — the math is always CoursePilot's"
           action={
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!enabled || query.isFetching}
-              onClick={() => {
-                forceRef.current = true;
-                query.refetch();
-              }}
-
-            >
+            <Button variant="outline" size="sm" disabled={!enabled || query.isFetching} onClick={() => query.refetch()}>
               Regenerate
             </Button>
           }
@@ -686,29 +583,21 @@ export function InsightsPanel({ course }: { course: Course }) {
               return (
                 <div
                   key={insight.category}
-                  className={cn(
-                    "relative overflow-hidden rounded-xl border px-4 py-3",
-                    style.card,
-                  )}
+                  className={cn("relative overflow-hidden rounded-lg border py-2.5 pl-4 pr-3", style.card)}
                 >
                   <span
                     aria-hidden
-                    className={cn("absolute inset-y-0 left-0 w-[3px]", style.accent)}
+                    className={cn("absolute inset-y-0.5 left-0 w-[1.5px] rounded-full", style.accent)}
                   />
-                  <p
-                    className={cn(
-                      "text-[10px] font-semibold uppercase tracking-[0.09em]",
-                      style.label,
-                    )}
-                  >
+                  <p className={cn("font-mono text-[10px] font-medium uppercase tracking-[0.14em]", style.label)}>
                     {CATEGORY_LABELS[insight.category]}
                   </p>
                   {insight.title ? (
-                    <p className="mt-1.5 text-[15px] font-semibold leading-snug tracking-tight">
+                    <p className="mt-1 font-display text-[15px] font-medium italic leading-snug tracking-tight">
                       {insight.title}
                     </p>
                   ) : null}
-                  <MessageResponse className="mt-0.5 text-sm leading-snug text-muted-foreground">
+                  <MessageResponse className="mt-0.5 text-sm italic leading-snug text-muted-foreground">
                     {insight.body}
                   </MessageResponse>
                 </div>
@@ -716,11 +605,9 @@ export function InsightsPanel({ course }: { course: Course }) {
             })}
           </div>
         )}
-
       </SectionCard>
     </div>
   );
 }
 
 export const PANEL_ICONS = { ArrowRight };
-
