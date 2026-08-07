@@ -5,7 +5,6 @@ import { toast } from "sonner";
 
 import {
   BarChart3,
-  FileText,
   LayoutDashboard,
   Lightbulb,
   ListChecks,
@@ -110,37 +109,6 @@ function Workspace() {
     queryFn: () => fetchGrades(courseId),
   });
 
-  const { data: syllabusPath } = useQuery({
-    queryKey: ["course-syllabus-path", courseId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("file_path")
-        .eq("id", courseId)
-        .maybeSingle();
-      if (error) throw error;
-      return data?.file_path ?? null;
-    },
-  });
-
-  const [openingSyllabus, setOpeningSyllabus] = useState(false);
-
-  const openSyllabus = async () => {
-    if (!syllabusPath) return;
-    setOpeningSyllabus(true);
-    try {
-      const { data, error } = await supabase.storage
-        .from("syllabi")
-        .createSignedUrl(syllabusPath, 60);
-      if (error || !data?.signedUrl) throw error ?? new Error("No signed URL");
-      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
-    } catch {
-      toast.error("We couldn't open that syllabus. Please try again.");
-    } finally {
-      setOpeningSyllabus(false);
-    }
-  };
-
   const gradeMutation = useMutation({
     mutationFn: async (input: { assignmentId: string; score: number | null }) => {
       if (input.score === null) await deleteGrade(courseId, input.assignmentId);
@@ -214,22 +182,6 @@ function Workspace() {
             ) : null}
           </div>
           <div className="flex items-center gap-3">
-            {syllabusPath ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={openSyllabus}
-                disabled={openingSyllabus}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                {openingSyllabus ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <FileText className="size-4" />
-                )}
-                View syllabus
-              </Button>
-            ) : null}
             <Button asChild variant="secondary" size="sm">
               <Link to="/review/$courseId" params={{ courseId }}>
                 Edit course
