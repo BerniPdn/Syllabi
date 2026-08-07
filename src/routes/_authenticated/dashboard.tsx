@@ -189,8 +189,9 @@ function Dashboard() {
                       <div className="mt-6 space-y-2 border-t border-border pt-4">
                         <ProgressBar value={snapshot.completion} tone={tone} />
                         <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                          <span className="numeric">
+                          <span className="numeric shrink-0">
                             {Math.round(snapshot.completion * 100)}% graded
+
                           </span>
                           {next ? (
                             <span className="truncate">
