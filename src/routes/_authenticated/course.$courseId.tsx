@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import {
   BarChart3,
+  FileText,
   LayoutDashboard,
   Lightbulb,
   ListChecks,
