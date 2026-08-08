@@ -66,34 +66,21 @@ export const extractSyllabus = createServerFn({ method: "POST" })
 
     let raw: string;
     try {
-      raw = await streamJson(
-        {
-          model: "openai/gpt-5.6-sol",
-          stream: true,
-          input: [
-            {
-              role: "user",
-              content: [
-                { type: "input_text", text: PROMPT },
-                {
-                  type: "input_file",
-                  filename: `${course.title ?? "syllabus"}.pdf`,
-                  file_data: `data:application/pdf;base64,${toBase64(bytes)}`,
-                },
-              ],
-            },
-          ],
-          text: {
-            format: {
-              type: "json_schema",
-              name: "syllabus_extraction",
-              strict: true,
-              schema: EXTRACTION_JSON_SCHEMA,
+      raw = await geminiJson({
+        label: "syllabus",
+        apiKey,
+        schema: EXTRACTION_JSON_SCHEMA,
+        parts: [
+          { text: PROMPT },
+          {
+            inline_data: {
+              mime_type: "application/pdf",
+              data: toBase64(bytes),
             },
           },
-        },
-        apiKey,
-      );
+        ],
+      });
+
     } catch (cause) {
       const message =
         cause instanceof Error ? cause.message : "We couldn't analyze that syllabus.";
