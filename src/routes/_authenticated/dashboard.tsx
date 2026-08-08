@@ -241,7 +241,9 @@ function DashboardCard({ course }: { course: Course }) {
 }
 
 function Dashboard() {
-  const { data: courses = [], isLoading } = useCourses();
+  const { data: courses = [], isLoading, isFetching, isPending } = useCourses();
+
+  const isDataLoading = isLoading || isFetching || isPending || !courses;
 
   const upcoming = courses
     .flatMap((course) =>
@@ -255,7 +257,7 @@ function Dashboard() {
   return (
     <AppShell>
       <div className="w-full max-w-full space-y-5 sm:space-y-6 pb-8">
-        {isLoading ? (
+        {isDataLoading ? (
           <div className="flex min-h-[30vh] sm:min-h-[40vh] items-center justify-center">
             <Loader2 className="size-7 animate-spin text-primary" />
           </div>
