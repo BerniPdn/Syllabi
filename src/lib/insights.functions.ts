@@ -9,16 +9,21 @@ export const generateInsights = createServerFn({ method: "POST" })
     z.object({ facts: z.record(z.string(), z.unknown()) }).parse(input),
   )
   .handler(async ({ data }): Promise<CourseInsight[]> => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
+    const apiKey = process.env["GEMINI_API_KEY"];
+    if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
-    const { buildInsightsRequest, parseInsights, streamGatewayJson } = await import(
+    const { INSIGHTS_JSON_SCHEMA, INSIGHTS_SYSTEM_PROMPT, parseInsights } = await import(
       "@/lib/insights.server"
     );
+    const { geminiJson } = await import("@/lib/gemini.server");
 
-    const raw = await streamGatewayJson(
-      buildInsightsRequest(data.facts as never),
+    const raw = await geminiJson({
+      label: "insights",
       apiKey,
-    );
+      systemInstruction: INSIGHTS_SYSTEM_PROMPT,
+      schema: INSIGHTS_JSON_SCHEMA,
+      parts: [{ text: `Course facts (source of truth):\n${JSON.stringify(data.facts)}` }],
+    });
     return parseInsights(raw);
   });
+
