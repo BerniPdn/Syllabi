@@ -43,7 +43,7 @@ async function streamJson(body: unknown, apiKey: string): Promise<string> {
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
     console.error("[syllabus] Gemini API error", response.status, detail);
-    throw new Error("We couldn't analyze that syllabus. Please try again.");
+    throw new Error(`Error de Gemini (${response.status}): ${detail || "No se pudo analizar el syllabus."}`);
   }
 
   const data = await response.json();
