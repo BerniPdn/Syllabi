@@ -2,15 +2,15 @@ import type { CourseInsight, InsightCategory, InsightFacts } from "./insights";
 
 const CATEGORY_BRIEF: Record<InsightCategory, string> = {
   overview:
-    "overview — \"How is my grade built?\" Name the component that dominates the grade with its weight. Structure only: no advice, no upcoming work, no performance talk.",
+    'overview — "How is my grade built?" Name the component that dominates the grade with its weight. Structure only: no advice, no upcoming work, no performance talk.',
   policies:
-    "policies — \"Which rule can hurt me?\" ONE policy from `policies` that carries real consequence, stated as its practical effect. Never restate course structure.",
+    'policies — "Which rule can hurt me?" ONE policy from `policies` that carries real consequence, stated as its practical effect. Never restate course structure.',
   priorities:
-    "priorities — \"What's next?\" Lead with the single nearest item from `upcoming`: name, weight, date. Nothing else.",
+    'priorities — "What\'s next?" Lead with the single nearest item from `upcoming`: name, weight, date. Nothing else.',
   performance:
-    "performance — \"What's my pattern?\" One pattern across `componentPerformance`/`graded`: strongest or weakest component, consistency or swing. Never mention the current grade number, target grade, or weights.",
+    'performance — "What\'s my pattern?" One pattern across `componentPerformance`/`graded`: strongest or weakest component, consistency or swing. Never mention the current grade number, target grade, or weights.',
   recommendation:
-    "recommendation — \"What do I do?\" Exactly one concrete next action. This is the ONLY category allowed to advise.",
+    'recommendation — "What do I do?" Exactly one concrete next action. This is the ONLY category allowed to advise.',
 };
 
 const SYSTEM_PROMPT = `You are CoursePilot's insight writer for a single university course.
@@ -27,136 +27,78 @@ Style — a student must get the point in under 5 seconds:
 - Lead with the key fact or number in the first four words. No warm-ups ("Your course is structured around…").
 - Plain, calm, second person. No markdown, no bullets, no emoji, no hedging.
 - Never repeat a fact, number or idea across two insights.
-- Example of the register wanted: "Exams drive most of your grade (60%). Focus here for the biggest impact." / "Next up: Exam I (20%) on Oct 1."
 
 Other rules:
 - If the facts do not support a category (no policies, no graded work, nothing upcoming), set that insight's "body" to an empty string. Never fill the gap with generic advice.
 - tone: "attention" only when something needs action or is at risk, "positive" when clearly on track, otherwise "neutral".
 - title: 2-4 words, specific, scannable.`;
 
-
-export function buildInsightsRequest(facts: InsightFacts) {
-  return {
-    model: "openai/gpt-5.6-sol",
-    stream: true,
-    input: [
-      { role: "system", content: [{ type: "input_text", text: SYSTEM_PROMPT }] },
-      {
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text: `Course facts (source of truth):\n${JSON.stringify(facts)}`,
+const INSIGHTS_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["insights"],
+  properties: {
+    insights: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["category", "title", "body", "tone"],
+        properties: {
+          category: {
+            type: "string",
+            enum: ["overview", "policies", "priorities", "performance", "recommendation"],
           },
-        ],
-      },
-    ],
-    text: {
-      format: {
-        type: "json_schema",
-        name: "course_insights",
-        strict: true,
-        schema: {
-          type: "object",
-          additionalProperties: false,
-          required: ["insights"],
-          properties: {
-            insights: {
-              type: "array",
-              items: {
-                type: "object",
-                additionalProperties: false,
-                required: ["category", "title", "body", "tone"],
-                properties: {
-                  category: {
-                    type: "string",
-                    enum: [
-                      "overview",
-                      "policies",
-                      "priorities",
-                      "performance",
-                      "recommendation",
-                    ],
-                  },
-                  title: { type: "string" },
-                  body: { type: "string" },
-                  tone: { type: "string", enum: ["positive", "neutral", "attention"] },
-                },
-              },
-            },
-          },
+          title: { type: "string" },
+          body: { type: "string" },
+          tone: { type: "string", enum: ["positive", "neutral", "attention"] },
         },
       },
     },
-  };
-}
+  },
+};
 
-/** Streams the gateway response and returns the accumulated JSON text. */
-export async function streamGatewayJson(body: unknown, apiKey: string): Promise<string> {
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Lovable-API-Key": apiKey,
-      "X-Lovable-AIG-SDK": "fetch",
+export async function callGeminiInsights(facts: InsightFacts, apiKey: string): Promise<string> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: SYSTEM_PROMPT }],
+        },
+        contents: [
+          {
+            parts: [{ text: `Course facts (source of truth):\n${JSON.stringify(facts)}` }],
+          },
+        ],
+        generationConfig: {
+          response_mime_type: "application/json",
+          response_schema: INSIGHTS_SCHEMA,
+        },
+      }),
     },
-    body: JSON.stringify(body),
-  });
+  );
 
-  if (!response.ok || !response.body) {
+  if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    if (response.status === 429) {
-      throw new Error("Our AI is busy right now. Please try again in a moment.");
-    }
-    if (response.status === 402) {
-      throw new Error("AI credits are exhausted. Add credits to keep generating insights.");
-    }
-    console.error("[insights] gateway error", response.status, detail);
-    throw new Error("We couldn't generate insights right now. Please try again.");
+    console.error("[insights] Gemini API error", response.status, detail);
+    throw new Error("We couldn't generate insights right now with Gemini.");
   }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let text = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      if (!line.startsWith("data:")) continue;
-      const payload = line.slice(5).trim();
-      if (!payload || payload === "[DONE]") continue;
-      try {
-        const event = JSON.parse(payload) as {
-          type?: string;
-          delta?: string;
-          response?: { output_text?: string };
-        };
-        if (event.type === "response.output_text.delta" && typeof event.delta === "string") {
-          text += event.delta;
-        } else if (event.type === "response.completed" && event.response?.output_text) {
-          if (!text) text = event.response.output_text;
-        }
-      } catch {
-        // ignore keep-alive / non-JSON frames
-      }
-    }
+  const result = await response.json();
+  const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!rawText) {
+    throw new Error("Empty insights response received from Gemini.");
   }
 
-  return text;
+  return rawText;
 }
 
-const ORDER: InsightCategory[] = [
-  "overview",
-  "policies",
-  "priorities",
-  "performance",
-  "recommendation",
-];
+const ORDER: InsightCategory[] = ["overview", "policies", "priorities", "performance", "recommendation"];
 
 export function parseInsights(raw: string): CourseInsight[] {
   let parsed: { insights?: CourseInsight[] } | null = null;
@@ -180,7 +122,7 @@ export function parseInsights(raw: string): CourseInsight[] {
     });
   }
 
-  return ORDER.map((category) => byCategory.get(category)).filter(
-    (insight): insight is CourseInsight => Boolean(insight),
+  return ORDER.map((category) => byCategory.get(category)).filter((insight): insight is CourseInsight =>
+    Boolean(insight),
   );
 }
