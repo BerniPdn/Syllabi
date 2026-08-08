@@ -68,7 +68,7 @@ const passwordSchema = z
 
 function AuthScreen() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signup");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
