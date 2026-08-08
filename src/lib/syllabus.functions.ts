@@ -92,7 +92,7 @@ export const extractSyllabus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ courseId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<ExtractionResult> => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
+    const apiKey = process.env["GEMINI_API_KEY"];
     if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
 
     const supabase = context.supabase;
@@ -150,18 +150,12 @@ export const extractSyllabus = createServerFn({ method: "POST" })
         apiKey,
       );
     } catch (cause) {
-      const message =
-        cause instanceof Error ? cause.message : "We couldn't analyze that syllabus.";
-      await supabase
-        .from("courses")
-        .update({ status: "failed", extraction_error: message })
-        .eq("id", data.courseId);
+      const message = cause instanceof Error ? cause.message : "We couldn't analyze that syllabus.";
+      await supabase.from("courses").update({ status: "failed", extraction_error: message }).eq("id", data.courseId);
       return { ok: false, error: message };
     }
 
-    let parsed:
-      | ({ is_syllabus?: boolean; reason?: string | null } & ExtractedSyllabus)
-      | null = null;
+    let parsed: ({ is_syllabus?: boolean; reason?: string | null } & ExtractedSyllabus) | null = null;
     try {
       parsed = JSON.parse(raw);
     } catch {
@@ -170,21 +164,13 @@ export const extractSyllabus = createServerFn({ method: "POST" })
 
     if (!parsed) {
       const message = "We couldn't read that syllabus. Please try uploading it again.";
-      await supabase
-        .from("courses")
-        .update({ status: "failed", extraction_error: message })
-        .eq("id", data.courseId);
+      await supabase.from("courses").update({ status: "failed", extraction_error: message }).eq("id", data.courseId);
       return { ok: false, error: message };
     }
 
     if (parsed.is_syllabus === false) {
-      const message = parsed.reason
-        ? `${NOT_A_SYLLABUS_MESSAGE} (${parsed.reason})`
-        : NOT_A_SYLLABUS_MESSAGE;
-      await supabase
-        .from("courses")
-        .update({ status: "failed", extraction_error: message })
-        .eq("id", data.courseId);
+      const message = parsed.reason ? `${NOT_A_SYLLABUS_MESSAGE} (${parsed.reason})` : NOT_A_SYLLABUS_MESSAGE;
+      await supabase.from("courses").update({ status: "failed", extraction_error: message }).eq("id", data.courseId);
       return { ok: false, error: message };
     }
 
@@ -227,12 +213,8 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
           professor: z.string().nullable(),
           semester: z.string().nullable(),
           description: z.string().nullable(),
-          grading_components: z.array(
-            z.object({ name: z.string(), weight: z.number().nullable() }),
-          ),
-          grade_scale: z
-            .array(z.object({ letter: z.string(), min: z.number().nullable() }))
-            .default([]),
+          grading_components: z.array(z.object({ name: z.string(), weight: z.number().nullable() })),
+          grade_scale: z.array(z.object({ letter: z.string(), min: z.number().nullable() })).default([]),
           assignments: z.array(
             z.object({
               name: z.string(),
@@ -241,9 +223,7 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
               weight: z.number().nullable(),
             }),
           ),
-          important_dates: z.array(
-            z.object({ label: z.string(), date: z.string().nullable() }),
-          ),
+          important_dates: z.array(z.object({ label: z.string(), date: z.string().nullable() })),
           policies: z.array(z.string()),
         }),
       })
@@ -267,10 +247,7 @@ export const deleteCourse = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ courseId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("courses")
-      .delete()
-      .eq("id", data.courseId);
+    const { error } = await context.supabase.from("courses").delete().eq("id", data.courseId);
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
