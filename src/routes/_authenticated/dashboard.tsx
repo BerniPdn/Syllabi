@@ -92,19 +92,19 @@ function DashboardCard({ course }: { course: Course }) {
 
   return (
     <>
-      <div className="group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-5 shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
+      <div className="group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-md">
         <div>
           {/* Header del curso */}
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-2 sm:gap-3">
             <div className="min-w-0 flex-1">
-              <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-primary">
+              <span className="inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-primary">
                 {course.code}
               </span>
-              <h3 className="mt-0.5 truncate font-display text-base font-bold text-foreground transition-colors group-hover:text-primary">
+              <h3 className="mt-0.5 truncate font-display text-base sm:text-lg font-bold text-foreground">
                 <Link
                   to="/course/$courseId"
                   params={{ courseId: course.id }}
-                  className="after:absolute after:inset-0"
+                  className="hover:underline focus:outline-hidden"
                 >
                   {course.name}
                 </Link>
@@ -114,21 +114,20 @@ function DashboardCard({ course }: { course: Course }) {
               </p>
             </div>
 
-            {/* Menú de 3 puntos */}
-            <div className="relative z-10 shrink-0">
+            {/* Menú de 3 puntos (Mayor área táctil para móvil) */}
+            <div className="shrink-0">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:bg-muted hover:text-foreground"
-                    onClick={(e) => e.stopPropagation()}
+                    className="h-9 w-9 text-muted-foreground hover:bg-muted hover:text-foreground touch-manipulation"
                   >
                     <MoreHorizontal className="size-4" />
                     <span className="sr-only">Course options</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem asChild>
                     <Link
                       to="/review/$courseId"
@@ -140,10 +139,7 @@ function DashboardCard({ course }: { course: Course }) {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsDeleteDialogOpen(true);
-                    }}
+                    onClick={() => setIsDeleteDialogOpen(true)}
                     className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                   >
                     <Trash2 className="mr-2 size-4" />
@@ -155,20 +151,20 @@ function DashboardCard({ course }: { course: Course }) {
           </div>
 
           {/* Promedio y Escala */}
-          <div className="mt-5 flex items-end justify-between gap-3">
+          <div className="mt-4 sm:mt-5 flex items-end justify-between gap-2">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Current Grade
               </p>
               <div className="mt-0.5 flex items-baseline gap-1">
-                <span className="font-display text-3xl font-extrabold tracking-tight text-foreground">
+                <span className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
                   {snapshot.currentGrade?.toFixed(1) ?? "—"}
                 </span>
-                <span className="text-sm font-semibold text-muted-foreground">
+                <span className="text-xs sm:text-sm font-semibold text-muted-foreground">
                   %
                 </span>
               </div>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
+              <p className="mt-0.5 text-[10px] sm:text-[11px] text-muted-foreground">
                 Target:{" "}
                 <span className="font-semibold text-foreground">
                   {course.targetGrade}%
@@ -176,7 +172,7 @@ function DashboardCard({ course }: { course: Course }) {
               </p>
             </div>
 
-            <div className="origin-bottom-right transform scale-105">
+            <div className="shrink-0">
               <GradeBadge
                 score={snapshot.currentGrade}
                 scale={course.scale}
@@ -187,11 +183,11 @@ function DashboardCard({ course }: { course: Course }) {
         </div>
 
         {/* Barra de progreso */}
-        <div className="mt-5 space-y-2">
+        <div className="mt-4 sm:mt-5 space-y-1.5 sm:space-y-2">
           <ProgressBar value={snapshot.completion} tone={tone} />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center justify-between text-[11px] sm:text-xs text-muted-foreground">
             <span className="flex items-center gap-1 font-medium">
-              <CheckCircle2 className="size-3 text-primary" />
+              <CheckCircle2 className="size-3 text-primary shrink-0" />
               {Math.round(snapshot.completion * 100)}% graded
             </span>
             {next ? (
@@ -205,26 +201,26 @@ function DashboardCard({ course }: { course: Course }) {
         </div>
       </div>
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal adaptado a móvil */}
       <AlertDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[92vw] sm:max-w-lg rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {course.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-xs sm:text-sm">
               This permanently removes the course and everything tied to it:
               its assignments, saved grades, and extracted syllabus data. This
               action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep course</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
+            <AlertDialogCancel className="w-full sm:w-auto mt-0">Keep course</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteMutation.mutate()}
               disabled={deleteMutation.isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteMutation.isPending ? (
                 <Loader2 className="mr-2 size-4 animate-spin" />
@@ -260,32 +256,32 @@ function Dashboard() {
 
   return (
     <AppShell>
-      <div className="max-w-full space-y-6 overflow-hidden pb-8">
-        {/* Header con tipografía distintiva tipo editorial */}
-        <div className="pt-2">
-          <h1 className="font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+      <div className="w-full max-w-full space-y-5 sm:space-y-6 pb-8">
+        {/* Header */}
+        <div className="pt-1 sm:pt-2">
+          <h1 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight text-foreground">
             Welcome back,{" "}
-            <span className="text-primary">
+            <span className="text-primary block sm:inline">
               {firstName}
             </span>
           </h1>
-          <p className="mt-1 text-xs font-medium text-muted-foreground/80 sm:text-sm">
+          <p className="mt-1 text-xs sm:text-sm font-medium text-muted-foreground/80">
             All your academic priorities, in one space.
           </p>
         </div>
 
         {isLoading ? (
-          <div className="flex min-h-[40vh] items-center justify-center">
+          <div className="flex min-h-[30vh] sm:min-h-[40vh] items-center justify-center">
             <Loader2 className="size-7 animate-spin text-primary" />
           </div>
         ) : courses.length === 0 ? (
-          <SectionCard className="border-dashed p-0">
+          <SectionCard className="border-dashed p-4 sm:p-6">
             <EmptyState
               icon={<Sparkles className="size-6 text-primary" />}
               title="Add your first course"
               body="Syllabi reads your syllabus PDF and builds a live workspace — grade weights, deadlines, and policies included."
               action={
-                <Button asChild size="lg" className="mt-2">
+                <Button asChild size="lg" className="mt-2 w-full sm:w-auto">
                   <Link to="/upload">
                     <FileText className="mr-2 size-4" />
                     Upload Syllabus
@@ -295,11 +291,11 @@ function Dashboard() {
             />
           </SectionCard>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {/* SECCIÓN PRINCIPAL: CURSOS */}
-            <div className="border-t border-border/40 pt-4">
-              <div className="mb-3 flex items-baseline justify-between">
-                <h2 className="font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+            <div className="border-t border-border/40 pt-3 sm:pt-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="font-display text-lg sm:text-2xl font-bold tracking-tight text-foreground">
                   Current Focus
                 </h2>
                 <span className="text-xs font-medium text-muted-foreground">
@@ -307,18 +303,18 @@ function Dashboard() {
                 </span>
               </div>
 
-              {/* GRID DE CURSOS */}
-              <div className="grid gap-4 sm:grid-cols-2">
+              {/* GRID DE CURSOS (1 columna en celular, 2 en pantallas medianas+) */}
+              <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                 {courses.map((course) => (
                   <DashboardCard key={course.id} course={course} />
                 ))}
 
-                {/* Botón para añadir curso dentro del grid */}
+                {/* Botón para añadir curso adaptado */}
                 <Link
                   to="/upload"
-                  className="group flex min-h-[180px] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border/70 bg-card/20 p-6 text-center transition-all hover:border-primary/50 hover:bg-card/60 active:scale-[0.99]"
+                  className="group flex min-h-[120px] sm:min-h-[180px] flex-row sm:flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border/70 bg-card/20 p-4 sm:p-6 text-left sm:text-center transition-all hover:border-primary/50 hover:bg-card/60 active:scale-[0.99]"
                 >
-                  <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-110">
+                  <div className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-110">
                     <Plus className="size-5" />
                   </div>
                   <div>
@@ -335,36 +331,37 @@ function Dashboard() {
 
             {/* UPCOMING DEADLINES */}
             {upcoming.length > 0 && (
-              <div className="min-w-0 border-t border-border/40 pt-4">
-                <h2 className="mb-3 font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              <div className="min-w-0 border-t border-border/40 pt-3 sm:pt-4">
+                <h2 className="mb-3 font-display text-lg sm:text-2xl font-bold tracking-tight text-foreground">
                   Upcoming Deadlines
                 </h2>
 
+                {/* Scroll Horizontal optimizado con snapping móvil */}
                 <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 pt-1 sm:mx-0 sm:px-0">
                   {upcoming.map(({ course, assignment }) => (
                     <div
                       key={assignment.id}
-                      className="group flex w-[220px] shrink-0 snap-start flex-col justify-between rounded-xl border border-border/80 bg-card p-3.5 shadow-xs transition-all active:scale-[0.98]"
+                      className="group flex w-[190px] sm:w-[220px] shrink-0 snap-start flex-col justify-between rounded-xl border border-border/80 bg-card p-3 sm:p-3.5 shadow-xs transition-all active:scale-[0.98]"
                     >
                       <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground truncate max-w-[80px]">
                             {course.code}
                           </span>
                           <DeadlinePill dueDate={assignment.dueDate!} />
                         </div>
-                        <p className="mt-2.5 line-clamp-2 text-xs font-semibold leading-snug text-foreground">
+                        <p className="mt-2 line-clamp-2 text-xs font-semibold leading-snug text-foreground">
                           {assignment.name}
                         </p>
                       </div>
 
-                      <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-2 text-[11px] text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <CalendarClock className="size-3 text-muted-foreground/70" />
+                      <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-2 text-[10px] sm:text-[11px] text-muted-foreground">
+                        <span className="flex items-center gap-1 truncate">
+                          <CalendarClock className="size-3 text-muted-foreground/70 shrink-0" />
                           {formatDate(assignment.dueDate)}
                         </span>
                         {assignment.weight ? (
-                          <span className="font-medium text-foreground">
+                          <span className="font-medium text-foreground shrink-0 pl-1">
                             {assignment.weight}%
                           </span>
                         ) : null}
