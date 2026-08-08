@@ -1,12 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  EXTRACTION_JSON_SCHEMA,
-  NOT_A_SYLLABUS_MESSAGE,
-  type ExtractedSyllabus,
-  type ExtractionResult,
-} from "@/lib/syllabus-extraction";
+import { NOT_A_SYLLABUS_MESSAGE, type ExtractedSyllabus, type ExtractionResult } from "@/lib/syllabus-extraction";
 
 const PROMPT = `You are extracting structured data from a university course syllabus PDF.
 
@@ -14,12 +9,28 @@ Rules:
 - Extract ONLY information explicitly present in the document. Never guess, infer, or invent.
 - Use null (or an empty array) for anything the document does not state.
 - Dates must be ISO (YYYY-MM-DD). If a date has no year, use the year implied by the semester; if that is unclear, return null.
-- grading_components: the graded categories with their percentage weight of the final grade (weight null if not stated).
-- assignments: individual assignments, exams, quizzes, projects with their due date and the grading component they belong to (use the exact component name).
-- important_dates: other dated milestones (exam periods, breaks, drop deadlines) that are not assignments.
-- grade_scale: the letter-grade cutoffs (e.g. A = 93, B+ = 87) ONLY if the syllabus explicitly states them; otherwise return an empty array.
-- policies: short verbatim-ish statements of course policies (late work, attendance, academic honesty, curves, extra credit, etc.).
-- Set is_syllabus to false when the document is not a course syllabus (e.g. a resume, an invoice, a random article, a homework handout). In that case give a one-sentence reason and leave every other field null/empty.`;
+- grading_components: array of { "name": string, "weight": number | null } representing percentage weight of final grade.
+- assignments: array of { "name": string, "component": string | null, "due_date": string | null, "weight": number | null }.
+- important_dates: array of { "label": string, "date": string | null }.
+- grade_scale: array of { "letter": string, "min": number | null } ONLY if explicitly stated; otherwise [].
+- policies: array of short verbatim statements of course policies.
+- Set is_syllabus to false if not a course syllabus, providing a reason string in "reason".
+
+Return strictly a valid JSON object matching this structure:
+{
+  "is_syllabus": boolean,
+  "reason": string | null,
+  "course_name": string | null,
+  "course_code": string | null,
+  "professor": string | null,
+  "semester": string | null,
+  "description": string | null,
+  "grading_components": [{"name": string, "weight": number | null}],
+  "grade_scale": [{"letter": string, "min": number | null}],
+  "assignments": [{"name": string, "component": string | null, "due_date": string | null, "weight": number | null}],
+  "important_dates": [{"label": string, "date": string | null}],
+  "policies": [string]
+}`;
 
 function toBase64(bytes: Uint8Array) {
   let binary = "";
@@ -56,7 +67,6 @@ async function callGemini(bytes: Uint8Array, apiKey: string): Promise<string> {
         ],
         generationConfig: {
           response_mime_type: "application/json",
-          response_schema: EXTRACTION_JSON_SCHEMA,
         },
       }),
     },
@@ -64,14 +74,14 @@ async function callGemini(bytes: Uint8Array, apiKey: string): Promise<string> {
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    console.error("[syllabus] Gemini API error", response.status, detail);
-    throw new Error(`Gemini API Error (${response.status}): ${detail || "Could not process PDF"}`);
+    console.error("[syllabus] Gemini error:", response.status, detail);
+    throw new Error(`Error de Gemini (${response.status}): ${detail.slice(0, 150)}`);
   }
 
   const result = await response.json();
   const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!rawText) {
-    throw new Error("Empty response received from Gemini.");
+    throw new Error("Gemini devolvió una respuesta vacía.");
   }
 
   return rawText;
@@ -82,7 +92,7 @@ export const extractSyllabus = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ courseId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<ExtractionResult> => {
     const apiKey = process.env["GEMINI_API_KEY"];
-    if (!apiKey) throw new Error("Missing GEMINI_API_KEY environment variable.");
+    if (!apiKey) throw new Error("Falta la variable GEMINI_API_KEY en el servidor.");
 
     const supabase = context.supabase;
 
@@ -92,7 +102,7 @@ export const extractSyllabus = createServerFn({ method: "POST" })
       .eq("id", data.courseId)
       .maybeSingle();
     if (courseError) throw new Error(courseError.message);
-    if (!course?.file_path) return { ok: false, error: "We couldn't find that syllabus file." };
+    if (!course?.file_path) return { ok: false, error: "No se encontró el archivo del programa." };
 
     if (course.extracted) {
       return { ok: true, data: course.extracted as ExtractedSyllabus };
@@ -100,19 +110,19 @@ export const extractSyllabus = createServerFn({ method: "POST" })
 
     const download = await supabase.storage.from("syllabi").download(course.file_path);
     if (download.error || !download.data) {
-      return { ok: false, error: "We couldn't open that syllabus file. Try uploading it again." };
+      return { ok: false, error: "No se pudo descargar el archivo PDF almacenado." };
     }
 
     const bytes = new Uint8Array(await download.data.arrayBuffer());
     if (bytes.length === 0) {
-      return { ok: false, error: "That PDF appears to be empty. Please upload another file." };
+      return { ok: false, error: "El archivo PDF está vacío." };
     }
 
     let raw: string;
     try {
       raw = await callGemini(bytes, apiKey);
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "We couldn't analyze that syllabus.";
+      const message = cause instanceof Error ? cause.message : "Error al analizar con Gemini.";
       await supabase.from("courses").update({ status: "failed", extraction_error: message }).eq("id", data.courseId);
       return { ok: false, error: message };
     }
@@ -125,7 +135,7 @@ export const extractSyllabus = createServerFn({ method: "POST" })
     }
 
     if (!parsed) {
-      const message = "We couldn't read that syllabus. Please try uploading it again.";
+      const message = "No se pudo procesar la estructura del documento.";
       await supabase.from("courses").update({ status: "failed", extraction_error: message }).eq("id", data.courseId);
       return { ok: false, error: message };
     }
