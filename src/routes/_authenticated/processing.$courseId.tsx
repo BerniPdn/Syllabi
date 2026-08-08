@@ -19,13 +19,13 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/processing/$courseId")({
   head: () => ({
     meta: [
-      { title: "Analyzing your syllabus — CoursePilot" },
+      { title: "Analyzing your syllabus" },
       {
         name: "description",
         content:
-          "CoursePilot is reading your syllabus to build grade weights, deadlines, and policies for this course.",
+          "Syllabi is reading your syllabus to build grade weights, deadlines, and policies for this course.",
       },
-      { property: "og:title", content: "Analyzing your syllabus — CoursePilot" },
+      { property: "og:title", content: "Analyzing your syllabus" },
       {
         property: "og:description",
         content: "Your course workspace is being prepared.",
@@ -152,7 +152,7 @@ function ProcessingRoute() {
             </div>
           </div>
           <p className="mt-4 text-center text-xs text-muted-foreground">
-            Nothing was saved to your workspace — CoursePilot never creates a course from an
+            Nothing was saved to your workspace — Syllabi never creates a course from an
             incomplete syllabus.
           </p>
         </div>
@@ -171,7 +171,7 @@ function ProcessingRoute() {
             Your syllabus has been uploaded successfully.
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            CoursePilot is analyzing your syllabus and extracting your course structure.
+            Syllabi is analyzing your syllabus and extracting your course structure.
           </p>
         </div>
 

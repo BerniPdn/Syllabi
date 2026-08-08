@@ -2,7 +2,7 @@ import type { Assignment, Category, Course, GradeScaleStep } from "./types";
 
 /**
  * Deterministic grade engine. No AI, no network, no side effects.
- * Every number shown anywhere in CoursePilot comes from here.
+ * Every number shown anywhere in Syllabi comes from here.
  */
 
 export type ScoreOverrides = Record<string, number | null>;

@@ -53,13 +53,13 @@ type TabId = (typeof TABS)[number]["id"];
 export const Route = createFileRoute("/_authenticated/course/$courseId")({
   head: () => ({
     meta: [
-      { title: "Course workspace — CoursePilot" },
+      { title: "Course workspace" },
       {
         name: "description",
         content:
           "Track grades, simulate outcomes, and ask questions about your course in one workspace.",
       },
-      { property: "og:title", content: "Course workspace — CoursePilot" },
+      { property: "og:title", content: "Course workspace" },
       {
         property: "og:description",
         content: "Your live workspace: grades, deadlines, and an AI assistant.",

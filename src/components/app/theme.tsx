@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 
-const STORAGE_KEY = "coursepilot-theme";
+const STORAGE_KEY = "syllabi-theme";
 
 export function useTheme() {
   const [theme, setTheme] = useState<"light" | "dark">("light");

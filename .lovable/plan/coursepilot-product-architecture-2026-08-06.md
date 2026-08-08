@@ -1,4 +1,4 @@
-# CoursePilot — Product Architecture
+# Syllabi — Product Architecture
 
 An AI academic copilot: upload a syllabus once, get a live course workspace that always answers "where do I stand?".
 

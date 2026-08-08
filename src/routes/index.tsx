@@ -5,13 +5,13 @@ export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "CoursePilot — Your AI academic copilot" },
+      { title: "Syllabi — Your AI academic copilot" },
       {
         name: "description",
         content:
           "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an assistant that knows your class.",
       },
-      { property: "og:title", content: "CoursePilot — Your AI academic copilot" },
+      { property: "og:title", content: "Syllabi — Your AI academic copilot" },
       {
         property: "og:description",
         content: "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an assistant that knows your class.",

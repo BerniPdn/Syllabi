@@ -1,5 +1,5 @@
 /**
- * CoursePilot domain types. Shared by the grade engine, mock data, and UI.
+ * Syllabi domain types. Shared by the grade engine, mock data, and UI.
  */
 
 export type GradeScaleStep = { letter: string; min: number };

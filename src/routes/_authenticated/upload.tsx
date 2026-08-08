@@ -10,13 +10,13 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/upload")({
   head: () => ({
     meta: [
-      { title: "Upload a syllabus — CoursePilot" },
+      { title: "Upload a syllabus" },
       {
         name: "description",
         content:
-          "Drop in a PDF syllabus and CoursePilot extracts grade weights, deadlines, and policies into a live workspace.",
+          "Drop in a PDF syllabus and Syllabi extracts grade weights, deadlines, and policies into a live workspace.",
       },
-      { property: "og:title", content: "Upload a syllabus — CoursePilot" },
+      { property: "og:title", content: "Upload a syllabus" },
       {
         property: "og:description",
         content: "One PDF in, a complete course workspace out.",

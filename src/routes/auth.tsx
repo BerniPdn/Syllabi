@@ -34,13 +34,13 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Sign in — CoursePilot" },
+      { title: "Sign in" },
       {
         name: "description",
         content:
-          "Sign in to CoursePilot to track grades, simulate outcomes, and ask your courses anything.",
+          "Sign in to Syllabi to track grades, simulate outcomes, and ask your courses anything.",
       },
-      { property: "og:title", content: "Sign in — CoursePilot" },
+      { property: "og:title", content: "Sign in" },
       { property: "og:description", content: "Your AI academic copilot for every course." },
     ],
   }),
@@ -302,7 +302,7 @@ function AuthScreen() {
                 </form>
 
                 <p className="text-center text-sm text-muted-foreground">
-                  {mode === "signup" ? "Already have an account?" : "New to CoursePilot?"}{" "}
+                  {mode === "signup" ? "Already have an account?" : "New to Syllabi?"}{" "}
                   <button
                     type="button"
                     onClick={() => {

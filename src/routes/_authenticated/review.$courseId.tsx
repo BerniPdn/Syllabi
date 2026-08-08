@@ -49,13 +49,13 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/review/$courseId")({
   head: () => ({
     meta: [
-      { title: "Review extracted syllabus — CoursePilot" },
+      { title: "Review extracted syllabus" },
       {
         name: "description",
         content:
-          "Confirm the course details, grade weights, assignments, and policies CoursePilot found in your syllabus.",
+          "Confirm the course details, grade weights, assignments, and policies Syllabi found in your syllabus.",
       },
-      { property: "og:title", content: "Review extracted syllabus — CoursePilot" },
+      { property: "og:title", content: "Review extracted syllabus" },
       {
         property: "og:description",
         content: "You confirm every extracted field before the course is saved.",

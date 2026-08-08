@@ -13,7 +13,7 @@ const CATEGORY_BRIEF: Record<InsightCategory, string> = {
     "recommendation — \"What do I do?\" Exactly one concrete next action. This is the ONLY category allowed to advise.",
 };
 
-export const INSIGHTS_SYSTEM_PROMPT = `You are CoursePilot's insight writer for a single university course.
+export const INSIGHTS_SYSTEM_PROMPT = `You are Syllabi's insight writer for a single university course.
 
 You receive a JSON object of ALREADY-CALCULATED facts. You never calculate, estimate or invent anything: every number, name, weight and date you mention must appear verbatim in the facts.
 
