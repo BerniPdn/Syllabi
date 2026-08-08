@@ -29,7 +29,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 sm:px-6">
           <LogoLink />
-          <span className="ml-1 hidden text-xs text-muted-foreground sm:inline">Fall 2026</span>
           <button
             type="button"
             onClick={handleSignOut}

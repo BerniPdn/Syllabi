@@ -9,6 +9,7 @@ import {
   Lightbulb,
   ListChecks,
   Loader2,
+  Pencil,
   Trash2,
 } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
@@ -38,14 +39,12 @@ import { computeGrades, toneFor } from "@/lib/grade-engine";
 import { deleteGrade, fetchGrades, saveGrade } from "@/lib/grades";
 import { coursesQueryKey } from "@/lib/use-courses";
 
-
 import { cn } from "@/lib/utils";
-
 
 const TABS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
-  { id: "assignments", label: "Assignments", icon: ListChecks },
-  { id: "simulator", label: "Simulator", icon: BarChart3 },
+  { id: "assignments", label: "Grade Tracker", icon: ListChecks },
+  { id: "simulator", label: "What If", icon: BarChart3 },
   { id: "insights", label: "Insights", icon: Lightbulb },
 ] as const;
 
@@ -89,7 +88,6 @@ function Workspace() {
       toast.error(error instanceof Error ? error.message : "Could not delete this course.");
     },
   });
-
 
   const { data: baseCourse, isLoading } = useQuery({
     queryKey: ["course-workspace", courseId],
@@ -137,7 +135,6 @@ function Workspace() {
     };
   }, [baseCourse, grades]);
 
-
   if (isLoading) {
     return (
       <AppShell>
@@ -181,18 +178,19 @@ function Workspace() {
               <p className="mt-1 text-sm text-muted-foreground">{course.professor}</p>
             ) : null}
           </div>
-          <div className="flex items-center gap-3">
+          {/* <div className="flex items-center gap-3">
             <Button asChild variant="secondary" size="sm">
               <Link to="/review/$courseId" params={{ courseId }}>
+                <Pencil className="size-4" />
                 Edit course
               </Link>
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
-                  className="text-muted-foreground hover:text-destructive"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   disabled={deleteMutation.isPending}
                 >
                   {deleteMutation.isPending ? (
@@ -200,7 +198,7 @@ function Workspace() {
                   ) : (
                     <Trash2 className="size-4" />
                   )}
-                  Delete
+                  Delete Course
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -223,13 +221,7 @@ function Workspace() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <GradeBadge
-            score={snapshot.currentGrade}
-            scale={course.scale}
-            tone={toneFor(snapshot.currentGrade, course.targetGrade)}
-            className="px-3 py-1.5 text-sm"
-            />
-          </div>
+          </div> */}
         </div>
 
         <div className="-mx-4 border-b border-border px-4 sm:mx-0 sm:px-0">

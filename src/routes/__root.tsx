@@ -13,7 +13,6 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -79,20 +78,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CoursePilot — Your AI academic copilot" },
+      { title: "Syllabi — Your syllabus, brought to life." },
       {
         name: "description",
         content:
-          "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an assistant that knows your class.",
+          "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and academic control.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:title", content: "CoursePilot — Your AI academic copilot" },
-      { name: "twitter:title", content: "CoursePilot — Your AI academic copilot" },
-      { property: "og:description", content: "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an assistant that knows your class." },
-      { name: "twitter:description", content: "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an assistant that knows your class." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3db72a8a-5ee1-41df-9b49-b9bfc19a3370/id-preview-6789bf58--228fc7bd-8159-465f-b5b7-3377404ce36f.lovable.app-1786035354971.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3db72a8a-5ee1-41df-9b49-b9bfc19a3370/id-preview-6789bf58--228fc7bd-8159-465f-b5b7-3377404ce36f.lovable.app-1786035354971.png" },
+      { property: "og:title", content: "Syllabi — Your syllabus, brought to life." },
+      { name: "twitter:title", content: "Syllabi — Your syllabus, brought to life." },
+      {
+        property: "og:description",
+        content:
+          "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and academic control.",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and academic control.",
+      },
     ],
     links: [
       {
@@ -105,7 +110,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap",
       },
-      { rel: "icon", href: "/favicon.png", type: "image/png" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    scripts: [
+      {
+        children: `
+          (function() {
+            try {
+              var storedTheme = localStorage.getItem('theme');
+              var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+              
+              if (storedTheme === 'dark' || ((!storedTheme || storedTheme === 'system') && prefersDark)) {
+                document.documentElement.classList.add('dark');
+              } else {
+                document.documentElement.classList.remove('dark');
+              }
+            } catch (e) {}
+          })();
+        `,
+      },
     ],
   }),
 
@@ -121,7 +144,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="bg-background text-foreground min-h-screen antialiased">
         {children}
         <Scripts />
       </body>
@@ -149,4 +172,3 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
-

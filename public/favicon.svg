@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
+  <!-- Fondo con el naranja/ámbar primario de tu tema -->
+  <rect width="32" height="32" rx="7" fill="#ca6702" />
+  
+  <!-- Ícono centrado en blanco -->
+  <g transform="translate(2, 2)">
+    <path
+      d="M7 5H21L15 12H23L17 21H7C5.89543 21 5 20.1046 5 19V7C5 5.89543 5.89543 5 7 5Z"
+      stroke="#ffffff"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path d="M9 16H13" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+    <path d="M17 16H18" stroke="#ffffff" stroke-width="2" stroke-linecap="round" />
+  </g>
+</svg>

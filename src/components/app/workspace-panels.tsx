@@ -8,7 +8,7 @@ import {
   Info,
   Lightbulb,
   RotateCcw,
-  Trash2,
+  Sparkles,
   TriangleAlert,
 } from "lucide-react";
 import {
@@ -47,12 +47,9 @@ import {
   insightsSignature,
 } from "@/lib/insights";
 import { fetchStoredInsights, saveStoredInsights } from "@/lib/insights-store";
-
 import { generateInsights } from "@/lib/insights.functions";
-
 import type { Course } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
 
 /* ---------------------------------- Overview --------------------------------- */
 
@@ -65,58 +62,57 @@ export function OverviewPanel({ course }: { course: Course }) {
     .slice(0, 3);
 
   return (
-    <div className="space-y-4">
-      <SectionCard>
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="grid flex-1 grid-cols-2 gap-6 sm:grid-cols-4">
-            <GradeStat
-              label="Current"
-              value={snapshot.currentGrade?.toFixed(1) ?? "—"}
-              suffix="%"
-              sub={
-                snapshot.currentGrade === null
-                  ? "Nothing graded yet"
-                  : letterFor(snapshot.currentGrade, course.scale)
-              }
-              emphasis
-              tone={tone}
-            />
-            <GradeStat
-              label="Projected"
-              value={snapshot.projectedGrade.toFixed(1)}
-              suffix="%"
-              sub="If you hold this pace"
-            />
-            <GradeStat
-              label="Target"
-              value={String(course.targetGrade)}
-              suffix="%"
-              sub={letterFor(course.targetGrade, course.scale)}
-            />
-            <GradeStat
-              label="Needed on rest"
-              value={snapshot.neededOnRemaining?.toFixed(1) ?? "—"}
-              suffix="%"
-              sub={
-                snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining > 100
-                  ? "Above 100 — target out of reach"
-                  : "Average across ungraded work"
-              }
-              tone={
-                snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining > 100
-                  ? "attention"
-                  : undefined
-              }
-            />
+    <div className="space-y-4 sm:space-y-6">
+      {/* Métricas Principales (Máximo 2 columnas) */}
+      <SectionCard className="border-border/80 shadow-xs p-3.5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Current Grade destacado con ProgressRing al lado */}
+          <div className="flex items-center gap-4 rounded-xl border border-border/60 bg-muted/30 p-4 flex-1">
+            <div className="flex-1">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Current Grade
+              </p>
+              <div className="flex items-baseline gap-1 mt-1">
+                <span className="font-display text-3xl sm:text-4xl font-extrabold text-foreground">
+                  {snapshot.currentGrade?.toFixed(1) ?? "—"}
+                </span>
+                <span className="text-sm font-semibold text-muted-foreground">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {snapshot.currentGrade === null ? "Nothing graded yet" : `Scale: ${letterFor(snapshot.currentGrade, course.scale)}`}
+              </p>
+            </div>
+            <div className="shrink-0">
+              <ProgressRing value={snapshot.completion} label="graded" />
+            </div>
           </div>
-          <ProgressRing value={snapshot.completion} label="graded" />
+
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-col sm:w-[220px]">
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
+              <GradeStat
+                label="Target"
+                value={String(course.targetGrade)}
+                suffix="%"
+                sub={`Scale: ${letterFor(course.targetGrade, course.scale)}`}
+              />
+            </div>
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
+              <GradeStat
+                label="Needed on Rest"
+                value={snapshot.neededOnRemaining?.toFixed(1) ?? "—"}
+                suffix="%"
+                sub={snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining > 100 ? "Out of reach" : "Avg remaining"}
+                tone={snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining > 100 ? "attention" : undefined}
+              />
+            </div>
+          </div>
         </div>
       </SectionCard>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <SectionCard className="min-w-0">
-          <SectionHeading title="Category breakdown" hint="Weight and performance per category" />
-          <div className="space-y-3.5">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+        <SectionCard className="min-w-0 border-border/80 shadow-xs p-3.5 sm:p-6">
+          <SectionHeading title="Category Breakdown" hint="Weight and performance per category" />
+          <div className="mt-3.5 space-y-2.5 sm:space-y-3">
             {course.categories.map((category) => {
               const items = snapshot.items.filter((item) => item.category.id === category.id);
               const graded = items.filter((item) => item.score !== null);
@@ -126,63 +122,71 @@ export function OverviewPanel({ course }: { course: Course }) {
                   : null;
 
               return (
-                <div key={category.id} className="min-w-0">
-                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
-                    <span className="min-w-0 truncate font-medium">{category.name}</span>
-                    <span className="flex shrink-0 items-center gap-2">
-                      <span className="numeric text-xs text-muted-foreground">
-                        {category.weight}% of grade
+                <div
+                  key={category.id}
+                  className="rounded-xl border border-border/60 bg-card p-3 sm:p-3.5 transition-all"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2 text-xs sm:text-sm">
+                    <span className="font-display font-bold text-foreground truncate">{category.name}</span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="numeric text-[11px] sm:text-xs font-medium text-muted-foreground">
+                        {category.weight}% weight
                       </span>
                       <GradeBadge
                         score={average === null ? null : Math.round(average * 10) / 10}
                         scale={course.scale}
                         tone={toneFor(average, course.targetGrade)}
                       />
-                    </span>
+                    </div>
                   </div>
                   <ProgressBar
                     value={graded.length / Math.max(1, items.length)}
                     tone={toneFor(average, course.targetGrade)}
                   />
+                  <div className="mt-1.5 flex justify-between text-[11px] font-medium text-muted-foreground">
+                    <span>{graded.length} of {items.length} completed</span>
+                    <span>{average !== null ? `${average.toFixed(1)}% avg` : "No scores"}</span>
+                  </div>
                 </div>
               );
             })}
           </div>
         </SectionCard>
 
-        <div className="min-w-0 space-y-4">
-          <SectionCard className="min-w-0">
-            <SectionHeading title="Next up" hint="Ungraded work, soonest first" />
+        <div className="min-w-0 space-y-4 sm:space-y-6">
+          <SectionCard className="min-w-0 border-border/80 shadow-xs p-3.5 sm:p-6">
+            <SectionHeading title="Next Up" hint="Ungraded work, soonest first" />
             {next.length === 0 ? (
-              <p className="py-4 text-sm text-muted-foreground">
-                Nothing left with a due date. Nice.
+              <p className="py-5 text-center text-xs sm:text-sm text-muted-foreground">
+                No upcoming assignments with due dates.
               </p>
             ) : (
-              <div className="space-y-2.5">
+              <div className="mt-3.5 space-y-2">
                 {next.map((assignment) => (
                   <div
                     key={assignment.id}
-                    className="flex flex-col gap-2 rounded-xl border border-border px-3.5 py-2.5 sm:flex-row sm:items-center sm:gap-3"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3 sm:p-3.5"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{assignment.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="truncate text-xs sm:text-sm font-bold text-foreground">
+                        {assignment.name}
+                      </p>
+                      <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
                         {formatDate(assignment.dueDate)}
                       </p>
                     </div>
-                    <DeadlinePill
-                      dueDate={assignment.dueDate!}
-                      className="self-start sm:shrink-0"
-                    />
+                    <DeadlinePill dueDate={assignment.dueDate!} className="shrink-0 text-[10px] sm:text-xs" />
                   </div>
                 ))}
               </div>
             )}
           </SectionCard>
 
-          <SectionCard className="min-w-0">
-            <SectionHeading title="Course policies" hint="Context only — never used in the math" />
-            <CoursePoliciesList policies={course.policies} />
+          <SectionCard className="min-w-0 border-border/80 shadow-xs p-3.5 sm:p-6">
+            <SectionHeading title="Course Policies" hint="Extracted from your syllabus" />
+            <div className="mt-3.5">
+              <CoursePoliciesList policies={course.policies} />
+            </div>
           </SectionCard>
         </div>
       </div>
@@ -197,8 +201,8 @@ function CoursePoliciesList({ policies }: { policies: string[] }) {
 
   if (policies.length === 0) {
     return (
-      <p className="py-4 text-sm text-muted-foreground">
-        No policies were extracted from this syllabus.
+      <p className="py-3 text-center text-xs sm:text-sm text-muted-foreground">
+        No policies extracted.
       </p>
     );
   }
@@ -208,16 +212,19 @@ function CoursePoliciesList({ policies }: { policies: string[] }) {
       <CollapsibleContent asChild>
         <ul className="space-y-2">
           {policies.map((policy) => (
-            <li key={policy} className="flex gap-2.5 text-sm text-muted-foreground">
+            <li
+              key={policy}
+              className="flex gap-2.5 rounded-xl border border-border/60 bg-muted/30 p-2.5 text-xs text-muted-foreground"
+            >
               <Info className="mt-0.5 size-3.5 shrink-0 text-primary" />
-              <span>{policy}</span>
+              <span className="leading-relaxed">{policy}</span>
             </li>
           ))}
         </ul>
       </CollapsibleContent>
       {policies.length > 3 ? (
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="mt-2 gap-1.5">
+          <Button variant="ghost" size="sm" className="mt-2.5 w-full gap-1 text-xs text-muted-foreground h-8">
             {expanded ? (
               <>
                 Show fewer <ChevronDown className="size-3.5 rotate-180" />
@@ -234,7 +241,7 @@ function CoursePoliciesList({ policies }: { policies: string[] }) {
   );
 }
 
-/* -------------------------------- Assignments -------------------------------- */
+/* -------------------------------- Grade Tracker -------------------------------- */
 
 export function AssignmentsPanel({
   course,
@@ -270,7 +277,7 @@ export function AssignmentsPanel({
     setErrors((prev) => {
       const next = { ...prev };
       if (isValidScoreInput(raw)) delete next[assignmentId];
-      else next[assignmentId] = "Enter a number between 0 and 100.";
+      else next[assignmentId] = "Enter 0-100.";
       return next;
     });
   };
@@ -281,7 +288,7 @@ export function AssignmentsPanel({
     const trimmed = raw.trim();
 
     if (!isValidScoreInput(trimmed)) {
-      setErrors((prev) => ({ ...prev, [assignmentId]: "Enter a number between 0 and 100." }));
+      setErrors((prev) => ({ ...prev, [assignmentId]: "Enter 0-100." }));
       return;
     }
 
@@ -305,33 +312,42 @@ export function AssignmentsPanel({
   };
 
   return (
-    <div className="space-y-4">
-      <SectionCard className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-6">
-          <GradeStat
-            label="Current"
-            value={snapshot.currentGrade?.toFixed(1) ?? "—"}
-            suffix="%"
-            tone={toneFor(snapshot.currentGrade, course.targetGrade)}
-          />
-          <GradeStat label="Graded weight" value={`${snapshot.gradedWeight}`} suffix="%" />
-        </div>
-        <div className="flex rounded-lg bg-muted p-0.5 text-xs">
-          {(["all", "graded", "ungraded"] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setFilter(value)}
-              className={cn(
-                "focus-ring rounded-[6px] px-2.5 py-1.5 font-medium capitalize transition-colors",
-                filter === value
-                  ? "bg-card text-foreground shadow-subtle"
-                  : "text-muted-foreground",
-              )}
-            >
-              {value}
-            </button>
-          ))}
+    <div className="space-y-4 sm:space-y-6">
+      <SectionCard className="border-border/80 shadow-xs p-3.5 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-4">
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-2.5 sm:p-3.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Current Avg</p>
+              <div className="flex items-baseline gap-1 mt-0.5">
+                <span className="font-display text-xl sm:text-2xl font-extrabold text-foreground">{snapshot.currentGrade?.toFixed(1) ?? "—"}</span>
+                <span className="text-xs font-semibold text-muted-foreground">%</span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-2.5 sm:p-3.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Graded Weight</p>
+              <div className="flex items-baseline gap-1 mt-0.5">
+                <span className="font-display text-xl sm:text-2xl font-extrabold text-foreground">{snapshot.gradedWeight}</span>
+                <span className="text-xs font-semibold text-muted-foreground">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex w-full sm:w-auto rounded-xl bg-muted/70 p-1 text-xs justify-between">
+            {(["all", "graded", "ungraded"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setFilter(value)}
+                className={cn(
+                  "flex-1 sm:flex-initial rounded-lg px-2.5 py-1.5 font-bold capitalize transition-all text-center text-[11px] sm:text-xs",
+                  filter === value ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {value}
+              </button>
+            ))}
+          </div>
         </div>
       </SectionCard>
 
@@ -339,90 +355,64 @@ export function AssignmentsPanel({
         const rows = items.filter((item) => item.category.id === category.id);
         if (rows.length === 0) return null;
 
+        const allCatItems = snapshot.items.filter((item) => item.category.id === category.id);
+        const gradedCount = allCatItems.filter((i) => i.score !== null).length;
+
         return (
-          <SectionCard key={category.id}>
-            <SectionHeading
-              title={category.name}
-              hint={`${category.weight}% of the final grade`}
-            />
-            <div className="divide-y divide-border">
-              {rows.map((item) => (
-                <div key={item.assignment.id} className="py-3">
-                  <div className="flex items-center gap-3">
+          <SectionCard key={category.id} className="border-border/80 shadow-xs p-3.5 sm:p-6">
+            <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-3">
+              <div className="flex items-center gap-2.5">
+                <h3 className="font-display text-base font-bold text-foreground">{category.name}</h3>
+                <span className="rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{category.weight}% weight</span>
+              </div>
+              <span className="text-xs font-semibold text-muted-foreground">{gradedCount} of {allCatItems.length} tracked</span>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {rows.map((item) => {
+                const isGraded = item.assignment.score !== null;
+                const draftVal = drafts[item.assignment.id];
+                const currentVal = draftVal ?? (isGraded ? String(item.assignment.score) : "");
+
+                return (
+                  <div
+                    key={item.assignment.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl border border-border/60 bg-card p-3 sm:p-3.5"
+                  >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{item.assignment.name}</p>
-                      <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{formatDate(item.assignment.dueDate)}</span>
-                        <span className="numeric">
-                          {item.effectiveWeight.toFixed(1)}% of grade
-                        </span>
-                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="truncate text-xs sm:text-sm font-bold text-foreground">{item.assignment.name}</p>
+                        <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase text-muted-foreground">{item.effectiveWeight.toFixed(1)}% total</span>
+                      </div>
+                      <div className="mt-1 text-[11px] sm:text-xs text-muted-foreground">
+                        {item.assignment.dueDate ? <span>Due {formatDate(item.assignment.dueDate)}</span> : <span>No due date</span>}
+                      </div>
                     </div>
-                    {item.assignment.dueDate && item.score === null ? (
-                      <DeadlinePill dueDate={item.assignment.dueDate} />
-                    ) : null}
-                    <div className="flex items-center gap-1.5">
-                      <Input
-                        inputMode="decimal"
-                        placeholder="—"
-                        aria-label={`Score for ${item.assignment.name}`}
-                        aria-invalid={errors[item.assignment.id] ? true : undefined}
-                        value={
-                          drafts[item.assignment.id] ??
-                          (item.assignment.score === null ? "" : String(item.assignment.score))
-                        }
-                        onChange={(event) => handleChange(item.assignment.id, event.target.value)}
-                        onBlur={() => commit(item.assignment.id, item.assignment.score)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") event.currentTarget.blur();
-                        }}
-                        className={cn(
-                          "numeric h-8 w-16 text-right",
-                          errors[item.assignment.id] && "border-destructive",
-                        )}
-                      />
-                      <span className="text-xs text-muted-foreground">%</span>
-                      {item.assignment.score !== null && onDeleteScore ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 text-muted-foreground"
-                          aria-label={`Delete grade for ${item.assignment.name}`}
-                          disabled={savingKey === item.assignment.id}
-                          onClick={() => {
-                            setDrafts((prev) => {
-                              const next = { ...prev };
-                              delete next[item.assignment.id];
-                              return next;
-                            });
-                            setErrors((prev) => {
-                              const next = { ...prev };
-                              delete next[item.assignment.id];
-                              return next;
-                            });
-                            onDeleteScore(item.assignment.id);
-                          }}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      ) : null}
+
+                    <div className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t border-border/40 sm:border-t-0 shrink-0">
+                      {item.assignment.dueDate && !isGraded ? <DeadlinePill dueDate={item.assignment.dueDate} className="text-[10px]" /> : <div />}
+
+                      <div className="flex items-center gap-1">
+                        <Input
+                          inputMode="decimal"
+                          placeholder="0-100"
+                          value={currentVal}
+                          onChange={(event) => handleChange(item.assignment.id, event.target.value)}
+                          onBlur={() => commit(item.assignment.id, item.assignment.score)}
+                          className={cn("numeric h-9 w-18 sm:w-20 text-center font-display text-sm font-extrabold", isGraded ? "border-primary/40 bg-primary/5 text-primary" : "bg-background/80 text-foreground")}
+                        />
+                        <span className="text-xs font-bold text-muted-foreground">%</span>
+                      </div>
                     </div>
                   </div>
-                  {errors[item.assignment.id] ? (
-                    <p role="alert" className="mt-1.5 text-right text-xs text-destructive">
-                      {errors[item.assignment.id]}
-                    </p>
-                  ) : null}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </SectionCard>
         );
       })}
     </div>
   );
-
 }
 
 /* --------------------------------- Simulator --------------------------------- */
@@ -436,7 +426,6 @@ export function SimulatorPanel({ course }: { course: Course }) {
   );
 
   const simulated = simulate(course, values);
-  const delta = simulated.projectedGrade - base.projectedGrade;
   const hitsTarget = simulated.projectedGrade >= course.targetGrade;
 
   const setAll = (value: number) =>
@@ -444,105 +433,138 @@ export function SimulatorPanel({ course }: { course: Course }) {
 
   if (remaining.length === 0) {
     return (
-      <SectionCard className="p-0">
+      <SectionCard className="p-0 border-dashed">
         <EmptyState
           title="Nothing left to simulate"
-          body="Every assignment in this course already has a score."
+          body="Every assignment in this course already has a recorded score."
         />
       </SectionCard>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <SectionCard>
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3">
+    <div className="space-y-4 sm:space-y-6">
+      <SectionCard className="border-border/80 shadow-xs p-3.5 sm:p-6">
+        <div className="rounded-xl border border-border/60 bg-muted/30 p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Simulated Final Grade
+            </p>
+            {/* Badge dinámico con verde de Overview para On track y el mismo rojo de la nota para Below target */}
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] sm:text-xs font-bold shadow-2xs shrink-0",
+                hitsTarget
+                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                  : "bg-red-950/20 text-red-700/80 dark:text-red-400/80 border border-red-900/20",
+              )}
+            >
+              {hitsTarget ? <Check className="size-3.5" /> : <TriangleAlert className="size-3.5" />}
+              {hitsTarget ? "On track" : "Below target"}
+            </span>
+          </div>
+
+          {/* Renderizado de la nota con el mismo verde positivo o rojo opaco */}
+          {hitsTarget ? (
             <GradeStat
-              label="Simulated final"
+              label=""
               value={simulated.projectedGrade.toFixed(1)}
               suffix="%"
-              sub={letterFor(simulated.projectedGrade, course.scale)}
+              sub={`Scale: ${letterFor(simulated.projectedGrade, course.scale)}`}
               emphasis
-              tone={hitsTarget ? "positive" : "attention"}
+              tone="positive"
             />
-            <GradeStat
-              label="Change"
-              value={`${delta >= 0 ? "+" : ""}${delta.toFixed(1)}`}
-              sub="vs. holding current pace"
-            />
-            <GradeStat
-              label="Target"
-              value={String(course.targetGrade)}
-              suffix="%"
-              sub={hitsTarget ? "Reached" : "Not yet reached"}
-            />
-          </div>
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold",
-              hitsTarget ? "bg-success-soft text-success" : "bg-warning-soft text-warning",
-            )}
-          >
-            {hitsTarget ? <Check className="size-3.5" /> : <TriangleAlert className="size-3.5" />}
-            {hitsTarget ? "On track for your target" : "Below your target"}
-          </span>
+          ) : (
+            <div>
+              <div className="flex items-baseline gap-1">
+                <span className="font-display text-3xl sm:text-4xl font-extrabold text-red-700/80 dark:text-red-400/80">
+                  {simulated.projectedGrade.toFixed(1)}
+                </span>
+                <span className="text-sm sm:text-base font-semibold text-red-700/60 dark:text-red-400/60">
+                  %
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Scale: <span className="font-semibold text-foreground">{letterFor(simulated.projectedGrade, course.scale)}</span>
+              </p>
+            </div>
+          )}
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-muted-foreground">Set all remaining to</span>
-          {[70, 80, 90, 100].map((value) => (
-            <Button key={value} variant="outline" size="sm" onClick={() => setAll(value)}>
-              {value}%
+        <div className="mt-3.5 sm:mt-4 flex flex-col sm:flex-row sm:items-center gap-2 border-t border-border/50 pt-3">
+          <span className="text-xs font-semibold text-muted-foreground w-full sm:w-auto">Quick set remaining to:</span>
+          <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+            {[70, 80, 90, 100].map((value) => (
+              <Button key={value} variant="outline" size="sm" className="h-7 text-xs font-medium flex-1 sm:flex-none px-2.5" onClick={() => setAll(value)}>
+                {value}%
+              </Button>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground px-2"
+              onClick={() => setAll(course.targetGrade)}
+            >
+              <RotateCcw className="size-3" />
+              Reset
             </Button>
-          ))}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setAll(course.targetGrade)}
-          >
-            <RotateCcw className="size-3.5" />
-            Reset
-          </Button>
+          </div>
         </div>
       </SectionCard>
 
-      <SectionCard>
+      <SectionCard className="border-border/80 shadow-xs p-3.5 sm:p-6">
         <SectionHeading
-          title="Remaining work"
-          hint="Drag a score to see how it moves your final grade"
+          title="What-if Simulation"
+          hint="Drag the sliders to project your final course grade in real time"
         />
-        <div className="space-y-5">
+
+        <div className="mt-3.5 space-y-2.5">
           {remaining.map((item) => {
             const value = values[item.assignment.id] ?? course.targetGrade;
             const share = base.impact[item.assignment.id] ?? 0;
 
             return (
-              <div key={item.assignment.id}>
-                <div className="flex items-center justify-between gap-3">
+              <div
+                key={item.assignment.id}
+                className="group rounded-xl border border-border/60 bg-card p-3 sm:p-3.5"
+              >
+                <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{item.assignment.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.category.name} ·{" "}
-                      <span className="numeric">{Math.round(share * 100)}%</span> of what's left
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="truncate text-xs sm:text-sm font-bold text-foreground">
+                        {item.assignment.name}
+                      </p>
+                      <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground uppercase">
+                        {item.category.name}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      Impact: <span className="font-semibold text-foreground">{Math.round(share * 100)}%</span> of rest
                     </p>
                   </div>
-                  <span className="numeric shrink-0 font-display text-sm font-semibold">
-                    {value}%
-                  </span>
+
+                  <div className="flex shrink-0 items-baseline gap-0.5 rounded-lg border border-border/60 bg-muted/20 px-2.5 py-0.5 font-display text-sm sm:text-base font-bold text-foreground">
+                    <span>{value}</span>
+                    <span className="text-[10px] sm:text-xs font-semibold opacity-70">%</span>
+                  </div>
                 </div>
-                <Slider
-                  value={[value]}
-                  min={0}
-                  max={100}
-                  step={1}
-                  aria-label={`Simulated score for ${item.assignment.name}`}
-                  onValueChange={([next]) =>
-                    setValues({ ...values, [item.assignment.id]: next ?? value })
-                  }
-                  className="mt-3"
-                />
+
+                <div className="mt-3 space-y-1">
+                  <Slider
+                    value={[value]}
+                    min={0}
+                    max={100}
+                    step={1}
+                    onValueChange={([next]) =>
+                      setValues({ ...values, [item.assignment.id]: next ?? value })
+                    }
+                    className="py-1"
+                  />
+                  <div className="flex justify-between text-[9px] font-medium text-muted-foreground/60 px-0.5">
+                    <span>0%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
               </div>
             );
           })}
@@ -554,24 +576,19 @@ export function SimulatorPanel({ course }: { course: Course }) {
 
 /* ---------------------------------- Insights --------------------------------- */
 
-/**
- * One consistent card system. Colour communicates meaning only:
- * info = neutral structure/facts, attention = risk or a rule to respect,
- * action = the single thing to do next.
- */
 const INSIGHT_STYLES = {
   info: {
-    card: "border-border bg-card",
-    accent: "bg-muted-foreground/30",
+    card: "border-border/60 bg-card",
+    accent: "bg-muted-foreground/40",
     label: "text-muted-foreground",
   },
   attention: {
-    card: "border-warning/30 bg-warning-soft/30",
-    accent: "bg-warning",
-    label: "text-warning",
+    card: "border-amber-500/30 bg-amber-500/5",
+    accent: "bg-amber-500",
+    label: "text-amber-600 dark:text-amber-400",
   },
   action: {
-    card: "border-primary/30 bg-primary-soft/30",
+    card: "border-primary/30 bg-primary/5",
     accent: "bg-primary",
     label: "text-primary",
   },
@@ -600,7 +617,6 @@ export function InsightsPanel({ course }: { course: Course }) {
       forceRef.current = false;
       const stored = await fetchStoredInsights(course.id);
 
-      // Fresh persisted insights: reuse them, never call the AI gateway.
       if (!force && stored && stored.signature === signature && stored.insights.length > 0) {
         return stored.insights;
       }
@@ -610,7 +626,6 @@ export function InsightsPanel({ course }: { course: Course }) {
         if (fresh.length > 0) await saveStoredInsights(course.id, signature, fresh);
         return fresh;
       } catch (error) {
-        // Fall back to whatever we last saved rather than an empty page.
         if (stored && stored.insights.length > 0) return stored.insights;
         throw error;
       }
@@ -626,14 +641,12 @@ export function InsightsPanel({ course }: { course: Course }) {
 
   const insights = query.data ?? [];
 
-
-
   return (
-    <div className="space-y-4">
-      <SectionCard>
+    <div className="space-y-4 sm:space-y-6">
+      <SectionCard className="border-border/80 shadow-xs p-3.5 sm:p-6">
         <SectionHeading
-          title="AI insights"
-          hint="Written from your numbers — the math is always CoursePilot's"
+          title="AI Insights"
+          hint="Calculated directly from your course numbers"
           action={
             <Button
               variant="outline"
@@ -643,8 +656,9 @@ export function InsightsPanel({ course }: { course: Course }) {
                 forceRef.current = true;
                 query.refetch();
               }}
-
+              className="gap-1.5 h-8 text-xs"
             >
+              <Sparkles className="size-3.5 text-primary" />
               Regenerate
             </Button>
           }
@@ -654,13 +668,13 @@ export function InsightsPanel({ course }: { course: Course }) {
           <EmptyState
             icon={<Lightbulb className="size-5" />}
             title="No insights yet"
-            body="Add your grading components, assignments, or a few scores and CoursePilot will explain where you stand."
+            body="Add your grading components or assignments to unlock AI insights."
           />
         ) : query.isPending || query.isFetching ? (
-          <div className="space-y-3 py-2">
-            <Shimmer className="text-sm font-medium">Reading your latest course data…</Shimmer>
-            {[0, 1, 2, 3, 4].map((index) => (
-              <div key={index} className="h-16 animate-pulse rounded-xl bg-muted" />
+          <div className="space-y-3 py-3">
+            <Shimmer className="text-xs font-medium">Analyzing your syllabus data…</Shimmer>
+            {[0, 1, 2].map((index) => (
+              <div key={index} className="h-16 animate-pulse rounded-xl bg-muted/60" />
             ))}
           </div>
         ) : query.isError ? (
@@ -677,17 +691,17 @@ export function InsightsPanel({ course }: { course: Course }) {
           <EmptyState
             icon={<Lightbulb className="size-5" />}
             title="Not enough data yet"
-            body="Enter a few scores or confirm your grading components and insights will appear here."
+            body="Enter a few scores to generate personalized insights."
           />
         ) : (
-          <div className="space-y-2">
+          <div className="mt-3 space-y-2.5">
             {insights.map((insight) => {
               const style = INSIGHT_STYLES[styleFor(insight)];
               return (
                 <div
                   key={insight.category}
                   className={cn(
-                    "relative overflow-hidden rounded-xl border px-4 py-3",
+                    "relative overflow-hidden rounded-xl border p-3 sm:p-3.5 shadow-2xs transition-all",
                     style.card,
                   )}
                 >
@@ -697,18 +711,18 @@ export function InsightsPanel({ course }: { course: Course }) {
                   />
                   <p
                     className={cn(
-                      "text-[10px] font-semibold uppercase tracking-[0.09em]",
+                      "text-[9px] sm:text-[10px] font-bold uppercase tracking-wider",
                       style.label,
                     )}
                   >
                     {CATEGORY_LABELS[insight.category]}
                   </p>
                   {insight.title ? (
-                    <p className="mt-1.5 text-[15px] font-semibold leading-snug tracking-tight">
+                    <p className="mt-0.5 text-xs sm:text-sm font-bold text-foreground">
                       {insight.title}
                     </p>
                   ) : null}
-                  <MessageResponse className="mt-0.5 text-sm leading-snug text-muted-foreground">
+                  <MessageResponse className="mt-1 text-xs leading-relaxed text-muted-foreground">
                     {insight.body}
                   </MessageResponse>
                 </div>
@@ -716,11 +730,9 @@ export function InsightsPanel({ course }: { course: Course }) {
             })}
           </div>
         )}
-
       </SectionCard>
     </div>
   );
 }
 
 export const PANEL_ICONS = { ArrowRight };
-

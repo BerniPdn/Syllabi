@@ -146,8 +146,8 @@ function AuthScreen() {
         <Logo size={30} />
         <div className="relative max-w-md">
           <h1 className="font-display text-[34px] font-semibold leading-[1.15] tracking-tight">
-            Every syllabus becomes a{" "}
-            <span className="text-gradient-primary">living workspace.</span>
+            Your syllabus, {" "}
+            <span className="text-gradient-primary">brought to life</span>
           </h1>
           <ul className="mt-8 space-y-3.5">
             {HIGHLIGHTS.map((item) => (
@@ -161,7 +161,7 @@ function AuthScreen() {
           </ul>
         </div>
         <p className="relative text-xs text-muted-foreground">
-          Grades are computed by CoursePilot, never estimated by AI.
+          Grades are computed by Syllabi, never estimated by AI.
         </p>
       </div>
 

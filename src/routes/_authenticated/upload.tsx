@@ -116,7 +116,7 @@ function UploadScreen() {
         <div>
           <h1 className="font-display text-2xl font-semibold tracking-tight">Add a course</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Upload the syllabus PDF. CoursePilot pulls out the grading breakdown, deadlines, and
+            Upload the syllabus PDF. Syllabi pulls out the grading breakdown, deadlines, and
             policies — you confirm everything before it's saved.
           </p>
         </div>
