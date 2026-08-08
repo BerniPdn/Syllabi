@@ -446,8 +446,15 @@ export function SimulatorPanel({ course }: { course: Course }) {
   const base = computeGrades(course);
   const remaining = base.remaining;
 
+  // Determinar la nota por defecto basada en lo que se necesita en el resto de las entregas
+  const defaultScore = useMemo(() => {
+    if (base.neededOnRemaining === null) return course.targetGrade;
+    // Limitamos el valor inicial entre 0 y 100 para los sliders
+    return Math.max(0, Math.min(100, Math.round(base.neededOnRemaining)));
+  }, [base.neededOnRemaining, course.targetGrade]);
+
   const [values, setValues] = useState<Record<string, number>>(() =>
-    Object.fromEntries(remaining.map((item) => [item.assignment.id, course.targetGrade])),
+    Object.fromEntries(remaining.map((item) => [item.assignment.id, defaultScore])),
   );
 
   const simulated = simulate(course, values);
@@ -475,7 +482,6 @@ export function SimulatorPanel({ course }: { course: Course }) {
             <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Simulated Final Grade
             </p>
-            {/* Badge dinámico con verde de Overview para On track y el mismo rojo de la nota para Below target */}
             <span
               className={cn(
                 "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] sm:text-xs font-bold shadow-2xs shrink-0",
@@ -489,7 +495,6 @@ export function SimulatorPanel({ course }: { course: Course }) {
             </span>
           </div>
 
-          {/* Renderizado de la nota con el mismo verde positivo o rojo opaco */}
           {hitsTarget ? (
             <GradeStat
               label=""
@@ -528,7 +533,7 @@ export function SimulatorPanel({ course }: { course: Course }) {
               variant="ghost"
               size="sm"
               className="h-7 gap-1 text-xs text-muted-foreground hover:text-foreground px-2"
-              onClick={() => setAll(course.targetGrade)}
+              onClick={() => setAll(defaultScore)}
             >
               <RotateCcw className="size-3" />
               Reset
@@ -545,7 +550,7 @@ export function SimulatorPanel({ course }: { course: Course }) {
 
         <div className="mt-3.5 space-y-2.5">
           {remaining.map((item) => {
-            const value = values[item.assignment.id] ?? course.targetGrade;
+            const value = values[item.assignment.id] ?? defaultScore;
             const share = base.impact[item.assignment.id] ?? 0;
 
             return (

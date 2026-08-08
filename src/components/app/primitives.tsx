@@ -196,27 +196,49 @@ export function ProgressRing({
   );
 }
 
-export function DeadlinePill({ dueDate, className }: { dueDate: string; className?: string }) {
+export function DeadlinePill({
+  dueDate,
+  className,
+}: {
+  dueDate: string;
+  className?: string;
+}) {
   const days = daysUntil(dueDate);
-  const tone: Tone = days <= 3 ? "attention" : days <= 10 ? "neutral" : "positive";
-  const label =
-    days < 0
-      ? `${Math.abs(days)}d overdue`
-      : days === 0
-        ? "Due today"
-        : days === 1
-          ? "Due tomorrow"
-          : `in ${days} days`;
+
+  if (days < 0) {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-500",
+          className,
+        )}
+      >
+        Overdue
+      </span>
+    );
+  }
+
+  if (days === 0) {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center rounded-md border border-red-500/30 bg-red-500/10 px-2 py-0.5 text-[10px] font-bold text-red-500",
+          className,
+        )}
+      >
+        Due today
+      </span>
+    );
+  }
 
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold transition-colors duration-200",
-        tone === "neutral" ? "bg-muted text-muted-foreground" : toneStyles[tone],
+        "inline-flex items-center rounded-md border border-border/60 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground",
         className,
       )}
     >
-      {label}
+      Due in {days}d
     </span>
   );
 }

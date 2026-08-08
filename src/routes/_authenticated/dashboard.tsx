@@ -84,10 +84,6 @@ function DashboardCard({ course }: { course: Course }) {
   });
 
   const snapshot = computeGrades(course);
-  // Nota: el dashboard no usa el sistema de tono attention/warning por diseño.
-  // El badge y la barra siempre van en "neutral" (--primary, azul), sin importar
-  // si la nota está por encima o por debajo del target. El estado warning/attention
-  // sigue existiendo como token para otras partes de la UI que sí lo necesiten.
   const next = course.assignments
     .filter((a) => a.score === null && a.dueDate)
     .sort((a, b) => a.dueDate!.localeCompare(b.dueDate!))
@@ -96,7 +92,6 @@ function DashboardCard({ course }: { course: Course }) {
   return (
     <>
       <div className="group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-md">
-        {/* Enlace global absoluto para que TODA la tarjeta sea clickeable */}
         <Link
           to="/course/$courseId"
           params={{ courseId: course.id }}
@@ -119,14 +114,14 @@ function DashboardCard({ course }: { course: Course }) {
               </p>
             </div>
 
-            {/* Menú de 3 puntos (Aislado con pointer-events-auto) */}
+            {/* Menú de 3 puntos optimizado */}
             <div className="shrink-0 pointer-events-auto">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 text-muted-foreground hover:bg-muted hover:text-foreground touch-manipulation"
+                    className="h-9 w-9 rounded-lg border border-border/50 bg-muted/40 text-muted-foreground hover:bg-accent hover:text-foreground touch-manipulation transition-colors"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -163,7 +158,7 @@ function DashboardCard({ course }: { course: Course }) {
             </div>
           </div>
 
-          {/* Promedio y Escala */}
+          {/* Promedio + Píldora destacada de la nota a la derecha */}
           <div className="mt-4 sm:mt-5 flex items-end justify-between gap-2">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -190,7 +185,7 @@ function DashboardCard({ course }: { course: Course }) {
                 score={snapshot.currentGrade}
                 scale={course.scale}
                 tone="neutral"
-                className="px-3.5 py-1.5 text-sm sm:text-base font-bold tracking-wide"
+                className="flex size-11 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 font-display text-lg font-bold text-primary shadow-2xs"
               />
             </div>
           </div>
@@ -215,7 +210,6 @@ function DashboardCard({ course }: { course: Course }) {
         </div>
       </div>
 
-      {/* Confirmation Modal */}
       <AlertDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
@@ -224,9 +218,7 @@ function DashboardCard({ course }: { course: Course }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {course.name}?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs sm:text-sm">
-              This permanently removes the course and everything tied to it:
-              its assignments, saved grades, and extracted syllabus data. This
-              action cannot be undone.
+              This permanently removes the course and everything tied to it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-0">
@@ -249,15 +241,7 @@ function DashboardCard({ course }: { course: Course }) {
 }
 
 function Dashboard() {
-  const { user } = Route.useRouteContext();
   const { data: courses = [], isLoading } = useCourses();
-
-  const firstName =
-    (
-      ((user?.user_metadata?.["full_name"] as string | undefined) ??
-        user?.email ??
-        "there").split(/[\s@]/)[0] ?? "there"
-    );
 
   const upcoming = courses
     .flatMap((course) =>
@@ -271,19 +255,6 @@ function Dashboard() {
   return (
     <AppShell>
       <div className="w-full max-w-full space-y-5 sm:space-y-6 pb-8">
-        {/* Header */}
-        <div className="pt-1 sm:pt-2">
-          <h1 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-            Welcome back,{" "}
-            <span className="text-primary block sm:inline">
-              {firstName}
-            </span>
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm font-medium text-muted-foreground/80">
-            All your academic priorities, in one space.
-          </p>
-        </div>
-
         {isLoading ? (
           <div className="flex min-h-[30vh] sm:min-h-[40vh] items-center justify-center">
             <Loader2 className="size-7 animate-spin text-primary" />
@@ -307,7 +278,7 @@ function Dashboard() {
         ) : (
           <div className="space-y-6 sm:space-y-8">
             {/* SECCIÓN PRINCIPAL: CURSOS */}
-            <div className="border-t border-border/40 pt-3 sm:pt-4">
+            <div>
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="font-display text-lg sm:text-2xl font-bold tracking-tight text-foreground">
                   Current Courses
@@ -317,7 +288,7 @@ function Dashboard() {
                 </span>
               </div>
 
-              {/* GRID DE CURSOS (1 columna en celular, 2 en pantallas medianas+) */}
+              {/* GRID DE CURSOS */}
               <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                 {courses.map((course) => (
                   <DashboardCard key={course.id} course={course} />
@@ -350,7 +321,7 @@ function Dashboard() {
                   Upcoming Deadlines
                 </h2>
 
-                {/* Carrusel con inicio perfectamente alineado al contenido */}
+                {/* Carrusel alineado */}
                 <div className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 pt-1">
                   {upcoming.map(({ course, assignment }) => (
                     <div

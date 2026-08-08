@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { GraduationCap, LayoutGrid, LogOut, Menu } from "lucide-react";
@@ -15,12 +15,31 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
+  const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false);
 
   useTheme();
 
@@ -31,130 +50,122 @@ export function AppShell({ children }: { children: ReactNode }) {
     navigate({ to: "/auth", replace: true });
   }
 
-  // Obtener el título dinámico según la ruta
-  const getCurrentTitle = () => {
-    if (pathname === "/dashboard" || pathname === "/") return "Dashboard";
-    
-    // Si la ruta es de un curso (/course/:courseId)
-    const activeCourse = courses.find((course) =>
-      pathname.startsWith(`/course/${course.id}`)
-    );
-    if (activeCourse) {
-      return activeCourse.code || activeCourse.name;
-    }
-
-    return "";
-  };
-
-  const currentTitle = getCurrentTitle();
-
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur-xl">
-        <div className="relative mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           
-          {/* Lado Izquierdo: Menú hamburguesa */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <button
-                type="button"
-                aria-label="Abrir menú de navegación"
-                className="focus-ring inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-              >
-                <Menu className="size-5" />
-              </button>
-            </SheetTrigger>
-
-            <SheetContent side="left" className="flex w-72 flex-col p-0">
-              <SheetHeader className="border-b border-border/70 p-4 text-left">
-                <SheetTitle>
-                  <Logo />
-                </SheetTitle>
-              </SheetHeader>
-
-              <nav className="flex-1 space-y-6 overflow-y-auto p-4">
-                <SheetClose asChild>
-                  <Link
-                    to="/dashboard"
-                    className={cn(
-                      "focus-ring flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                      pathname === "/dashboard"
-                        ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
-                    )}
-                  >
-                    <LayoutGrid className="size-4" />
-                    Dashboard
-                  </Link>
-                </SheetClose>
-
-                <div>
-                  <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                    Cursos
-                  </p>
-                  <div className="space-y-1">
-                    {coursesLoading ? (
-                      <>
-                        <div className="mx-3 h-7 animate-pulse rounded-md bg-muted" />
-                        <div className="mx-3 h-7 animate-pulse rounded-md bg-muted" />
-                      </>
-                    ) : courses.length === 0 ? (
-                      <p className="px-3 py-1 text-xs text-muted-foreground">
-                        No tienes cursos aún
-                      </p>
-                    ) : (
-                      courses.map((course) => (
-                        <SheetClose key={course.id} asChild>
-                          <Link
-                            to="/course/$courseId"
-                            params={{ courseId: course.id }}
-                            className={cn(
-                              "focus-ring flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
-                              pathname.startsWith(`/course/${course.id}`)
-                                ? "bg-accent font-medium text-accent-foreground"
-                                : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
-                            )}
-                          >
-                            <GraduationCap className="size-4 shrink-0 opacity-70" />
-                            <span className="truncate">{course.code || course.name}</span>
-                          </Link>
-                        </SheetClose>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </nav>
-
-              <div className="border-t border-border/70 p-4">
+          {/* Lado Izquierdo: Menú Hamburguesa + Divisor + Logo Syllabi */}
+          <div className="flex items-center gap-3">
+            <Sheet>
+              <SheetTrigger asChild>
                 <button
                   type="button"
-                  onClick={handleSignOut}
-                  className="focus-ring flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  aria-label="Abrir menú de navegación"
+                  className="focus-ring inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
                 >
-                  <LogOut className="size-4" />
-                  Sign out
+                  <Menu className="size-5" />
                 </button>
-              </div>
-            </SheetContent>
-          </Sheet>
+              </SheetTrigger>
 
-          {/* Centro: Título de la vista actual */}
-          {/* <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            <span className="text-sm font-semibold tracking-tight text-foreground truncate max-w-[180px] block text-center">
-              {currentTitle}
-            </span>
-          </div> */}
+              <SheetContent side="left" className="flex w-72 flex-col p-0">
+                <SheetHeader className="border-b border-border/70 p-4 text-left">
+                  <SheetTitle>
+                    <Logo />
+                  </SheetTitle>
+                </SheetHeader>
 
-          {/* Lado Derecho: Sign out */}
-          <button
-            type="button"
-            onClick={handleSignOut}
-            aria-label="Sign out"
-            className="focus-ring inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-          >
-            <LogOut className="size-3.5" />
-            <span>Sign out</span>
-          </button>
+                {/* Navegación lateral enfocada únicamente en contenidos */}
+                <nav className="flex-1 space-y-6 overflow-y-auto p-4">
+                  <SheetClose asChild>
+                    <Link
+                      to="/dashboard"
+                      className={cn(
+                        "focus-ring flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        pathname === "/dashboard"
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                      )}
+                    >
+                      <LayoutGrid className="size-4" />
+                      Dashboard
+                    </Link>
+                  </SheetClose>
+
+                  <div>
+                    <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                      Cursos
+                    </p>
+                    <div className="space-y-1">
+                      {coursesLoading ? (
+                        <>
+                          <div className="mx-3 h-7 animate-pulse rounded-md bg-muted" />
+                          <div className="mx-3 h-7 animate-pulse rounded-md bg-muted" />
+                        </>
+                      ) : courses.length === 0 ? (
+                        <p className="px-3 py-1 text-xs text-muted-foreground">
+                          No tienes cursos aún
+                        </p>
+                      ) : (
+                        courses.map((course) => (
+                          <SheetClose key={course.id} asChild>
+                            <Link
+                              to="/course/$courseId"
+                              params={{ courseId: course.id }}
+                              className={cn(
+                                "focus-ring flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                                pathname.startsWith(`/course/${course.id}`)
+                                  ? "bg-accent font-medium text-accent-foreground"
+                                  : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                              )}
+                            >
+                              <GraduationCap className="size-4 shrink-0 opacity-70" />
+                              <span className="truncate">{course.code || course.name}</span>
+                            </Link>
+                          </SheetClose>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </nav>
+              </SheetContent>
+            </Sheet>
+
+            <div className="h-4 w-px bg-border/60" aria-hidden="true" />
+
+            <Link to="/dashboard" className="focus-ring flex items-center rounded-md" aria-label="Syllabi home">
+              <Logo />
+            </Link>
+          </div>
+
+          {/* Lado Derecho: Menú de Usuario con Avatar */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Menú de usuario"
+                className="focus-ring flex size-8 items-center justify-center rounded-full bg-primary/10 font-display text-xs font-bold text-primary ring-1 ring-primary/20 transition-all hover:bg-primary/20 hover:ring-primary/40 active:scale-95"
+              >
+                B
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="z-50 w-48">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-xs font-semibold leading-none text-foreground">Bernarda</p>
+                  <p className="text-[11px] leading-none text-muted-foreground">Estudiante</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setIsSignOutDialogOpen(true)}
+                className="cursor-pointer text-xs text-destructive focus:bg-destructive/10 focus:text-destructive"
+              >
+                <LogOut className="mr-2 size-3.5" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
         </div>
       </header>
@@ -163,6 +174,27 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="mx-auto max-w-6xl px-4 pb-12 pt-6 sm:px-6">
         <main className="min-w-0 flex-1">{children}</main>
       </div>
+
+      {/* Modal de confirmación para Sign Out */}
+      <AlertDialog open={isSignOutDialogOpen} onOpenChange={setIsSignOutDialogOpen}>
+        <AlertDialogContent className="z-50 max-w-[92vw] rounded-2xl sm:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign out of Syllabi?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs sm:text-sm">
+              You will need to sign back in to access your course grades, deadlines, and workspace.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:gap-0">
+            <AlertDialogCancel className="mt-0 w-full sm:w-auto">Stay signed in</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSignOut}
+              className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 sm:w-auto"
+            >
+              Sign out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
