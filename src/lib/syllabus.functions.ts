@@ -31,61 +31,23 @@ function toBase64(bytes: Uint8Array) {
 }
 
 async function streamJson(body: unknown, apiKey: string): Promise<string> {
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Lovable-API-Key": apiKey,
-      "X-Lovable-AIG-SDK": "fetch",
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify(body),
   });
 
-  if (!response.ok || !response.body) {
+  if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    if (response.status === 429) {
-      throw new Error("Our AI is busy right now. Please try again in a moment.");
-    }
-    if (response.status === 402) {
-      throw new Error("AI credits are exhausted. Add credits to keep analyzing syllabi.");
-    }
-    console.error("[syllabus] gateway error", response.status, detail);
+    console.error("[syllabus] Gemini API error", response.status, detail);
     throw new Error("We couldn't analyze that syllabus. Please try again.");
   }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let text = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      if (!line.startsWith("data:")) continue;
-      const payload = line.slice(5).trim();
-      if (!payload || payload === "[DONE]") continue;
-      try {
-        const event = JSON.parse(payload) as {
-          type?: string;
-          delta?: string;
-          response?: { output_text?: string };
-        };
-        if (event.type === "response.output_text.delta" && typeof event.delta === "string") {
-          text += event.delta;
-        } else if (event.type === "response.completed" && event.response?.output_text) {
-          if (!text) text = event.response.output_text;
-        }
-      } catch {
-        // ignore keep-alive / non-JSON frames
-      }
-    }
-  }
-
-  return text;
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content ?? "";
 }
 
 export const extractSyllabus = createServerFn({ method: "POST" })
@@ -123,29 +85,22 @@ export const extractSyllabus = createServerFn({ method: "POST" })
     try {
       raw = await streamJson(
         {
-          model: "openai/gpt-5.6-sol",
-          stream: true,
-          input: [
+          model: "gemini-2.5-flash",
+          messages: [
             {
               role: "user",
               content: [
-                { type: "input_text", text: PROMPT },
+                { type: "text", text: PROMPT },
                 {
-                  type: "input_file",
-                  filename: `${course.title ?? "syllabus"}.pdf`,
-                  file_data: `data:application/pdf;base64,${toBase64(bytes)}`,
+                  type: "image_url",
+                  image_url: {
+                    url: `data:application/pdf;base64,${toBase64(bytes)}`,
+                  },
                 },
               ],
             },
           ],
-          text: {
-            format: {
-              type: "json_schema",
-              name: "syllabus_extraction",
-              strict: true,
-              schema: EXTRACTION_JSON_SCHEMA,
-            },
-          },
+          response_format: { type: "json_object" },
         },
         apiKey,
       );
