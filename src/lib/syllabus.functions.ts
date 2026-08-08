@@ -34,7 +34,7 @@ async function callGemini(bytes: Uint8Array, apiKey: string): Promise<string> {
   const base64Pdf = toBase64(bytes);
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: {
@@ -65,7 +65,7 @@ async function callGemini(bytes: Uint8Array, apiKey: string): Promise<string> {
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
     console.error("[syllabus] Gemini API error", response.status, detail);
-    throw new Error("We couldn't analyze that syllabus with Gemini. Please try again.");
+    throw new Error(`Gemini API Error (${response.status}): ${detail || "Could not process PDF"}`);
   }
 
   const result = await response.json();
@@ -82,7 +82,7 @@ export const extractSyllabus = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ courseId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<ExtractionResult> => {
     const apiKey = process.env["GEMINI_API_KEY"];
-    if (!apiKey) throw new Error("Missing GEMINI_API_KEY in environment variables.");
+    if (!apiKey) throw new Error("Missing GEMINI_API_KEY environment variable.");
 
     const supabase = context.supabase;
 
