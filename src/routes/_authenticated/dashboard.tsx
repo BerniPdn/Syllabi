@@ -310,7 +310,7 @@ function Dashboard() {
             <div className="border-t border-border/40 pt-3 sm:pt-4">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="font-display text-lg sm:text-2xl font-bold tracking-tight text-foreground">
-                  Current Focus
+                  Current Courses
                 </h2>
                 <span className="text-xs font-medium text-muted-foreground">
                   {courses.length} active
