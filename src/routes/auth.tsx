@@ -202,7 +202,7 @@ function AuthScreen() {
                 </h2>
                 <p className="mt-1.5 text-sm text-muted-foreground">
                   {mode === "signup"
-                    ? "Start with one syllabus. Add the rest whenever."
+                    ? "Your semester starts with a single upload."
                     : "Sign in to pick up where you left off."}
                 </p>
               </div>
@@ -313,7 +313,7 @@ function AuthScreen() {
                     }}
                     className={cn("focus-ring rounded font-medium text-primary hover:underline")}
                   >
-                    {mode === "signup" ? "Sign in" : "Create one"}
+                    {mode === "signup" ? "Sign in" : "Create an account"}
                   </button>
                 </p>
 
