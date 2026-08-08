@@ -85,7 +85,7 @@ export const extractSyllabus = createServerFn({ method: "POST" })
     try {
       raw = await streamJson(
         {
-          model: "gemini-2.5-flash",
+          model: "gemini-1.5-flash",
           messages: [
             {
               role: "user",
