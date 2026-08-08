@@ -36,7 +36,7 @@ Other rules:
 
 export function buildInsightsRequest(facts: InsightFacts) {
   return {
-    model: "gemini-2.5-flash",
+    model: "gemini-1.5-flash",
     stream: true,
     input: [
       { role: "system", content: [{ type: "input_text", text: SYSTEM_PROMPT }] },
