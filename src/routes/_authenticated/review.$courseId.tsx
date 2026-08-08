@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, ArrowLeft, Check, ChevronDown, Loader2, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, ChevronDown, Loader2, Plus, Trash2, Sparkles, CalendarDays, ClipboardList } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
 import { SectionCard, SectionHeading } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
@@ -77,7 +77,6 @@ function ReviewExtractionScreen() {
   const [error, setError] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
 
-
   const { data: course, isLoading } = useQuery({
     queryKey: ["course", courseId],
     queryFn: async () => {
@@ -109,8 +108,6 @@ function ReviewExtractionScreen() {
     setInferredKeys(new Set(inferredIndexes.map((index) => assignmentKey(assignments[index]!))));
   }, [course, draft]);
 
-
-  // No extraction stored yet: the processing screen owns running/retrying it.
   useEffect(() => {
     if (!missingExtraction) return;
     navigate({ to: "/processing/$courseId", params: { courseId }, replace: true });
@@ -124,18 +121,26 @@ function ReviewExtractionScreen() {
       ),
     [draft],
   );
-  const balanced = Math.abs(total - 100) < 0.5;
-  const componentsOverflow = total > 100.5;
+
+  const balanced = Math.round(total * 10) / 10 === 100;
+  const componentsOverflow = total > 100;
 
   const componentOptions = useMemo(
     () =>
       (draft?.grading_components ?? [])
-        .map((component) => component.name.trim())
-        .filter((name, index, all) => name.length > 0 && all.indexOf(name) === index),
+        .map((component) => ({
+          name: component.name.trim(),
+          weight: component.weight ?? 0,
+        }))
+        .filter((c, index, all) => c.name.length > 0 && all.findIndex(item => item.name === c.name) === index),
     [draft],
   );
 
-  // Assignments reference their grading component by name (extraction data model).
+  const componentNames = useMemo(
+    () => componentOptions.map((c) => c.name),
+    [componentOptions],
+  );
+
   const componentUsage = useMemo(() => {
     const usage = new Map<string, { used: number; limit: number }>();
     for (const component of draft?.grading_components ?? []) {
@@ -156,36 +161,82 @@ function ReviewExtractionScreen() {
   const overAllocated = useMemo(
     () =>
       [...componentUsage.entries()]
-        .filter(([, entry]) => entry.used > entry.limit + 0.5)
+        .filter(([, entry]) => Math.round(entry.used * 10) / 10 > Math.round(entry.limit * 10) / 10)
         .map(([name, entry]) => ({ name, ...entry })),
     [componentUsage],
   );
 
-  // Every assignment must belong to exactly one of the course's components.
+  const underAllocated = useMemo(
+    () =>
+      [...componentUsage.entries()]
+        .filter(([, entry]) => Math.round(entry.used * 10) / 10 < Math.round(entry.limit * 10) / 10)
+        .map(([name, entry]) => ({ name, ...entry })),
+    [componentUsage],
+  );
+
   const unassignedCount = useMemo(
     () =>
       (draft?.assignments ?? []).filter((assignment) => {
         const name = assignment.component?.trim();
-        return !name || !componentOptions.includes(name);
+        return !name || !componentNames.includes(name);
       }).length,
-    [draft, componentOptions],
+    [draft, componentNames],
   );
 
   const scaleErrors = useMemo(() => validateScaleOrder(draft?.grade_scale), [draft]);
 
+  const groupedAssignments = useMemo(() => {
+    if (!draft) return [];
+    
+    const groups: {
+      componentName: string;
+      weight: number | null;
+      items: { assignment: ExtractedAssignment; originalIndex: number }[];
+    }[] = [];
+
+    for (const comp of componentOptions) {
+      groups.push({
+        componentName: comp.name,
+        weight: comp.weight,
+        items: [],
+      });
+    }
+
+    const unassignedItems: { assignment: ExtractedAssignment; originalIndex: number }[] = [];
+
+    draft.assignments.forEach((assignment, originalIndex) => {
+      const compName = assignment.component?.trim();
+      const group = groups.find((g) => g.componentName === compName);
+      if (group) {
+        group.items.push({ assignment, originalIndex });
+      } else {
+        unassignedItems.push({ assignment, originalIndex });
+      }
+    });
+
+    if (unassignedItems.length > 0) {
+      groups.unshift({
+        componentName: "Unassigned",
+        weight: null,
+        items: unassignedItems,
+      });
+    }
+
+    return groups.filter((g) => g.items.length > 0 || g.componentName !== "Unassigned");
+  }, [draft, componentOptions]);
+
   const blockedFromSaving =
     componentsOverflow ||
+    !balanced ||
     overAllocated.length > 0 ||
+    underAllocated.length > 0 ||
     unassignedCount > 0 ||
     scaleErrors.length > 0;
-
-
-
 
   if (!isLoading && !course) {
     return (
       <AppShell>
-        <div className="mx-auto max-w-md space-y-3 py-16 text-center">
+        <div className="mx-auto max-w-md px-4 space-y-3 py-16 text-center">
           <h1 className="font-display text-xl font-semibold tracking-tight">
             We couldn't find that course
           </h1>
@@ -209,7 +260,6 @@ function ReviewExtractionScreen() {
       </AppShell>
     );
   }
-
 
   const isEditing = course?.status === "ready";
 
@@ -256,34 +306,62 @@ function ReviewExtractionScreen() {
     }
   }
 
-
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl space-y-6">
-        <Link
-          to="/dashboard"
-          className="focus-ring inline-flex items-center gap-1.5 rounded text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          Dashboard
-        </Link>
+      <div className="mx-auto max-w-3xl space-y-6 px-3 sm:px-0 overflow-x-hidden">
+        <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card px-4 py-5 sm:px-7 sm:py-7 shadow-sm">
+          <div className="pointer-events-none absolute -right-12 -top-12 size-32 rounded-full bg-primary/5 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-start gap-3">
+              <div className="hidden size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:flex">
+                <Sparkles className="size-5" />
+              </div>
+              <div>
+                <h1 className="font-display text-2xl font-semibold tracking-tight sm:text-4xl">
+                  {isEditing ? "Your course, ready to edit." : "Your syllabus is now your course."}
+                </h1>
+                <p className="mt-2 max-w-2xl text-xs sm:text-[15px] leading-5 sm:leading-6 text-muted-foreground">
+                  {isEditing
+                    ? "Everything CoursePilot found is organized below. Make any changes you need, then save your updates."
+                    : "CoursePilot turned your syllabus into a ready-to-use course workspace — assignments, grading, dates, and more, all in one place."}
+                </p>
+              </div>
+            </div>
 
-        <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-1 text-[11px] font-semibold text-success">
-            <Check className="size-3" strokeWidth={3} />
-            {isEditing ? "Course saved" : "Syllabus analyzed"}
-          </span>
-          <h1 className="mt-3 font-display text-2xl font-semibold tracking-tight">
-            {isEditing ? "Edit course details" : "Review what we found"}
-          </h1>
-          <p className="mt-1.5 max-w-lg text-sm text-muted-foreground">
-            Only what your syllabus actually states was extracted — blank fields mean the document
-            didn't say. Everything here is editable.
-          </p>
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="flex items-center gap-3 rounded-xl bg-muted/45 px-3 py-2.5 sm:px-3.5 sm:py-3">
+                <ClipboardList className="size-4 shrink-0 text-primary" />
+                <div>
+                  <p className="numeric text-base sm:text-lg font-semibold leading-none">{draft.assignments.length}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">assignments & exams</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl bg-muted/45 px-3 py-2.5 sm:px-3.5 sm:py-3">
+                <Sparkles className="size-4 shrink-0 text-primary" />
+                <div>
+                  <p className="numeric text-base sm:text-lg font-semibold leading-none">{draft.grading_components.length}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">grading components</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl bg-muted/45 px-3 py-2.5 sm:px-3.5 sm:py-3">
+                <CalendarDays className="size-4 shrink-0 text-primary" />
+                <div>
+                  <p className="numeric text-base sm:text-lg font-semibold leading-none">{draft.important_dates.length}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">important dates</p>
+                </div>
+              </div>
+            </div>
+
+            {!isEditing ? (
+              <p className="mt-4 text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">Take a quick look.</span> Everything below is editable before you save.
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <SectionCard>
-          <SectionHeading title="Course details" />
+          <SectionHeading title="Your course" hint="The basics CoursePilot found in your syllabus" />
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
               label="Course name"
@@ -320,14 +398,14 @@ function ReviewExtractionScreen() {
 
         <SectionCard>
           <SectionHeading
-            title="Grading scale"
-            hint="Letter cutoffs used for every grade shown in your workspace"
+            title="How you'll be graded"
+            hint="Letter cutoffs used throughout your workspace"
           />
           <div className="space-y-2">
             {draft.grade_scale.map((step, index) => (
               <div
                 key={index}
-                className="flex items-center gap-3 rounded-xl border border-border px-3.5 py-2.5"
+                className="flex items-center gap-2 sm:gap-3 rounded-xl border border-border px-3 py-2 sm:px-3.5 sm:py-2.5"
               >
                 <Input
                   aria-label="Letter"
@@ -337,7 +415,7 @@ function ReviewExtractionScreen() {
                     next[index] = { ...step, letter: event.target.value };
                     patch({ grade_scale: next });
                   }}
-                  className="h-8 w-20"
+                  className="h-8 w-16 sm:w-20 shrink-0"
                 />
                 <span className="flex-1 text-xs text-muted-foreground">at least</span>
                 <Input
@@ -352,16 +430,16 @@ function ReviewExtractionScreen() {
                     };
                     patch({ grade_scale: next });
                   }}
-                  className="numeric h-8 w-20 text-right"
+                  className="numeric h-8 w-16 sm:w-20 text-right shrink-0"
                 />
-                <span className="text-xs text-muted-foreground">%</span>
+                <span className="text-xs text-muted-foreground shrink-0">%</span>
                 <button
                   type="button"
                   aria-label={`Remove ${step.letter}`}
                   onClick={() =>
                     patch({ grade_scale: draft.grade_scale.filter((_, i) => i !== index) })
                   }
-                  className="focus-ring rounded-md p-1.5 text-muted-foreground hover:text-destructive"
+                  className="focus-ring rounded-md p-1.5 text-muted-foreground hover:text-destructive shrink-0"
                 >
                   <Trash2 className="size-3.5" />
                 </button>
@@ -397,24 +475,14 @@ function ReviewExtractionScreen() {
 
         <SectionCard>
           <SectionHeading
-            title="Grading components"
-            hint="These drive every number in your workspace"
-            action={
-              <span
-                className={cn(
-                  "numeric rounded-full px-2.5 py-1 text-xs font-semibold",
-                  balanced ? "bg-success-soft text-success" : "bg-warning-soft text-warning",
-                )}
-              >
-                {Math.round(total * 10) / 10}%
-              </span>
-            }
+            title="Your grade, broken down"
+            hint="The weighting CoursePilot found in your syllabus"
           />
           <div className="space-y-2">
             {draft.grading_components.map((component, index) => (
               <div
                 key={index}
-                className="flex items-center gap-3 rounded-xl border border-border px-3.5 py-2.5"
+                className="flex items-center gap-2 sm:gap-3 rounded-xl border border-border px-3 py-2 sm:px-3.5 sm:py-2.5"
               >
                 <Input
                   value={component.name}
@@ -424,7 +492,7 @@ function ReviewExtractionScreen() {
                     next[index] = { ...component, name: event.target.value };
                     patch({ grading_components: next });
                   }}
-                  className="h-8 flex-1"
+                  className="h-8 flex-1 min-w-0"
                 />
                 <Input
                   type="number"
@@ -438,9 +506,9 @@ function ReviewExtractionScreen() {
                     };
                     patch({ grading_components: next });
                   }}
-                  className="numeric h-8 w-16 text-right"
+                  className="numeric h-8 w-16 text-right shrink-0"
                 />
-                <span className="text-xs text-muted-foreground">%</span>
+                <span className="text-xs text-muted-foreground shrink-0">%</span>
                 <button
                   type="button"
                   aria-label={`Remove ${component.name}`}
@@ -449,7 +517,7 @@ function ReviewExtractionScreen() {
                       grading_components: draft.grading_components.filter((_, i) => i !== index),
                     })
                   }
-                  className="focus-ring rounded-md p-1.5 text-muted-foreground hover:text-destructive"
+                  className="focus-ring rounded-md p-1.5 text-muted-foreground hover:text-destructive shrink-0"
                 >
                   <Trash2 className="size-3.5" />
                 </button>
@@ -461,19 +529,6 @@ function ReviewExtractionScreen() {
               </p>
             ) : null}
           </div>
-
-          {componentsOverflow ? (
-            <p role="alert" className="mt-3 flex items-center gap-1.5 text-xs text-destructive">
-              <AlertTriangle className="size-3.5" />
-              Grading components add up to {Math.round(total * 10) / 10}% — they can never exceed
-              100%. Remove {Math.round((total - 100) * 10) / 10}% before saving.
-            </p>
-          ) : draft.grading_components.length > 0 && !balanced ? (
-            <p className="mt-3 flex items-center gap-1.5 text-xs text-warning">
-              <AlertTriangle className="size-3.5" />
-              Weights should add up to 100%. Adjust before saving.
-            </p>
-          ) : null}
 
           <Button
             variant="ghost"
@@ -493,133 +548,177 @@ function ReviewExtractionScreen() {
           </Button>
         </SectionCard>
 
-
+        {/* Sección de Assignments Agrupados por Secciones */}
         <SectionCard>
           <SectionHeading
-            title={`Assignments & exams (${draft.assignments.length})`}
-            hint="Scores stay empty until you enter them"
+            title={`Everything that's due (${draft.assignments.length})`}
+            hint="Assignments and exams found in your syllabus, categorized by component"
           />
-          <div className="space-y-2">
-            {draft.assignments.map((assignment, index) => {
-              const componentName = assignment.component?.trim() ?? "";
-              const missingComponent =
-                !componentName || !componentOptions.includes(componentName);
-              const isInferred =
-                inferredKeys.has(assignmentKey(assignment)) && assignment.weight !== null;
+
+          <div className="space-y-4 sm:space-y-6">
+            {groupedAssignments.map((group) => {
+              const usage = componentUsage.get(group.componentName);
+              const isUnassigned = group.componentName === "Unassigned";
+              const currentTotal = usage?.used ?? 0;
+              const expectedTotal = group.weight ?? 0;
+              const isMismatch = !isUnassigned && Math.round(currentTotal * 10) / 10 !== Math.round(expectedTotal * 10) / 10;
+
               return (
-              <div
-                key={index}
-                className={cn(
-                  "rounded-xl border p-3",
-                  missingComponent ? "border-destructive/60" : "border-border",
-                )}
-              >
+                <div key={group.componentName} className="rounded-xl border border-border/80 bg-muted/20 p-3 sm:p-4 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2">
+                    <span className="font-semibold text-sm text-foreground">
+                      {group.componentName}
+                    </span>
+                    
+                    {!isUnassigned && usage && (
+                      <span
+                        className={cn(
+                          "text-xs font-semibold px-2.5 py-0.5 rounded-full",
+                          isMismatch ? "bg-destructive/10 text-destructive" : "bg-success-soft text-success"
+                        )}
+                      >
+                        Allocated: {Math.round(currentTotal * 10) / 10}% / {expectedTotal}%
+                      </span>
+                    )}
+                  </div>
 
-                <div className="flex items-center gap-2">
-                  <Input
-                    aria-label="Assignment name"
-                    value={assignment.name}
-                    onChange={(event) => {
-                      const next = [...draft.assignments];
-                      next[index] = { ...assignment, name: event.target.value };
-                      patch({ assignments: next });
-                    }}
-                    className="h-8 flex-1"
-                  />
-                  <button
-                    type="button"
-                    aria-label={`Remove ${assignment.name}`}
-                    onClick={() =>
-                      patch({ assignments: draft.assignments.filter((_, i) => i !== index) })
-                    }
-                    className="focus-ring rounded-md p-1.5 text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </div>
-                <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                  <Select
-                    value={assignment.component ?? ""}
-                    onValueChange={(value) => {
-                      const next = [...draft.assignments];
-                      next[index] = { ...assignment, component: value || null };
-                      patch({ assignments: next });
-                    }}
-                  >
-                    <SelectTrigger
-                      aria-label="Component"
-                      className="h-8"
-                      disabled={componentOptions.length === 0}
-                    >
-                      <SelectValue
-                        placeholder={
-                          componentOptions.length === 0
-                            ? "Add a grading component first"
-                            : "Component"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {componentOptions.map((name) => (
-                        <SelectItem key={name} value={name}>
-                          {name}
-                        </SelectItem>
-                      ))}
-                      {assignment.component &&
-                      !componentOptions.includes(assignment.component.trim()) ? (
-                        <SelectItem value={assignment.component}>
-                          {assignment.component}
-                        </SelectItem>
-                      ) : null}
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    {group.items.map(({ assignment, originalIndex }) => {
+                      const componentName = assignment.component?.trim() ?? "";
+                      const missingComponent =
+                        !componentName || !componentNames.includes(componentName);
+                      const isInferred =
+                        inferredKeys.has(assignmentKey(assignment)) && assignment.weight !== null;
 
-                  <Input
-                    type="date"
-                    aria-label="Due date"
-                    value={assignment.due_date ?? ""}
-                    onChange={(event) => {
-                      const next = [...draft.assignments];
-                      next[index] = { ...assignment, due_date: event.target.value || null };
-                      patch({ assignments: next });
-                    }}
-                    className="numeric h-8"
-                  />
-                  <Input
-                    type="number"
-                    aria-label="Weight"
-                    placeholder="Weight %"
-                    value={assignment.weight ?? ""}
-                    onChange={(event) => {
-                      const next = [...draft.assignments];
-                      next[index] = {
-                        ...assignment,
-                        weight: event.target.value === "" ? null : Number(event.target.value),
-                      };
-                      const key = assignmentKey(assignment);
-                      setInferredKeys((current) => {
-                        if (!current.has(key)) return current;
-                        const updated = new Set(current);
-                        updated.delete(key);
-                        return updated;
-                      });
-                      patch({ assignments: next });
-                    }}
-                    className="numeric h-8"
-                  />
+                      return (
+                        <div
+                          key={originalIndex}
+                          className={cn(
+                            "rounded-lg border bg-card p-2.5 sm:p-3 shadow-sm",
+                            missingComponent ? "border-destructive/60" : "border-border",
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Input
+                              aria-label="Assignment name"
+                              value={assignment.name}
+                              onChange={(event) => {
+                                const next = [...draft.assignments];
+                                next[originalIndex] = { ...assignment, name: event.target.value };
+                                patch({ assignments: next });
+                              }}
+                              className="h-8 flex-1 min-w-0"
+                            />
+                            <button
+                              type="button"
+                              aria-label={`Remove ${assignment.name}`}
+                              onClick={() =>
+                                patch({ assignments: draft.assignments.filter((_, i) => i !== originalIndex) })
+                              }
+                              className="focus-ring rounded-md p-1.5 text-muted-foreground hover:text-destructive shrink-0"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
+                          
+                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <Select
+                              value={assignment.component ?? ""}
+                              onValueChange={(value) => {
+                                const next = [...draft.assignments];
+                                next[originalIndex] = { ...assignment, component: value || null };
+                                patch({ assignments: next });
+                              }}
+                            >
+                              <SelectTrigger
+                                aria-label="Component"
+                                className="h-8 w-full"
+                                disabled={componentOptions.length === 0}
+                              >
+                                <SelectValue
+                                  placeholder={
+                                    componentOptions.length === 0
+                                      ? "Add component first"
+                                      : "Component"
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {componentOptions.map((comp) => (
+                                  <SelectItem key={comp.name} value={comp.name}>
+                                    {comp.name}
+                                  </SelectItem>
+                                ))}
+                                {assignment.component &&
+                                !componentNames.includes(assignment.component.trim()) ? (
+                                  <SelectItem value={assignment.component}>
+                                    {assignment.component}
+                                  </SelectItem>
+                                ) : null}
+                              </SelectContent>
+                            </Select>
+
+                            <Input
+                              type="date"
+                              aria-label="Due date"
+                              value={assignment.due_date ?? ""}
+                              onChange={(event) => {
+                                const next = [...draft.assignments];
+                                next[originalIndex] = { ...assignment, due_date: event.target.value || null };
+                                patch({ assignments: next });
+                              }}
+                              className="numeric h-8 w-full"
+                            />
+                            
+                            <div className="flex items-center gap-1.5">
+                              <Input
+                                type="number"
+                                aria-label="Weight"
+                                placeholder="Weight"
+                                value={assignment.weight ?? ""}
+                                onChange={(event) => {
+                                  const next = [...draft.assignments];
+                                  next[originalIndex] = {
+                                    ...assignment,
+                                    weight: event.target.value === "" ? null : Number(event.target.value),
+                                  };
+                                  const key = assignmentKey(assignment);
+                                  setInferredKeys((current) => {
+                                    if (!current.has(key)) return current;
+                                    const updated = new Set(current);
+                                    updated.delete(key);
+                                    return updated;
+                                  });
+                                  patch({ assignments: next });
+                                }}
+                                className="numeric h-8 text-right flex-1"
+                              />
+                              <span className="text-xs text-muted-foreground shrink-0">%</span>
+                            </div>
+                          </div>
+
+                          {missingComponent ? (
+                            <p
+                              role="alert"
+                              className="mt-2 flex items-center gap-1.5 text-xs text-destructive"
+                            >
+                              <AlertTriangle className="size-3.5 shrink-0" />
+                              Select a grading component for this assignment before saving.
+                            </p>
+                          ) : isInferred ? (
+                            <p className="mt-2 text-xs text-muted-foreground">{INFERRED_WEIGHT_NOTE}</p>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+
+                    {group.items.length === 0 && (
+                      <p className="text-xs text-muted-foreground italic py-1">
+                        No assignments added to this section yet.
+                      </p>
+                    )}
+                  </div>
                 </div>
-                {missingComponent ? (
-                  <p
-                    role="alert"
-                    className="mt-2 flex items-center gap-1.5 text-xs text-destructive"
-                  >
-                    <AlertTriangle className="size-3.5" />
-                    Select a grading component for this assignment before saving.
-                  </p>
-                ) : isInferred ? (
-                  <p className="mt-2 text-xs text-muted-foreground">{INFERRED_WEIGHT_NOTE}</p>
-                ) : null}
-              </div>
               );
             })}
 
@@ -630,34 +729,10 @@ function ReviewExtractionScreen() {
             ) : null}
           </div>
 
-          {componentUsage.size > 0 ? (
-            <div className="mt-3 space-y-1.5">
-              {[...componentUsage.entries()].map(([name, entry]) => {
-                const remaining = Math.round((entry.limit - entry.used) * 10) / 10;
-                const over = remaining < -0.05;
-                return (
-                  <p
-                    key={name}
-                    role={over ? "alert" : undefined}
-                    className={cn(
-                      "flex items-center gap-1.5 text-xs",
-                      over ? "text-destructive" : "text-muted-foreground",
-                    )}
-                  >
-                    {over ? <AlertTriangle className="size-3.5" /> : null}
-                    {over
-                      ? `${name}: assignments add up to ${Math.round(entry.used * 10) / 10}% but the component is only worth ${entry.limit}%. Remove ${Math.abs(remaining)}%.`
-                      : `${name}: ${remaining}% of ${entry.limit}% still available.`}
-                  </p>
-                );
-              })}
-            </div>
-          ) : null}
-
           <Button
             variant="ghost"
             size="sm"
-            className="mt-3 gap-1.5"
+            className="mt-4 gap-1.5"
             onClick={() =>
               patch({
                 assignments: [
@@ -673,10 +748,10 @@ function ReviewExtractionScreen() {
         </SectionCard>
 
         <SectionCard>
-          <SectionHeading title="Important dates" hint="Milestones that aren't graded work" />
+          <SectionHeading title="Dates worth remembering" hint="Important milestones found in your syllabus" />
           <div className="space-y-2">
             {draft.important_dates.map((item, index) => (
-              <div key={index} className="flex items-center gap-2">
+              <div key={index} className="flex flex-wrap sm:flex-nowrap items-center gap-2">
                 <Input
                   aria-label="Date label"
                   value={item.label}
@@ -685,7 +760,7 @@ function ReviewExtractionScreen() {
                     next[index] = { ...item, label: event.target.value };
                     patch({ important_dates: next });
                   }}
-                  className="h-8 flex-1"
+                  className="h-8 flex-1 min-w-[150px]"
                 />
                 <Input
                   type="date"
@@ -696,7 +771,7 @@ function ReviewExtractionScreen() {
                     next[index] = { ...item, date: event.target.value || null };
                     patch({ important_dates: next });
                   }}
-                  className="numeric h-8 w-40"
+                  className="numeric h-8 w-full sm:w-40 shrink-0"
                 />
                 <button
                   type="button"
@@ -706,7 +781,7 @@ function ReviewExtractionScreen() {
                       important_dates: draft.important_dates.filter((_, i) => i !== index),
                     })
                   }
-                  className="focus-ring rounded-md p-1.5 text-muted-foreground hover:text-destructive"
+                  className="focus-ring rounded-md p-1.5 text-muted-foreground hover:text-destructive shrink-0 ml-auto sm:ml-0"
                 >
                   <Trash2 className="size-3.5" />
                 </button>
@@ -733,8 +808,8 @@ function ReviewExtractionScreen() {
 
         <SectionCard>
           <SectionHeading
-            title="Course policies"
-            hint="Stored as context — never used in calculations"
+            title="The fine print"
+            hint="Course policies saved as context"
           />
           {draft.policies.length === 0 ? (
             <p className="text-sm text-muted-foreground">No policies were stated.</p>
@@ -753,7 +828,7 @@ function ReviewExtractionScreen() {
                           next[index] = event.target.value;
                           patch({ policies: next });
                         }}
-                        className="flex-1"
+                        className="flex-1 min-w-0"
                       />
                       <button
                         type="button"
@@ -761,7 +836,7 @@ function ReviewExtractionScreen() {
                         onClick={() =>
                           patch({ policies: draft.policies.filter((_, i) => i !== index) })
                         }
-                        className="focus-ring mt-1 rounded-md p-1.5 text-muted-foreground hover:text-destructive"
+                        className="focus-ring mt-1 rounded-md p-1.5 text-muted-foreground hover:text-destructive shrink-0"
                       >
                         <Trash2 className="size-3.5" />
                       </button>
@@ -802,31 +877,37 @@ function ReviewExtractionScreen() {
         </SectionCard>
 
         {blockedFromSaving ? (
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="text-sm font-medium text-destructive px-1">
             {scaleErrors.length > 0
               ? "Fix the grading scale order before saving — higher letter grades must have equal or higher percentage cutoffs."
-              : componentsOverflow
-              ? `Grading components add up to ${Math.round(total * 10) / 10}%. Bring the total to 100% or less to save.`
+              : !balanced
+              ? `Your course components do not add up to 100% (currently ${Math.round(total * 10) / 10}%). Please edit this before saving so your grade calculations work properly.`
               : overAllocated.length > 0
                 ? overAllocated
                     .map(
                       (item) =>
-                        `These assignments exceed the ${item.name} component by ${Math.round((item.used - item.limit) * 10) / 10}%. Reduce the weights before saving.`,
+                        `Assignments in ${item.name} total ${Math.round(item.used * 10) / 10}%, exceeding its ${item.limit}% weight. Please edit this before saving.`,
                     )
                     .join(" ")
-                : `${unassignedCount} assignment${unassignedCount === 1 ? "" : "s"} still ${unassignedCount === 1 ? "needs" : "need"} a grading component. Every assignment must belong to one.`}
+                : underAllocated.length > 0
+                  ? underAllocated
+                      .map(
+                        (item) =>
+                          `Assignments in ${item.name} total ${Math.round(item.used * 10) / 10}%, which is less than its ${item.limit}% weight. Please edit this before saving.`,
+                      )
+                      .join(" ")
+                  : `${unassignedCount} assignment${unassignedCount === 1 ? "" : "s"} still ${unassignedCount === 1 ? "needs" : "need"} a grading component. Select a component for each assignment before saving.`}
           </p>
         ) : null}
 
-
         {error ? (
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="text-sm font-medium text-destructive px-1">
             {error}
           </p>
         ) : null}
 
-        <div className="flex flex-col gap-3 pb-4 sm:flex-row sm:justify-end">
-          <Button variant="ghost" asChild>
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pb-6 sm:justify-end">
+          <Button variant="ghost" className="w-full sm:w-auto" asChild>
             {isEditing ? (
               <Link to="/course/$courseId" params={{ courseId }}>
                 Cancel
@@ -837,15 +918,15 @@ function ReviewExtractionScreen() {
           </Button>
           <Button
             size="lg"
+            className="w-full sm:w-auto"
             disabled={saving || blockedFromSaving}
             onClick={() => void handleSave()}
           >
-
             {saving
               ? "Saving…"
               : isEditing
                 ? "Save changes"
-                : "Confirm and save course"}
+                : "Looks good — save my course"}
           </Button>
         </div>
 
@@ -855,7 +936,7 @@ function ReviewExtractionScreen() {
             if (!open) setDuplicates([]);
           }}
         >
-          <AlertDialogContent>
+          <AlertDialogContent className="max-w-[90vw] sm:max-w-lg rounded-xl">
             <AlertDialogHeader>
               <AlertDialogTitle>This course may already exist.</AlertDialogTitle>
               <AlertDialogDescription>
@@ -864,7 +945,7 @@ function ReviewExtractionScreen() {
                 a separate one.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <ul className="space-y-2">
+            <ul className="space-y-2 max-h-[50vh] overflow-y-auto">
               {duplicates.map((match) => (
                 <li key={match.id} className="rounded-lg border border-border/70 p-3">
                   <p className="text-sm font-medium">{match.name}</p>
@@ -875,7 +956,7 @@ function ReviewExtractionScreen() {
                   {match.reason ? (
                     <p className="mt-1 text-xs text-muted-foreground">Matches on {match.reason}</p>
                   ) : null}
-                  <Button asChild variant="secondary" size="sm" className="mt-2">
+                  <Button asChild variant="secondary" size="sm" className="mt-2 w-full sm:w-auto">
                     <Link to="/course/$courseId" params={{ courseId: match.id }}>
                       Use existing course
                     </Link>
@@ -883,9 +964,10 @@ function ReviewExtractionScreen() {
                 </li>
               ))}
             </ul>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
+              <AlertDialogCancel className="w-full sm:w-auto mt-0">Cancel</AlertDialogCancel>
               <AlertDialogAction
+                className="w-full sm:w-auto"
                 onClick={() => {
                   setDuplicates([]);
                   void handleSave({ skipDuplicateCheck: true });
@@ -897,18 +979,15 @@ function ReviewExtractionScreen() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-
     </AppShell>
   );
 }
 
-/** Identity for tracking which weights we inferred, stable across reorders. */
 function assignmentKey(assignment: ExtractedAssignment) {
   return `${assignment.component?.trim() ?? ""}::${assignment.name.trim()}`;
 }
 
 function Field({
-
   label,
   value,
   onChange,

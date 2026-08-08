@@ -42,19 +42,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useCourses, coursesQueryKey } from "@/lib/use-courses";
 import { deleteCourse } from "@/lib/delete-course";
-import { computeGrades, daysUntil, toneFor } from "@/lib/grade-engine";
+import { computeGrades, daysUntil } from "@/lib/grade-engine";
 import type { Course } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Syllabi" },
+      { title: "Dashboard" },
       {
         name: "description",
         content:
           "See every course's current grade, projected grade, and next deadline in one calm dashboard.",
       },
-      { property: "og:title", content: "Dashboard — Syllabi" },
+      { property: "og:title", content: "Dashboard" },
       {
         property: "og:description",
         content: "Every course's grade and next deadline, in one place.",
@@ -84,7 +84,10 @@ function DashboardCard({ course }: { course: Course }) {
   });
 
   const snapshot = computeGrades(course);
-  const tone = toneFor(snapshot.currentGrade, course.targetGrade);
+  // Nota: el dashboard no usa el sistema de tono attention/warning por diseño.
+  // El badge y la barra siempre van en "neutral" (--primary, azul), sin importar
+  // si la nota está por encima o por debajo del target. El estado warning/attention
+  // sigue existiendo como token para otras partes de la UI que sí lo necesiten.
   const next = course.assignments
     .filter((a) => a.score === null && a.dueDate)
     .sort((a, b) => a.dueDate!.localeCompare(b.dueDate!))
@@ -93,41 +96,47 @@ function DashboardCard({ course }: { course: Course }) {
   return (
     <>
       <div className="group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-xs transition-all hover:border-primary/40 hover:shadow-md">
-        <div>
+        {/* Enlace global absoluto para que TODA la tarjeta sea clickeable */}
+        <Link
+          to="/course/$courseId"
+          params={{ courseId: course.id }}
+          className="absolute inset-0 z-0 rounded-2xl focus:outline-hidden"
+          aria-label={`Go to ${course.name}`}
+        />
+
+        <div className="relative z-10 pointer-events-none">
           {/* Header del curso */}
           <div className="flex items-start justify-between gap-2 sm:gap-3">
             <div className="min-w-0 flex-1">
               <span className="inline-block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-primary">
                 {course.code}
               </span>
-              <h3 className="mt-0.5 truncate font-display text-base sm:text-lg font-bold text-foreground">
-                <Link
-                  to="/course/$courseId"
-                  params={{ courseId: course.id }}
-                  className="hover:underline focus:outline-hidden"
-                >
-                  {course.name}
-                </Link>
+              <h3 className="mt-0.5 truncate font-display text-base sm:text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                {course.name}
               </h3>
               <p className="truncate text-xs text-muted-foreground">
                 {course.professor || "No instructor specified"}
               </p>
             </div>
 
-            {/* Menú de 3 puntos (Mayor área táctil para móvil) */}
-            <div className="shrink-0">
+            {/* Menú de 3 puntos (Aislado con pointer-events-auto) */}
+            <div className="shrink-0 pointer-events-auto">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9 text-muted-foreground hover:bg-muted hover:text-foreground touch-manipulation"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
                   >
                     <MoreHorizontal className="size-4" />
                     <span className="sr-only">Course options</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-48 z-50">
                   <DropdownMenuItem asChild>
                     <Link
                       to="/review/$courseId"
@@ -139,7 +148,11 @@ function DashboardCard({ course }: { course: Course }) {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => setIsDeleteDialogOpen(true)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsDeleteDialogOpen(true);
+                    }}
                     className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                   >
                     <Trash2 className="mr-2 size-4" />
@@ -176,15 +189,16 @@ function DashboardCard({ course }: { course: Course }) {
               <GradeBadge
                 score={snapshot.currentGrade}
                 scale={course.scale}
-                tone={tone}
+                tone="neutral"
+                className="px-3.5 py-1.5 text-sm sm:text-base font-bold tracking-wide"
               />
             </div>
           </div>
         </div>
 
         {/* Barra de progreso */}
-        <div className="mt-4 sm:mt-5 space-y-1.5 sm:space-y-2">
-          <ProgressBar value={snapshot.completion} tone={tone} />
+        <div className="relative z-10 pointer-events-none mt-4 sm:mt-5 space-y-1.5 sm:space-y-2">
+          <ProgressBar value={snapshot.completion} tone="neutral" />
           <div className="flex items-center justify-between text-[11px] sm:text-xs text-muted-foreground">
             <span className="flex items-center gap-1 font-medium">
               <CheckCircle2 className="size-3 text-primary shrink-0" />
@@ -201,12 +215,12 @@ function DashboardCard({ course }: { course: Course }) {
         </div>
       </div>
 
-      {/* Confirmation Modal adaptado a móvil */}
+      {/* Confirmation Modal */}
       <AlertDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
       >
-        <AlertDialogContent className="max-w-[92vw] sm:max-w-lg rounded-2xl">
+        <AlertDialogContent className="max-w-[92vw] sm:max-w-lg rounded-2xl z-50">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {course.name}?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs sm:text-sm">
@@ -336,26 +350,26 @@ function Dashboard() {
                   Upcoming Deadlines
                 </h2>
 
-                {/* Scroll Horizontal optimizado con snapping móvil */}
-                <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 pt-1 sm:mx-0 sm:px-0">
+                {/* Carrusel con inicio perfectamente alineado al contenido */}
+                <div className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 pt-1">
                   {upcoming.map(({ course, assignment }) => (
                     <div
                       key={assignment.id}
-                      className="group flex w-[190px] sm:w-[220px] shrink-0 snap-start flex-col justify-between rounded-xl border border-border/80 bg-card p-3 sm:p-3.5 shadow-xs transition-all active:scale-[0.98]"
+                      className="group flex w-[220px] shrink-0 snap-start flex-col justify-between rounded-xl border border-border/80 bg-card p-3.5 shadow-xs transition-all active:scale-[0.98]"
                     >
                       <div>
                         <div className="flex items-center justify-between gap-1.5">
-                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground truncate max-w-[80px]">
+                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground truncate max-w-[90px]">
                             {course.code}
                           </span>
                           <DeadlinePill dueDate={assignment.dueDate!} />
                         </div>
-                        <p className="mt-2 line-clamp-2 text-xs font-semibold leading-snug text-foreground">
+                        <p className="mt-2.5 line-clamp-2 text-xs font-semibold leading-snug text-foreground">
                           {assignment.name}
                         </p>
                       </div>
 
-                      <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-2 text-[10px] sm:text-[11px] text-muted-foreground">
+                      <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-2 text-[11px] text-muted-foreground">
                         <span className="flex items-center gap-1 truncate">
                           <CalendarClock className="size-3 text-muted-foreground/70 shrink-0" />
                           {formatDate(assignment.dueDate)}

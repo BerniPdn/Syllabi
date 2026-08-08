@@ -71,7 +71,6 @@
 :root {
   --radius: 0.5rem;
 
-  /* Fondo principal y tarjetas */
   --background: oklch(0.982 0.003 240);
   --foreground: oklch(0.18 0.02 250);
   --surface: oklch(1 0 0);
@@ -81,51 +80,60 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.02 250);
 
-  /* Primario: Ámbar / Miel Tostado sobrio */
-  --primary: oklch(0.48 0.13 58);
+  --primary: oklch(0.40 0.07 235);
   --primary-foreground: oklch(0.99 0 0);
-  --primary-glow: oklch(0.58 0.12 58);
-  /* Pastilla suave: tono desaturado y sin tanto brillo */
-  --primary-soft: oklch(0.93 0.02 60);
+  --primary-glow: oklch(0.50 0.07 235);
+  --primary-soft: oklch(0.92 0.02 235);
 
   --secondary: oklch(0.94 0.005 240);
   --secondary-foreground: oklch(0.22 0.02 250);
   --muted: oklch(0.93 0.005 240);
-  --muted-foreground: oklch(0.42 0.015 250); /* Texto atenuado con más contraste */
-  --accent: oklch(0.92 0.012 58);
-  --accent-foreground: oklch(0.25 0.06 58);
+  --muted-foreground: oklch(0.42 0.015 250);
 
-  /* Píldoras de estado y notas (Success / Warning / Danger) */
+  /* CORREGIDO: era oklch(0.92 0.012 58) / oklch(0.25 0.06 58) — ámbar viejo, ahora sigue el hue del primary */
+  --accent: oklch(0.92 0.02 235);
+  --accent-foreground: oklch(0.28 0.05 235);
+
   --destructive: oklch(0.52 0.18 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --danger-soft: oklch(0.93 0.025 25);       /* Fondo rojo sutil */
+  --danger-soft: oklch(0.93 0.025 25);
 
   --success: oklch(0.48 0.10 155);
   --success-foreground: oklch(0.99 0 0);
-  --success-soft: oklch(0.92 0.025 155);     /* Fondo verde sutil/mate */
+  --success-soft: oklch(0.92 0.025 155);
 
+  /* Warning se mantiene ámbar a propósito */
   --warning: oklch(0.58 0.13 60);
   --warning-foreground: oklch(0.99 0 0);
-  --warning-soft: oklch(0.93 0.03 60);        /* Fondo ámbar suave */
+  --warning-soft: oklch(0.93 0.03 60);
 
   --border: oklch(0.88 0.005 240);
   --input: oklch(0.88 0.005 240);
-  --ring: oklch(0.48 0.13 58);
 
-  --chart-1: oklch(0.48 0.13 58);
-  --chart-2: oklch(0.58 0.12 58);
+  /* CORREGIDO: era oklch(0.48 0.13 58) — ring debe matchear primary */
+  --ring: oklch(0.40 0.07 235);
+
+  /* CORREGIDO: chart-1/2 eran ámbar (58); ahora chart-1 = primary, chart-2 = primary-glow.
+     chart-3/4/5 quedan como estaban (success/warning/destructive), son colores de estado. */
+  --chart-1: oklch(0.40 0.07 235);
+  --chart-2: oklch(0.50 0.07 235);
   --chart-3: oklch(0.48 0.10 155);
   --chart-4: oklch(0.58 0.13 60);
   --chart-5: oklch(0.52 0.18 25);
 
   --sidebar: oklch(0.97 0.003 240);
   --sidebar-foreground: oklch(0.18 0.02 250);
-  --sidebar-primary: oklch(0.48 0.13 58);
+
+  /* CORREGIDO: sidebar-primary/ring eran oklch(... 58) — ámbar viejo */
+  --sidebar-primary: oklch(0.40 0.07 235);
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.92 0.012 58);
-  --sidebar-accent-foreground: oklch(0.25 0.06 58);
+
+  /* CORREGIDO: mismo fix que --accent arriba */
+  --sidebar-accent: oklch(0.92 0.02 235);
+  --sidebar-accent-foreground: oklch(0.28 0.05 235);
+
   --sidebar-border: oklch(0.88 0.005 240);
-  --sidebar-ring: oklch(0.48 0.13 58);
+  --sidebar-ring: oklch(0.40 0.07 235);
 
   --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-glow) 100%);
   --gradient-surface: linear-gradient(180deg, var(--surface) 0%, var(--background) 100%);
@@ -143,17 +151,21 @@
   --popover: oklch(0.19 0.01 250);
   --popover-foreground: oklch(0.96 0.003 240);
 
-  --primary: oklch(0.70 0.11 60);
+  --primary: oklch(0.68 0.07 235);
   --primary-foreground: oklch(0.14 0.01 250);
-  --primary-glow: oklch(0.78 0.09 60);
-  --primary-soft: oklch(0.24 0.03 60);
+
+  /* CORREGIDO: era oklch(0.78 0.09 60) — hue ámbar mezclado en un gradiente que debía ser azul */
+  --primary-glow: oklch(0.78 0.08 235);
+  --primary-soft: oklch(0.24 0.03 235);
 
   --secondary: oklch(0.22 0.01 250);
   --secondary-foreground: oklch(0.96 0.003 240);
   --muted: oklch(0.22 0.01 250);
   --muted-foreground: oklch(0.70 0.01 250);
-  --accent: oklch(0.24 0.02 60);
-  --accent-foreground: oklch(0.92 0.01 240);
+
+  /* CORREGIDO: era oklch(0.24 0.02 60) / oklch(0.92 0.01 240) — mismatch de hue con accent-foreground */
+  --accent: oklch(0.24 0.03 235);
+  --accent-foreground: oklch(0.90 0.02 235);
 
   --destructive: oklch(0.62 0.16 25);
   --destructive-foreground: oklch(0.14 0.01 250);
@@ -169,16 +181,20 @@
 
   --border: oklch(1 0 0 / 8%);
   --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.70 0.12 60);
+
+  /* CORREGIDO: era oklch(0.70 0.12 60) — ring en ámbar, ahora sigue primary */
+  --ring: oklch(0.68 0.07 235);
 
   --sidebar: oklch(0.17 0.01 250);
   --sidebar-foreground: oklch(0.96 0.003 240);
-  --sidebar-primary: oklch(0.70 0.12 60);
+
+  /* CORREGIDO: sidebar-primary/ring/accent eran hue 60 (ámbar) */
+  --sidebar-primary: oklch(0.68 0.07 235);
   --sidebar-primary-foreground: oklch(0.14 0.01 250);
-  --sidebar-accent: oklch(0.24 0.02 60);
-  --sidebar-accent-foreground: oklch(0.92 0.01 240);
+  --sidebar-accent: oklch(0.24 0.03 235);
+  --sidebar-accent-foreground: oklch(0.90 0.02 235);
   --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.70 0.12 60);
+  --sidebar-ring: oklch(0.68 0.07 235);
 
   --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-glow) 100%);
   --gradient-surface: linear-gradient(180deg, var(--surface) 0%, var(--background) 100%);
