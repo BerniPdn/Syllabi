@@ -30,70 +30,15 @@ function toBase64(bytes: Uint8Array) {
   return btoa(binary);
 }
 
-async function streamJson(body: unknown, apiKey: string): Promise<string> {
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Lovable-API-Key": apiKey,
-      "X-Lovable-AIG-SDK": "fetch",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok || !response.body) {
-    const detail = await response.text().catch(() => "");
-    if (response.status === 429) {
-      throw new Error("Our AI is busy right now. Please try again in a moment.");
-    }
-    if (response.status === 402) {
-      throw new Error("AI credits are exhausted. Add credits to keep analyzing syllabi.");
-    }
-    console.error("[syllabus] gateway error", response.status, detail);
-    throw new Error("We couldn't analyze that syllabus. Please try again.");
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let text = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      if (!line.startsWith("data:")) continue;
-      const payload = line.slice(5).trim();
-      if (!payload || payload === "[DONE]") continue;
-      try {
-        const event = JSON.parse(payload) as {
-          type?: string;
-          delta?: string;
-          response?: { output_text?: string };
-        };
-        if (event.type === "response.output_text.delta" && typeof event.delta === "string") {
-          text += event.delta;
-        } else if (event.type === "response.completed" && event.response?.output_text) {
-          if (!text) text = event.response.output_text;
-        }
-      } catch {
-        // ignore keep-alive / non-JSON frames
-      }
-    }
-  }
-
-  return text;
-}
-
 export const extractSyllabus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ courseId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<ExtractionResult> => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
+    const apiKey = process.env["GEMINI_API_KEY"];
+    if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
+
+    const { geminiJson } = await import("@/lib/gemini.server");
+
 
     const supabase = context.supabase;
 
