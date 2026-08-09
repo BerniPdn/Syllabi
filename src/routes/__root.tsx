@@ -78,26 +78,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Syllabi — Your syllabus, brought to life." },
+      { title: "Syllabi" },
       {
         name: "description",
         content:
-          "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and academic control.",
+          "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an assistant that knows your class.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:title", content: "Syllabi — Your syllabus, brought to life." },
-      { name: "twitter:title", content: "Syllabi — Your syllabus, brought to life." },
+      { property: "og:title", content: "Syllabi" },
+      { name: "twitter:title", content: "Syllabi" },
       {
         property: "og:description",
         content:
-          "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and academic control.",
+          "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an assistant that knows your class.",
       },
       {
         name: "twitter:description",
         content:
-          "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and academic control.",
+          "Turn any syllabus into a live course workspace: grade tracking, what-if simulation, and an assistant that knows your class.",
       },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e03fd93f-6149-4330-b168-fdd3495d5815/id-preview-70d355db--228fc7bd-8159-465f-b5b7-3377404ce36f.lovable.app-1786223845770.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e03fd93f-6149-4330-b168-fdd3495d5815/id-preview-70d355db--228fc7bd-8159-465f-b5b7-3377404ce36f.lovable.app-1786223845770.png" },
     ],
     links: [
       {
