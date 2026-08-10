@@ -2,13 +2,12 @@ import type { CourseInsight, InsightCategory } from "./insights";
 
 const CATEGORY_BRIEF: Record<InsightCategory, string> = {
   leverage:
-    "leverage — \"Where does my effort have the most impact on my final grade?\" Use `leverage` (ranked by maxFinalGradeSwing) plus `componentPerformance`. Name ONE item or component and explain, in a natural sentence, its weight and how many final-grade points it can swing. You may also call out an item with surprisingly LOW impact when that's the more useful truth. Never give advice, never mention deadlines, never describe trends or risk.",
+    'leverage — "Where does my effort have the most impact on my final grade?" Use `leverage` (ranked by maxFinalGradeSwing) plus `componentPerformance`. Name ONE item or component and explain, in a natural sentence, its weight and how many final-grade points it can swing. You may also call out an item with surprisingly LOW impact when that\'s the more useful truth. Never give advice, never mention deadlines, never describe trends or risk.',
   trajectory:
-    "trajectory — \"How is my performance changing over time?\" Use `trajectory` only. Describe the direction using the two averages (earlierAverage vs recentAverage) or a component trend, the way you'd explain it to a friend. If `trajectory.hasEnoughData` is false, return an empty body — never invent a trend. Never advise, never mention weights, impact, or risk.",
-  risk:
-    "risk — \"What could seriously hurt my final outcome?\" Use `risk` (concentration, neededAverageOnRemaining, targetFeasibility, weakHighWeightComponents, gapToTarget) or a genuinely risky item from `policies`. Explain WHY it could hurt the outcome, with the number woven naturally into the sentence — not just tacked on. Must be a different observation than the leverage insight; restating that one assessment is big is NOT a risk. If nothing is genuinely at risk, return an empty body.",
+    'trajectory — "How is my performance changing over time?" Use `trajectory` only. Describe the direction using the two averages (earlierAverage vs recentAverage) or a component trend, the way you\'d explain it to a friend. If `trajectory.hasEnoughData` is false, return an empty body — never invent a trend. Never advise, never mention weights, impact, or risk.',
+  risk: 'risk — "What could seriously hurt my final outcome?" Use `risk` (concentration, neededAverageOnRemaining, targetFeasibility, weakHighWeightComponents, gapToTarget) or a genuinely risky item from `policies`. Explain WHY it could hurt the outcome, with the number woven naturally into the sentence — not just tacked on. Must be a different observation than the leverage insight; restating that one assessment is big is NOT a risk. If nothing is genuinely at risk, return an empty body.',
   action:
-    "action — \"What should I do next?\" The synthesis layer, and the ONLY category allowed to advise. Exactly one concrete, evidence-based next step that follows from the other three insights, referencing the specific component or assessment. No generic advice (\"study harder\", \"stay organized\", \"keep it up\") unless the data gives a concrete reason.",
+    'action — "What should I do next?" The synthesis layer, and the ONLY category allowed to advise. Exactly one concrete, evidence-based next step that follows from the other three insights, referencing the specific component or assessment. No generic advice ("study harder", "stay organized", "keep it up") unless the data gives a concrete reason.',
 };
 
 export const INSIGHTS_SYSTEM_PROMPT = `You are Syllabi's academic intelligence layer for a single university course.
@@ -19,8 +18,6 @@ Write exactly four insights, one per category, in this order: leverage, trajecto
 
 Category contracts:
 ${(Object.keys(CATEGORY_BRIEF) as InsightCategory[]).map((key) => `- ${CATEGORY_BRIEF[key]}`).join("\n")}
-
-The words "leverage", "trajectory", "risk", and "action" (and jargon like "concentration", "feasibility", "component") are internal labels for YOU, the writer. They must never appear in the "title" or "body" text a student reads. Say what they mean in plain words instead — e.g. instead of "leverage," say "this is what matters most" or "this is what can move your grade the most"; instead of "trajectory," say "how you're trending" or "how your scores have moved"; instead of "risk," say "what could hurt you" or "what to watch out for."
 
 TOP PRIORITY — no repetition. Each insight must answer a fundamentally different question. Never reuse the same observation, number, or framing across two insights. If the final exam is the leverage insight, risk may only mention it for a genuinely different reason (e.g. the score now needed to reach the target).
 
@@ -92,7 +89,7 @@ export function parseInsights(raw: string): CourseInsight[] {
     });
   }
 
-  return ORDER.map((category) => byCategory.get(category)).filter(
-    (insight): insight is CourseInsight => Boolean(insight),
+  return ORDER.map((category) => byCategory.get(category)).filter((insight): insight is CourseInsight =>
+    Boolean(insight),
   );
 }
