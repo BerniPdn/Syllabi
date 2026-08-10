@@ -778,7 +778,7 @@ export function InsightsPanel({
       <SectionCard className="border-border/80 shadow-xs p-3.5 sm:p-6">
         <SectionHeading
           title="Course Intelligence"
-          hint="A few key things"
+          hint="A few key insights"
           action={
             <Button
               variant="outline"
