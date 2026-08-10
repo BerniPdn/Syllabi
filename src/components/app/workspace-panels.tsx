@@ -722,7 +722,7 @@ function InsightCard({
 }: {
   insight: CourseInsight;
   facts: ReturnType<typeof buildInsightFacts>;
-  onNavigate?: (tab: WorkspaceTab) => void;
+  onNavigate?: ((tab: WorkspaceTab) => void) | undefined;
 }) {
   const style = CATEGORY_STYLES[insight.category];
   const Icon = style.icon;
@@ -803,7 +803,7 @@ export function InsightsPanel({
   onNavigate,
 }: {
   course: Course;
-  onNavigate?: (tab: WorkspaceTab) => void;
+  onNavigate?: ((tab: WorkspaceTab) => void) | undefined;
 }) {
   const generate = useServerFn(generateInsights);
 
