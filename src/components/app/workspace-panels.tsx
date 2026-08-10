@@ -814,8 +814,8 @@ export function InsightsPanel({
     <div className="space-y-4 sm:space-y-6">
       <SectionCard className="border-border/80 shadow-xs p-3.5 sm:p-6">
         <SectionHeading
-          title="AI Insights"
-          hint="What matters → how you're doing → what could go wrong → what to do next"
+          title="Course Intelligence"
+          hint="A few key Insights"
           action={
             <Button
               variant="outline"
