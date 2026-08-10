@@ -259,7 +259,10 @@ function Workspace() {
         ) : null}
 
         {tab === "simulator" ? <SimulatorPanel course={course} /> : null}
-        {tab === "insights" ? <InsightsPanel course={course} /> : null}
+        {tab === "insights" ? (
+          <InsightsPanel course={course} onNavigate={(next) => setTab(next as TabId)} />
+        ) : null}
+
       </div>
     </AppShell>
   );
