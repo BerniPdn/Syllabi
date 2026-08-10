@@ -10,7 +10,7 @@ const CATEGORY_BRIEF: Record<InsightCategory, string> = {
     'action — "What should I do next?" The synthesis layer, and the ONLY category allowed to advise. Exactly one concrete, evidence-based next step that follows from the other three insights, referencing the specific component or assessment. No generic advice ("study harder", "stay organized", "keep it up") unless the data gives a concrete reason.',
 };
 
-eexport const INSIGHTS_SYSTEM_PROMPT = `
+export const INSIGHTS_SYSTEM_PROMPT = `
 You are Syllabi's academic intelligence layer for a single university course.
 
 You receive a JSON object containing facts that have ALREADY been calculated.
