@@ -15,11 +15,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
@@ -36,14 +32,7 @@ import {
   SectionHeading,
   formatDate,
 } from "@/components/app/primitives";
-import {
-  clampScore,
-  computeGrades,
-  isValidScoreInput,
-  letterFor,
-  simulate,
-  toneFor,
-} from "@/lib/grade-engine";
+import { clampScore, computeGrades, isValidScoreInput, letterFor, simulate, toneFor } from "@/lib/grade-engine";
 import {
   CATEGORY_LABELS,
   CATEGORY_QUESTIONS,
@@ -87,7 +76,9 @@ export function OverviewPanel({ course }: { course: Course }) {
                 <span className="text-sm font-semibold text-muted-foreground">%</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {snapshot.currentGrade === null ? "Nothing graded yet" : `Scale: ${letterFor(snapshot.currentGrade, course.scale)}`}
+                {snapshot.currentGrade === null
+                  ? "Nothing graded yet"
+                  : `Scale: ${letterFor(snapshot.currentGrade, course.scale)}`}
               </p>
             </div>
             <div className="shrink-0">
@@ -109,7 +100,11 @@ export function OverviewPanel({ course }: { course: Course }) {
                 label="Needed on Rest"
                 value={snapshot.neededOnRemaining?.toFixed(1) ?? "—"}
                 suffix="%"
-                sub={snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining > 100 ? "Out of reach" : "Avg remaining"}
+                sub={
+                  snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining > 100
+                    ? "Out of reach"
+                    : "Avg remaining"
+                }
                 tone={snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining > 100 ? "attention" : undefined}
               />
             </div>
@@ -125,9 +120,7 @@ export function OverviewPanel({ course }: { course: Course }) {
               const items = snapshot.items.filter((item) => item.category.id === category.id);
               const graded = items.filter((item) => item.score !== null);
               const average =
-                graded.length > 0
-                  ? graded.reduce((sum, item) => sum + item.score!, 0) / graded.length
-                  : null;
+                graded.length > 0 ? graded.reduce((sum, item) => sum + item.score!, 0) / graded.length : null;
 
               return (
                 <div
@@ -152,7 +145,9 @@ export function OverviewPanel({ course }: { course: Course }) {
                     tone={toneFor(average, course.targetGrade)}
                   />
                   <div className="mt-1.5 flex justify-between text-[11px] font-medium text-muted-foreground">
-                    <span>{graded.length} of {items.length} completed</span>
+                    <span>
+                      {graded.length} of {items.length} completed
+                    </span>
                     <span>{average !== null ? `${average.toFixed(1)}% avg` : "No scores"}</span>
                   </div>
                 </div>
@@ -176,9 +171,7 @@ export function OverviewPanel({ course }: { course: Course }) {
                     className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3 sm:p-3.5"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs sm:text-sm font-bold text-foreground">
-                        {assignment.name}
-                      </p>
+                      <p className="truncate text-xs sm:text-sm font-bold text-foreground">{assignment.name}</p>
                       <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
                         {formatDate(assignment.dueDate)}
                       </p>
@@ -208,11 +201,7 @@ function CoursePoliciesList({ policies }: { policies: string[] }) {
   const [expanded, setExpanded] = useState(false);
 
   if (policies.length === 0) {
-    return (
-      <p className="py-3 text-center text-xs sm:text-sm text-muted-foreground">
-        No policies extracted.
-      </p>
-    );
+    return <p className="py-3 text-center text-xs sm:text-sm text-muted-foreground">No policies extracted.</p>;
   }
 
   return (
@@ -327,7 +316,9 @@ export function AssignmentsPanel({
             <div className="rounded-xl border border-border/60 bg-muted/30 p-2.5 sm:p-3.5">
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Current Avg</p>
               <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="font-display text-xl sm:text-2xl font-extrabold text-foreground">{snapshot.currentGrade?.toFixed(1) ?? "—"}</span>
+                <span className="font-display text-xl sm:text-2xl font-extrabold text-foreground">
+                  {snapshot.currentGrade?.toFixed(1) ?? "—"}
+                </span>
                 <span className="text-xs font-semibold text-muted-foreground">%</span>
               </div>
             </div>
@@ -335,7 +326,9 @@ export function AssignmentsPanel({
             <div className="rounded-xl border border-border/60 bg-muted/30 p-2.5 sm:p-3.5">
               <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Graded Weight</p>
               <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="font-display text-xl sm:text-2xl font-extrabold text-foreground">{snapshot.gradedWeight}</span>
+                <span className="font-display text-xl sm:text-2xl font-extrabold text-foreground">
+                  {snapshot.gradedWeight}
+                </span>
                 <span className="text-xs font-semibold text-muted-foreground">%</span>
               </div>
             </div>
@@ -349,7 +342,9 @@ export function AssignmentsPanel({
                 onClick={() => setFilter(value)}
                 className={cn(
                   "flex-1 sm:flex-initial rounded-lg px-2.5 py-1.5 font-bold capitalize transition-all text-center text-[11px] sm:text-xs",
-                  filter === value ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground",
+                  filter === value
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {value}
@@ -372,9 +367,13 @@ export function AssignmentsPanel({
             <div className="border-b border-border/50 pb-3">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="min-w-0 truncate font-display text-base font-bold text-foreground">{category.name}</h3>
-                <span className="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{category.weight}% weight</span>
+                <span className="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
+                  {category.weight}% weight
+                </span>
               </div>
-              <p className="mt-1.5 text-xs font-semibold text-muted-foreground">{gradedCount} of {allCatItems.length} tracked</p>
+              <p className="mt-1.5 text-xs font-semibold text-muted-foreground">
+                {gradedCount} of {allCatItems.length} tracked
+              </p>
             </div>
 
             <div className="mt-3 space-y-2.5">
@@ -385,10 +384,7 @@ export function AssignmentsPanel({
                 const error = errors[item.assignment.id];
 
                 return (
-                  <div
-                    key={item.assignment.id}
-                    className="rounded-xl border border-border/60 bg-card p-3.5"
-                  >
+                  <div key={item.assignment.id} className="rounded-xl border border-border/60 bg-card p-3.5">
                     {/* Bloque superior: nombre a la izquierda; weight + deadline pill apilados a la derecha, mismo margen que el header de categoría */}
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -468,8 +464,7 @@ export function SimulatorPanel({ course }: { course: Course }) {
   const simulated = simulate(course, values);
   const hitsTarget = simulated.projectedGrade >= course.targetGrade;
 
-  const setAll = (value: number) =>
-    setValues(Object.fromEntries(remaining.map((item) => [item.assignment.id, value])));
+  const setAll = (value: number) => setValues(Object.fromEntries(remaining.map((item) => [item.assignment.id, value])));
 
   if (remaining.length === 0) {
     return (
@@ -518,12 +513,13 @@ export function SimulatorPanel({ course }: { course: Course }) {
                 <span className="font-display text-3xl sm:text-4xl font-extrabold text-red-700/80 dark:text-red-400/80">
                   {simulated.projectedGrade.toFixed(1)}
                 </span>
-                <span className="text-sm sm:text-base font-semibold text-red-700/60 dark:text-red-400/60">
-                  %
-                </span>
+                <span className="text-sm sm:text-base font-semibold text-red-700/60 dark:text-red-400/60">%</span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Scale: <span className="font-semibold text-foreground">{letterFor(simulated.projectedGrade, course.scale)}</span>
+                Scale:{" "}
+                <span className="font-semibold text-foreground">
+                  {letterFor(simulated.projectedGrade, course.scale)}
+                </span>
               </p>
             </div>
           )}
@@ -533,7 +529,13 @@ export function SimulatorPanel({ course }: { course: Course }) {
           <span className="text-xs font-semibold text-muted-foreground w-full sm:w-auto">Quick set remaining to:</span>
           <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
             {[70, 80, 90, 100].map((value) => (
-              <Button key={value} variant="outline" size="sm" className="h-7 text-xs font-medium flex-1 sm:flex-none px-2.5" onClick={() => setAll(value)}>
+              <Button
+                key={value}
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs font-medium flex-1 sm:flex-none px-2.5"
+                onClick={() => setAll(value)}
+              >
                 {value}%
               </Button>
             ))}
@@ -562,16 +564,11 @@ export function SimulatorPanel({ course }: { course: Course }) {
             const share = base.impact[item.assignment.id] ?? 0;
 
             return (
-              <div
-                key={item.assignment.id}
-                className="group rounded-xl border border-border/60 bg-card p-3 sm:p-3.5"
-              >
+              <div key={item.assignment.id} className="group rounded-xl border border-border/60 bg-card p-3 sm:p-3.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="truncate text-xs sm:text-sm font-bold text-foreground">
-                        {item.assignment.name}
-                      </p>
+                      <p className="truncate text-xs sm:text-sm font-bold text-foreground">{item.assignment.name}</p>
                       <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground uppercase">
                         {item.category.name}
                       </span>
@@ -593,9 +590,7 @@ export function SimulatorPanel({ course }: { course: Course }) {
                     min={0}
                     max={100}
                     step={1}
-                    onValueChange={([next]) =>
-                      setValues({ ...values, [item.assignment.id]: next ?? value })
-                    }
+                    onValueChange={([next]) => setValues({ ...values, [item.assignment.id]: next ?? value })}
                     className="py-1"
                   />
                   <div className="flex justify-between text-[9px] font-medium text-muted-foreground/60 px-0.5">
@@ -617,10 +612,7 @@ export function SimulatorPanel({ course }: { course: Course }) {
 // Estilos tokenizados al theme: cada categoría tiene su propio ícono y acento
 // (leverage = primary, trajectory = neutral/positivo, risk = warning, action = primary sólido)
 // para que las cuatro preguntas se distingan de un vistazo sin leer el texto.
-const CATEGORY_STYLES: Record<
-  InsightCategory,
-  { icon: typeof Info; card: string; iconWrap: string; label: string }
-> = {
+const CATEGORY_STYLES: Record<InsightCategory, { icon: typeof Info; card: string; iconWrap: string; label: string }> = {
   leverage: {
     icon: Crosshair,
     card: "border-border/60 bg-card",
@@ -662,16 +654,11 @@ const CTA_TABS: Record<keyof typeof CTA_LABELS, WorkspaceTab> = {
 };
 
 /** Deterministic evidence behind each insight — never AI text. */
-function evidenceFor(
-  category: InsightCategory,
-  facts: ReturnType<typeof buildInsightFacts>,
-): string[] {
+function evidenceFor(category: InsightCategory, facts: ReturnType<typeof buildInsightFacts>): string[] {
   const lines: string[] = [];
   if (category === "leverage") {
     for (const item of facts.leverage.slice(0, 3)) {
-      lines.push(
-        `${item.name} · ${item.weightPercent}% of grade · up to ${item.maxFinalGradeSwing} pts of swing`,
-      );
+      lines.push(`${item.name} · ${item.weightPercent}% of grade · up to ${item.maxFinalGradeSwing} pts of swing`);
     }
   }
   if (category === "trajectory") {
@@ -697,9 +684,7 @@ function evidenceFor(
       );
     }
     for (const weak of facts.risk.weakHighWeightComponents.slice(0, 2)) {
-      lines.push(
-        `${weak.component} (${weak.componentWeightPercent}% of grade) averaging ${weak.averageScore}%`,
-      );
+      lines.push(`${weak.component} (${weak.componentWeightPercent}% of grade) averaging ${weak.averageScore}%`);
     }
   }
   if (category === "action") {
@@ -715,40 +700,18 @@ function evidenceFor(
   return lines;
 }
 
-function InsightCard({
-  insight,
-  facts,
-}: {
-  insight: CourseInsight;
-  facts: ReturnType<typeof buildInsightFacts>;
-}) {
+function InsightCard({ insight, facts }: { insight: CourseInsight; facts: ReturnType<typeof buildInsightFacts> }) {
   const style = CATEGORY_STYLES[insight.category];
   const Icon = style.icon;
 
   return (
-    <div
-      className={cn(
-        "rounded-xl border p-3 sm:p-3.5 shadow-2xs transition-all hover:shadow-xs",
-        style.card,
-      )}
-    >
+    <div className={cn("rounded-xl border p-3 sm:p-3.5 shadow-2xs transition-all hover:shadow-xs", style.card)}>
       <div className="flex items-start gap-3">
-        <div
-          aria-hidden
-          className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-lg",
-            style.iconWrap,
-          )}
-        >
+        <div aria-hidden className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", style.iconWrap)}>
           <Icon className="size-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <p
-            className={cn(
-              "text-[9px] sm:text-[10px] font-bold uppercase tracking-wider",
-              style.label,
-            )}
-          >
+          <p className={cn("text-[9px] sm:text-[10px] font-bold uppercase tracking-wider", style.label)}>
             {CATEGORY_LABELS[insight.category]}
           </p>
           {insight.title ? (
@@ -814,8 +777,8 @@ export function InsightsPanel({
     <div className="space-y-4 sm:space-y-6">
       <SectionCard className="border-border/80 shadow-xs p-3.5 sm:p-6">
         <SectionHeading
-          title="AI Insights"
-          hint="What matters → how you're doing → what could go wrong → what to do next"
+          title="Course Intelligence"
+          hint="A few key things"
           action={
             <Button
               variant="outline"
@@ -865,11 +828,7 @@ export function InsightsPanel({
         ) : (
           <div className="mt-3 space-y-2.5">
             {insights.map((insight) => (
-              <InsightCard
-                key={insight.category}
-                insight={insight}
-                facts={facts}
-              />
+              <InsightCard key={insight.category} insight={insight} facts={facts} />
             ))}
 
             {missing.map((category) => {
@@ -902,6 +861,5 @@ export function InsightsPanel({
     </div>
   );
 }
-
 
 export const PANEL_ICONS = { ArrowRight };
