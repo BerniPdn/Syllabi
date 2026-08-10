@@ -1,16 +1,12 @@
 import { computeGrades, daysUntil, letterFor } from "./grade-engine";
 import type { Course } from "./types";
 
-/**
- * Four insight categories.
- * Order = display order.
- */
+/** The four insight categories. Order = display order. */
 export const INSIGHT_CATEGORIES = ["leverage", "trajectory", "risk", "action"] as const;
 
 export type InsightCategory = (typeof INSIGHT_CATEGORIES)[number];
 
 export const INSIGHT_CTAS = ["simulator", "assignments", "policies"] as const;
-
 export type InsightCta = (typeof INSIGHT_CTAS)[number];
 
 export type CourseInsight = {
@@ -35,34 +31,27 @@ export const CATEGORY_QUESTIONS: Record<InsightCategory, string> = {
   action: "What should I do next?",
 };
 
-const round = (value: number, decimals = 1) => {
-  const factor = 10 ** decimals;
+/**
+ * Deterministic facts for the AI to interpret. Every number here comes from the
+ * existing grade engine — the model never calculates anything.
+ */
+export type InsightFacts = ReturnType<typeof buildInsightFacts>;
+
+const round = (value: number, digits = 1) => {
+  const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
 };
 
 const average = (values: number[]) =>
   values.length === 0 ? null : round(values.reduce((sum, value) => sum + value, 0) / values.length);
 
-export type InsightFacts = ReturnType<typeof buildInsightFacts>;
-
 export function buildInsightFacts(course: Course, now = new Date()) {
   const snapshot = computeGrades(course);
 
-  const totalWeight = snapshot.totalWeight || 100;
-
-  /*
-   * CURRENT GRADE
-   */
-
-  const currentGrade = snapshot.totalWeight > 0 ? round((snapshot.earnedWeight / snapshot.totalWeight) * 100) : null;
-
-  const currentLetter = currentGrade !== null ? letterFor(currentGrade) : null;
-
-  /*
-   * GRADED ASSIGNMENTS
-   *
-   * Ordered chronologically so we can detect trends.
-   */
+  const components = course.categories.map((category) => ({
+    name: category.name,
+    weightPercent: category.weight,
+  }));
 
   const orderKey = (dueDate: string | null) => (dueDate ? new Date(dueDate).getTime() : Number.POSITIVE_INFINITY);
 
@@ -73,50 +62,12 @@ export function buildInsightFacts(course: Course, now = new Date()) {
   const graded = gradedOrdered.map((item) => ({
     name: item.assignment.name,
     component: item.category.name,
-    score: round(item.score),
+    score: item.score,
     weightPercent: round(item.effectiveWeight),
     dueDate: item.assignment.dueDate,
   }));
 
-  /*
-   * PERFORMANCE / TRAJECTORY
-   */
-
-  const scores = gradedOrdered.map((item) => item.score);
-
-  const midpoint = Math.ceil(scores.length / 2);
-
-  const earlierScores = scores.slice(0, midpoint);
-  const recentScores = scores.slice(midpoint);
-
-  const earlierAverage = average(earlierScores);
-  const recentAverage = average(recentScores);
-
-  const change = earlierAverage !== null && recentAverage !== null ? round(recentAverage - earlierAverage) : null;
-
-  let direction: "improving" | "declining" | "stable" | "insufficient_data" = "insufficient_data";
-
-  if (change !== null) {
-    if (change >= 5) {
-      direction = "improving";
-    } else if (change <= -5) {
-      direction = "declining";
-    } else {
-      direction = "stable";
-    }
-  }
-
-  const trajectory = {
-    earlierAverage,
-    recentAverage,
-    change,
-    direction,
-    hasEnoughData: earlierScores.length >= 1 && recentScores.length >= 1,
-  };
-
-  /*
-   * UPCOMING ASSIGNMENTS
-   */
+  const totalWeight = snapshot.totalWeight || 100;
 
   const upcoming = snapshot.remaining
     .map((item) => ({
@@ -124,35 +75,18 @@ export function buildInsightFacts(course: Course, now = new Date()) {
       component: item.category.name,
       weightPercent: round(item.effectiveWeight),
       dueDate: item.assignment.dueDate,
-
       daysUntilDue: item.assignment.dueDate ? daysUntil(item.assignment.dueDate, now) : null,
-
-      /*
-       * Percentage of the remaining grade represented
-       * by this assignment.
-       */
       shareOfRemaining: round((snapshot.impact[item.assignment.id] ?? 0) * 100),
-
-      /*
-       * Maximum number of final-grade percentage points
-       * represented by this assignment.
-       */
+      /** Final-grade points between scoring 0 and 100 on this item. */
       maxFinalGradeSwing: round((item.effectiveWeight / totalWeight) * 100),
     }))
     .sort((a, b) => {
       if (a.daysUntilDue === null) return 1;
       if (b.daysUntilDue === null) return -1;
-
       return a.daysUntilDue - b.daysUntilDue;
     });
 
-  /*
-   * LEVERAGE
-   *
-   * Same upcoming assignments, ranked by
-   * potential impact on the final grade.
-   */
-
+  /** Same list, ranked by grade leverage instead of date. */
   const leverage = [...upcoming]
     .sort((a, b) => b.maxFinalGradeSwing - a.maxFinalGradeSwing)
     .map((item) => ({
@@ -161,184 +95,162 @@ export function buildInsightFacts(course: Course, now = new Date()) {
       weightPercent: item.weightPercent,
       maxFinalGradeSwing: item.maxFinalGradeSwing,
       shareOfRemaining: item.shareOfRemaining,
-      dueDate: item.dueDate,
-      daysUntilDue: item.daysUntilDue,
     }));
 
-  /*
-   * COURSE COMPONENT PERFORMANCE
-   *
-   * This lets the AI identify things like:
-   *
-   * "Exams are 60% of the course and your exam
-   * average is 68%."
-   */
+  const componentPerformance = course.categories
+    .map((category) => {
+      const scores = gradedOrdered.filter((item) => item.category.id === category.id).map((item) => item.score!);
+      const remainingWeight = snapshot.remaining
+        .filter((item) => item.category.id === category.id)
+        .reduce((sum, item) => sum + item.effectiveWeight, 0);
+      if (scores.length === 0) {
+        return {
+          component: category.name,
+          componentWeightPercent: category.weight,
+          gradedCount: 0,
+          averageScore: null,
+          lowestScore: null,
+          highestScore: null,
+          spread: null,
+          firstScore: null,
+          lastScore: null,
+          remainingWeightPercent: round(remainingWeight),
+        };
+      }
+      return {
+        component: category.name,
+        componentWeightPercent: category.weight,
+        gradedCount: scores.length,
+        averageScore: average(scores),
+        lowestScore: Math.min(...scores),
+        highestScore: Math.max(...scores),
+        spread: round(Math.max(...scores) - Math.min(...scores)),
+        firstScore: scores[0]!,
+        lastScore: scores.at(-1)!,
+        remainingWeightPercent: round(remainingWeight),
+      };
+    })
+    .filter((entry) => entry.gradedCount > 0 || entry.remainingWeightPercent > 0);
 
-  const componentMap = new Map<
-    string,
-    {
-      name: string;
-      totalWeight: number;
-      gradedWeight: number;
-      scores: number[];
-      remainingWeight: number;
-    }
-  >();
+  // ----- Trajectory (deterministic) -----
+  const scoresInOrder = gradedOrdered.map((item) => item.score!);
+  const windowSize = Math.min(3, Math.floor(scoresInOrder.length / 2));
+  const earlier = windowSize > 0 ? scoresInOrder.slice(0, windowSize) : [];
+  const recent = windowSize > 0 ? scoresInOrder.slice(-windowSize) : [];
+  const earlierAverage = average(earlier);
+  const recentAverage = average(recent);
+  const delta = earlierAverage !== null && recentAverage !== null ? round(recentAverage - earlierAverage) : null;
 
-  for (const category of course.gradingCategories ?? []) {
-    componentMap.set(category.name, {
-      name: category.name,
-      totalWeight: category.weight,
-      gradedWeight: 0,
-      scores: [],
-      remainingWeight: category.weight,
-    });
-  }
+  const trajectory = {
+    gradedCount: scoresInOrder.length,
+    /** Below 4 graded items there is not enough signal to claim a trend. */
+    hasEnoughData: scoresInOrder.length >= 4 && delta !== null,
+    windowSize,
+    earlierAverage,
+    recentAverage,
+    delta,
+    direction: delta === null ? null : delta >= 3 ? "improving" : delta <= -3 ? "declining" : "stable",
+    scoresInOrder,
+    componentTrends: componentPerformance
+      .filter((entry) => entry.gradedCount >= 2)
+      .map((entry) => ({
+        component: entry.component,
+        gradedCount: entry.gradedCount,
+        firstScore: entry.firstScore,
+        lastScore: entry.lastScore,
+        change: round((entry.lastScore ?? 0) - (entry.firstScore ?? 0)),
+      })),
+  };
 
-  for (const item of snapshot.graded) {
-    const name = item.category.name;
+  // ----- Risk (deterministic) -----
+  const topTwo = leverage.slice(0, 2);
+  const topTwoShareOfRemaining = round(topTwo.reduce((sum, item) => sum + item.shareOfRemaining, 0));
+  const needed = snapshot.neededOnRemaining;
 
-    if (!componentMap.has(name)) {
-      componentMap.set(name, {
-        name,
-        totalWeight: item.category.weight,
-        gradedWeight: 0,
-        scores: [],
-        remainingWeight: item.category.weight,
-      });
-    }
-
-    const component = componentMap.get(name)!;
-
-    component.gradedWeight += item.effectiveWeight;
-    component.scores.push(item.score);
-
-    component.remainingWeight = Math.max(0, component.totalWeight - component.gradedWeight);
-  }
-
-  const components = Array.from(componentMap.values()).map((component) => {
-    const averageScore = average(component.scores);
-
-    return {
-      name: component.name,
-      weightPercent: round(component.totalWeight),
-      gradedWeightPercent: round(component.gradedWeight),
-      remainingWeightPercent: round(component.remainingWeight),
-      averageScore,
-
-      /*
-       * Difference between this component's performance
-       * and the student's current overall grade.
-       */
-      scoreVsCourse: averageScore !== null && currentGrade !== null ? round(averageScore - currentGrade) : null,
-
-      assignmentCount: component.scores.length,
-    };
-  });
-
-  /*
-   * COMPONENTS WITH THE MOST REMAINING WEIGHT
-   */
-
-  const highImpactComponents = [...components]
-    .filter((component) => component.remainingWeightPercent > 0)
-    .sort((a, b) => b.remainingWeightPercent - a.remainingWeightPercent);
-
-  /*
-   * GENUINE PERFORMANCE RISKS
-   *
-   * We only flag a component when:
-   * - it is worth at least 20%
-   * - the student has graded work in it
-   * - performance is below 75%
-   * - there is still meaningful weight remaining
-   */
-
-  const risks = components
+  const weakHighWeightComponents = componentPerformance
     .filter(
-      (component) =>
-        component.averageScore !== null &&
-        component.remainingWeightPercent > 0 &&
-        component.weightPercent >= 20 &&
-        component.averageScore < 75,
+      (entry) =>
+        entry.averageScore !== null && entry.componentWeightPercent >= 20 && entry.averageScore < course.targetGrade,
     )
-    .sort((a, b) => {
-      const aRisk = a.weightPercent * (100 - (a.averageScore ?? 100));
+    .map((entry) => ({
+      component: entry.component,
+      componentWeightPercent: entry.componentWeightPercent,
+      averageScore: entry.averageScore,
+      remainingWeightPercent: entry.remainingWeightPercent,
+    }))
+    .sort((a, b) => b.componentWeightPercent - a.componentWeightPercent);
 
-      const bRisk = b.weightPercent * (100 - (b.averageScore ?? 100));
-
-      return bRisk - aRisk;
-    });
-
-  /*
-   * HIGH-IMPACT UPCOMING WORK
-   */
-
-  const highImpactUpcoming = upcoming.filter((item) => item.maxFinalGradeSwing >= 10 || item.weightPercent >= 10);
-
-  /*
-   * IMPORTANT UPCOMING WORK
-   *
-   * Assignments due within 14 days with meaningful weight.
-   */
-
-  const urgentUpcoming = upcoming
-    .filter(
-      (item) =>
-        item.daysUntilDue !== null && item.daysUntilDue >= 0 && item.daysUntilDue <= 14 && item.weightPercent >= 5,
-    )
-    .sort((a, b) => {
-      const aScore = a.weightPercent / Math.max(1, a.daysUntilDue ?? 1);
-
-      const bScore = b.weightPercent / Math.max(1, b.daysUntilDue ?? 1);
-
-      return bScore - aScore;
-    });
-
-  /*
-   * AI-READY FACTS
-   */
+  const risk = {
+    remainingWeightPercent: snapshot.remainingWeight,
+    concentration: {
+      topItems: topTwo.map((item) => item.name),
+      shareOfRemaining: topTwoShareOfRemaining,
+      shareOfFinalGrade: round(topTwo.reduce((sum, item) => sum + item.maxFinalGradeSwing, 0)),
+    },
+    neededAverageOnRemaining: needed,
+    targetFeasibility:
+      needed === null
+        ? "no_remaining_work"
+        : needed > 100
+          ? "impossible"
+          : needed >= 93
+            ? "very_hard"
+            : needed >= 80
+              ? "demanding"
+              : "comfortable",
+    weakHighWeightComponents,
+    gapToTarget: snapshot.currentGrade === null ? null : round(snapshot.currentGrade - course.targetGrade),
+  };
 
   return {
     course: {
       name: course.name,
       code: course.code,
+      semester: course.semester,
+      targetGrade: course.targetGrade,
+      targetLetter: letterFor(course.targetGrade, course.scale),
     },
-
-    grade: {
-      current: currentGrade,
-      letter: currentLetter,
-
-      totalGradedWeight: round(snapshot.totalWeight),
-
-      remainingWeight: round(Math.max(0, 100 - snapshot.totalWeight)),
-    },
-
-    performance: {
-      overallAverage: currentGrade,
-      earlierAverage,
-      recentAverage,
-      change,
-      direction,
-      gradedAssignmentCount: graded.length,
-    },
-
-    trajectory,
-
-    graded,
-
     components,
-
-    highImpactComponents,
-
+    grading: {
+      currentGrade: snapshot.currentGrade,
+      currentLetter: snapshot.currentGrade === null ? null : letterFor(snapshot.currentGrade, course.scale),
+      projectedGrade: snapshot.projectedGrade,
+      neededAverageOnRemaining: snapshot.neededOnRemaining,
+      gradedWeightPercent: snapshot.gradedWeight,
+      remainingWeightPercent: snapshot.remainingWeight,
+      completionPercent: round(snapshot.completion * 100),
+    },
+    graded,
     upcoming,
-
     leverage,
-
-    risks,
-
-    highImpactUpcoming,
-
-    urgentUpcoming,
+    componentPerformance,
+    trajectory,
+    risk,
+    policies: course.policies,
   };
+}
+
+/** Not enough data to say anything useful. */
+export function hasInsightData(facts: InsightFacts) {
+  return (
+    facts.components.length > 0 || facts.graded.length > 0 || facts.upcoming.length > 0 || facts.policies.length > 0
+  );
+}
+
+/**
+ * Stable cache key for insights: only the course data that should trigger a
+ * regeneration (components, scale/target, assignments, grades, policies).
+ * Deliberately excludes time-derived values like `daysUntilDue` so simply
+ * opening the page on a later day does not re-generate.
+ */
+export function insightsSignature(facts: InsightFacts) {
+  return JSON.stringify({
+    // Bumped when the insight contract changes so stale cached rows are ignored.
+    version: "v2-4cat",
+    target: [facts.course.targetGrade, facts.course.targetLetter],
+    components: facts.components,
+    graded: facts.graded.map((item) => [item.name, item.component, item.score, item.weightPercent]),
+    upcoming: facts.upcoming.map((item) => [item.name, item.component, item.weightPercent, item.dueDate]).sort(),
+    policies: facts.policies,
+  });
 }
