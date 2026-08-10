@@ -718,16 +718,12 @@ function evidenceFor(
 function InsightCard({
   insight,
   facts,
-  onNavigate,
 }: {
   insight: CourseInsight;
   facts: ReturnType<typeof buildInsightFacts>;
-  onNavigate?: ((tab: WorkspaceTab) => void) | undefined;
 }) {
   const style = CATEGORY_STYLES[insight.category];
   const Icon = style.icon;
-  const evidence = evidenceFor(insight.category, facts);
-  const cta = insight.cta ?? null;
 
   return (
     <div
@@ -761,37 +757,6 @@ function InsightCard({
           <MessageResponse className="mt-1 text-xs leading-relaxed text-muted-foreground">
             {insight.body}
           </MessageResponse>
-
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {cta && onNavigate ? (
-              <Button
-                size="sm"
-                variant={insight.category === "action" ? "default" : "outline"}
-                className="h-7 gap-1 text-[11px]"
-                onClick={() => onNavigate(CTA_TABS[cta])}
-              >
-                {CTA_LABELS[cta]}
-                <ArrowRight className="size-3" />
-              </Button>
-            ) : null}
-            {evidence.length > 0 ? (
-              <Collapsible>
-                <CollapsibleTrigger className="group inline-flex items-center gap-1 rounded-md text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground">
-                  Why?
-                  <ChevronDown className="size-3 transition-transform group-data-[state=open]:rotate-180" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-2">
-                  <ul className="space-y-1 border-l border-border/70 pl-2.5">
-                    {evidence.map((line) => (
-                      <li key={line} className="text-[11px] leading-snug text-muted-foreground/90">
-                        {line}
-                      </li>
-                    ))}
-                  </ul>
-                </CollapsibleContent>
-              </Collapsible>
-            ) : null}
-          </div>
         </div>
       </div>
     </div>
@@ -904,7 +869,6 @@ export function InsightsPanel({
                 key={insight.category}
                 insight={insight}
                 facts={facts}
-                onNavigate={onNavigate}
               />
             ))}
 
