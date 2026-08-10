@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowRight, Check, Loader2, Mail } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
@@ -274,6 +274,16 @@ function AuthScreen() {
                       <p id="password-error" className="text-xs text-destructive">
                         {passwordError}
                       </p>
+                    ) : null}
+                    {mode === "signin" ? (
+                      <div className="flex justify-end">
+                        <Link
+                          to="/reset-password"
+                          className="text-xs text-muted-foreground hover:text-primary hover:underline focus-ring rounded"
+                        >
+                          Forgot password?
+                        </Link>
+                      </div>
                     ) : null}
                   </div>
 
