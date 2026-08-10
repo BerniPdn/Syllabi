@@ -5,12 +5,16 @@ import {
   ArrowRight,
   Check,
   ChevronDown,
+  Crosshair,
   Info,
   Lightbulb,
   RotateCcw,
+  ShieldAlert,
   Sparkles,
+  TrendingUp,
   TriangleAlert,
 } from "lucide-react";
+
 import {
   Collapsible,
   CollapsibleContent,
