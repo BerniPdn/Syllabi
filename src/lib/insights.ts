@@ -248,7 +248,7 @@ export function hasInsightData(facts: InsightFacts) {
     facts.graded.length > 0 ||
     facts.upcoming.length > 0 ||
     facts.policies.length > 0
-  );
+  ); 
 }
 
 /**
