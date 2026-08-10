@@ -614,19 +614,27 @@ export function SimulatorPanel({ course }: { course: Course }) {
 
 /* ---------------------------------- Insights --------------------------------- */
 
-// Estilos tokenizados al theme: attention usa --warning/--warning-soft (no amber-500 de Tailwind),
-// action usa --primary/--primary-soft, e info usa --muted. Cada tono tiene un ícono propio
-// en vez de la barra de acento fina, para que se distinga de un vistazo cuál insight requiere
-// atención vs. cuál es solo informativo.
-const INSIGHT_STYLES = {
-  info: {
-    icon: Info,
+// Estilos tokenizados al theme: cada categoría tiene su propio ícono y acento
+// (leverage = primary, trajectory = neutral/positivo, risk = warning, action = primary sólido)
+// para que las cuatro preguntas se distingan de un vistazo sin leer el texto.
+const CATEGORY_STYLES: Record<
+  InsightCategory,
+  { icon: typeof Info; card: string; iconWrap: string; label: string }
+> = {
+  leverage: {
+    icon: Crosshair,
+    card: "border-border/60 bg-card",
+    iconWrap: "bg-primary/10 text-primary",
+    label: "text-primary",
+  },
+  trajectory: {
+    icon: TrendingUp,
     card: "border-border/60 bg-card",
     iconWrap: "bg-muted text-muted-foreground",
     label: "text-muted-foreground",
   },
-  attention: {
-    icon: TriangleAlert,
+  risk: {
+    icon: ShieldAlert,
     card: "border-warning/30 bg-warning-soft",
     iconWrap: "bg-warning/15 text-warning",
     label: "text-warning",
@@ -637,17 +645,166 @@ const INSIGHT_STYLES = {
     iconWrap: "bg-primary/15 text-primary",
     label: "text-primary",
   },
+};
+
+const CTA_LABELS = {
+  simulator: "Open simulator",
+  assignments: "View assignments",
+  policies: "Review course policies",
 } as const;
 
-type InsightStyle = keyof typeof INSIGHT_STYLES;
+type WorkspaceTab = "overview" | "assignments" | "simulator" | "insights";
 
-function styleFor(insight: { category: string; tone: string }): InsightStyle {
-  if (insight.category === "recommendation") return "action";
-  if (insight.category === "policies") return "attention";
-  return insight.tone === "attention" ? "attention" : "info";
+const CTA_TABS: Record<keyof typeof CTA_LABELS, WorkspaceTab> = {
+  simulator: "simulator",
+  assignments: "assignments",
+  policies: "overview",
+};
+
+/** Deterministic evidence behind each insight — never AI text. */
+function evidenceFor(
+  category: InsightCategory,
+  facts: ReturnType<typeof buildInsightFacts>,
+): string[] {
+  const lines: string[] = [];
+  if (category === "leverage") {
+    for (const item of facts.leverage.slice(0, 3)) {
+      lines.push(
+        `${item.name} · ${item.weightPercent}% of grade · up to ${item.maxFinalGradeSwing} pts of swing`,
+      );
+    }
+  }
+  if (category === "trajectory") {
+    const { earlierAverage, recentAverage, windowSize, gradedCount } = facts.trajectory;
+    lines.push(`${gradedCount} graded item(s) so far`);
+    if (earlierAverage !== null && recentAverage !== null) {
+      lines.push(`First ${windowSize}: ${earlierAverage}% → last ${windowSize}: ${recentAverage}%`);
+    }
+    for (const trend of facts.trajectory.componentTrends.slice(0, 3)) {
+      lines.push(`${trend.component}: ${trend.firstScore}% → ${trend.lastScore}%`);
+    }
+  }
+  if (category === "risk") {
+    lines.push(`${facts.risk.remainingWeightPercent}% of your grade is still ungraded`);
+    if (facts.risk.concentration.topItems.length > 0) {
+      lines.push(
+        `${facts.risk.concentration.topItems.join(" + ")} = ${facts.risk.concentration.shareOfRemaining}% of what's left`,
+      );
+    }
+    if (facts.risk.neededAverageOnRemaining !== null) {
+      lines.push(
+        `Need ${facts.risk.neededAverageOnRemaining}% average on remaining work for a ${facts.course.targetGrade}% target`,
+      );
+    }
+    for (const weak of facts.risk.weakHighWeightComponents.slice(0, 2)) {
+      lines.push(
+        `${weak.component} (${weak.componentWeightPercent}% of grade) averaging ${weak.averageScore}%`,
+      );
+    }
+  }
+  if (category === "action") {
+    lines.push(
+      facts.grading.currentGrade === null
+        ? "No graded work yet"
+        : `Current ${facts.grading.currentGrade}% · projected ${facts.grading.projectedGrade}% · target ${facts.course.targetGrade}%`,
+    );
+    if (facts.risk.neededAverageOnRemaining !== null) {
+      lines.push(`Target feasibility: ${facts.risk.targetFeasibility.replace(/_/g, " ")}`);
+    }
+  }
+  return lines;
 }
 
-export function InsightsPanel({ course }: { course: Course }) {
+function InsightCard({
+  insight,
+  facts,
+  onNavigate,
+}: {
+  insight: CourseInsight;
+  facts: ReturnType<typeof buildInsightFacts>;
+  onNavigate?: (tab: WorkspaceTab) => void;
+}) {
+  const style = CATEGORY_STYLES[insight.category];
+  const Icon = style.icon;
+  const evidence = evidenceFor(insight.category, facts);
+  const cta = insight.cta ?? null;
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border p-3 sm:p-3.5 shadow-2xs transition-all hover:shadow-xs",
+        style.card,
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          aria-hidden
+          className={cn(
+            "flex size-8 shrink-0 items-center justify-center rounded-lg",
+            style.iconWrap,
+          )}
+        >
+          <Icon className="size-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p
+            className={cn(
+              "text-[9px] sm:text-[10px] font-bold uppercase tracking-wider",
+              style.label,
+            )}
+          >
+            {CATEGORY_LABELS[insight.category]}
+          </p>
+          {insight.title ? (
+            <p className="mt-0.5 text-xs sm:text-sm font-bold text-foreground">{insight.title}</p>
+          ) : null}
+          <MessageResponse className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            {insight.body}
+          </MessageResponse>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {cta && onNavigate ? (
+              <Button
+                size="sm"
+                variant={insight.category === "action" ? "default" : "outline"}
+                className="h-7 gap-1 text-[11px]"
+                onClick={() => onNavigate(CTA_TABS[cta])}
+              >
+                {CTA_LABELS[cta]}
+                <ArrowRight className="size-3" />
+              </Button>
+            ) : null}
+            {evidence.length > 0 ? (
+              <Collapsible>
+                <CollapsibleTrigger className="group inline-flex items-center gap-1 rounded-md text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground">
+                  Why?
+                  <ChevronDown className="size-3 transition-transform group-data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2">
+                  <ul className="space-y-1 border-l border-border/70 pl-2.5">
+                    {evidence.map((line) => (
+                      <li key={line} className="text-[11px] leading-snug text-muted-foreground/90">
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                </CollapsibleContent>
+              </Collapsible>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function InsightsPanel({
+  course,
+  onNavigate,
+}: {
+  course: Course;
+  onNavigate?: (tab: WorkspaceTab) => void;
+}) {
   const generate = useServerFn(generateInsights);
 
   const facts = useMemo(() => buildInsightFacts(course), [course]);
@@ -685,13 +842,15 @@ export function InsightsPanel({ course }: { course: Course }) {
   });
 
   const insights = query.data ?? [];
+  const present = new Set(insights.map((insight) => insight.category));
+  const missing = INSIGHT_CATEGORIES.filter((category) => !present.has(category));
 
   return (
     <div className="space-y-4 sm:space-y-6">
       <SectionCard className="border-border/80 shadow-xs p-3.5 sm:p-6">
         <SectionHeading
           title="AI Insights"
-          hint="Calculated directly from your course numbers"
+          hint="What matters → how you're doing → what could go wrong → what to do next"
           action={
             <Button
               variant="outline"
@@ -717,8 +876,8 @@ export function InsightsPanel({ course }: { course: Course }) {
           />
         ) : query.isPending || query.isFetching ? (
           <div className="space-y-3 py-3">
-            <Shimmer className="text-xs font-medium">Analyzing your syllabus data…</Shimmer>
-            {[0, 1, 2].map((index) => (
+            <Shimmer className="text-xs font-medium">Analyzing your course data…</Shimmer>
+            {[0, 1, 2, 3].map((index) => (
               <div key={index} className="h-16 animate-pulse rounded-xl bg-muted/60" />
             ))}
           </div>
@@ -740,43 +899,35 @@ export function InsightsPanel({ course }: { course: Course }) {
           />
         ) : (
           <div className="mt-3 space-y-2.5">
-            {insights.map((insight) => {
-              const style = INSIGHT_STYLES[styleFor(insight)];
-              const Icon = style.icon;
+            {insights.map((insight) => (
+              <InsightCard
+                key={insight.category}
+                insight={insight}
+                facts={facts}
+                onNavigate={onNavigate}
+              />
+            ))}
+
+            {missing.map((category) => {
+              const style = CATEGORY_STYLES[category];
               return (
                 <div
-                  key={insight.category}
-                  className={cn(
-                    "flex items-start gap-3 rounded-xl border p-3 sm:p-3.5 shadow-2xs transition-all hover:shadow-xs",
-                    style.card,
-                  )}
+                  key={category}
+                  className="flex items-start gap-3 rounded-xl border border-dashed border-border/70 p-3 sm:p-3.5"
                 >
                   <div
                     aria-hidden
-                    className={cn(
-                      "flex size-8 shrink-0 items-center justify-center rounded-lg",
-                      style.iconWrap,
-                    )}
+                    className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground/70"
                   >
-                    <Icon className="size-4" />
+                    <style.icon className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p
-                      className={cn(
-                        "text-[9px] sm:text-[10px] font-bold uppercase tracking-wider",
-                        style.label,
-                      )}
-                    >
-                      {CATEGORY_LABELS[insight.category]}
+                    <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                      {CATEGORY_LABELS[category]}
                     </p>
-                    {insight.title ? (
-                      <p className="mt-0.5 text-xs sm:text-sm font-bold text-foreground">
-                        {insight.title}
-                      </p>
-                    ) : null}
-                    <MessageResponse className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      {insight.body}
-                    </MessageResponse>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Needs more graded work to answer “{CATEGORY_QUESTIONS[category]}”
+                    </p>
                   </div>
                 </div>
               );
@@ -787,5 +938,6 @@ export function InsightsPanel({ course }: { course: Course }) {
     </div>
   );
 }
+
 
 export const PANEL_ICONS = { ArrowRight };
