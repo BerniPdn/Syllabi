@@ -123,8 +123,7 @@ export function AppShell({ children, user }: { children: ReactNode; user: User |
                               )}
                             >
                               <GraduationCap className="size-4 shrink-0 opacity-70" />
-                              <span className="truncate">{course.code || course.name}</span>
-                            </Link>
+                              <span className="truncate">{course.code || course.name || "Untitled course"}</span>                            </Link>
                           </SheetClose>
                         ))
                       )}
