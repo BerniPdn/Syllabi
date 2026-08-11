@@ -303,16 +303,20 @@ function ReviewExtractionScreen() {
       (a) => a.component?.trim() === componentName,
     );
 
-    if (matchingItems.length === 0) return;
+    const n = matchingItems.length;
+    if (n === 0) return;
 
-    // Dividir equitativamente con máximo 1 decimal
-    const equalWeight = Math.round((categoryWeight / matchingItems.length) * 10) / 10;
+    // Split into equal tenths, then hand the leftover tenths to the first
+    // few items so the total lands exactly on categoryWeight (not 99.9%).
+    const baseWeight = Math.floor((categoryWeight / n) * 10) / 10;
+    const remainderTenths = Math.round((categoryWeight - baseWeight * n) * 10);
 
+    let remaining = remainderTenths;
     const updatedAssignments = draft.assignments.map((a) => {
-      if (a.component?.trim() === componentName) {
-        return { ...a, weight: equalWeight };
-      }
-      return a;
+      if (a.component?.trim() !== componentName) return a;
+      const bump = remaining > 0 ? 0.1 : 0;
+      if (remaining > 0) remaining -= 1;
+      return { ...a, weight: Math.round((baseWeight + bump) * 10) / 10 };
     });
 
     patch({ assignments: updatedAssignments });
