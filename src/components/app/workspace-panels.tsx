@@ -64,7 +64,6 @@ import { cn } from "@/lib/utils";
 
 export function OverviewPanel({ course }: { course: Course }) {
   const snapshot = computeGrades(course);
-  const tone = toneFor(snapshot.currentGrade, course.targetGrade);
   const next = course.assignments
     .filter((a) => a.score === null && a.dueDate)
     .sort((a, b) => a.dueDate!.localeCompare(b.dueDate!))
@@ -279,7 +278,6 @@ export function AssignmentsPanel({
   course,
   onSaveScore,
   onDeleteScore,
-  savingKey,
 }: {
   course: Course;
   onSaveScore?: (assignmentId: string, score: number) => void;
@@ -674,77 +672,10 @@ const CATEGORY_STYLES: Record<
   },
 };
 
-const CTA_LABELS = {
-  simulator: "Open simulator",
-  assignments: "View assignments",
-  policies: "Review course policies",
-} as const;
-
 type WorkspaceTab = "overview" | "assignments" | "simulator" | "insights";
-
-const CTA_TABS: Record<keyof typeof CTA_LABELS, WorkspaceTab> = {
-  simulator: "simulator",
-  assignments: "assignments",
-  policies: "overview",
-};
-
-/** Deterministic evidence behind each insight — never AI text. */
-function evidenceFor(
-  category: InsightCategory,
-  facts: ReturnType<typeof buildInsightFacts>,
-): string[] {
-  const lines: string[] = [];
-  if (category === "leverage") {
-    for (const item of facts.leverage.slice(0, 3)) {
-      lines.push(
-        `${item.name} · ${item.weightPercent}% of grade · up to ${item.maxFinalGradeSwing} pts of swing`,
-      );
-    }
-  }
-  if (category === "trajectory") {
-    const { earlierAverage, recentAverage, windowSize, gradedCount } = facts.trajectory;
-    lines.push(`${gradedCount} graded item(s) so far`);
-    if (earlierAverage !== null && recentAverage !== null) {
-      lines.push(`First ${windowSize}: ${earlierAverage}% → last ${windowSize}: ${recentAverage}%`);
-    }
-    for (const trend of facts.trajectory.componentTrends.slice(0, 3)) {
-      lines.push(`${trend.component}: ${trend.firstScore}% → ${trend.lastScore}%`);
-    }
-  }
-  if (category === "risk") {
-    lines.push(`${facts.risk.remainingWeightPercent}% of your grade is still ungraded`);
-    if (facts.risk.concentration.topItems.length > 0) {
-      lines.push(
-        `${facts.risk.concentration.topItems.join(" + ")} = ${facts.risk.concentration.shareOfRemaining}% of what's left`,
-      );
-    }
-    if (facts.risk.neededAverageOnRemaining !== null) {
-      lines.push(
-        `Need ${facts.risk.neededAverageOnRemaining}% average on remaining work for a ${facts.course.targetGrade}% target`,
-      );
-    }
-    for (const weak of facts.risk.weakHighWeightComponents.slice(0, 2)) {
-      lines.push(
-        `${weak.component} (${weak.componentWeightPercent}% of grade) averaging ${weak.averageScore}%`,
-      );
-    }
-  }
-  if (category === "action") {
-    lines.push(
-      facts.grading.currentGrade === null
-        ? "No graded work yet"
-        : `Current ${facts.grading.currentGrade}% · projected ${facts.grading.projectedGrade}% · target ${facts.course.targetGrade}%`,
-    );
-    if (facts.risk.neededAverageOnRemaining !== null) {
-      lines.push(`Target feasibility: ${facts.risk.targetFeasibility.replace(/_/g, " ")}`);
-    }
-  }
-  return lines;
-}
 
 function InsightCard({
   insight,
-  facts,
 }: {
   insight: CourseInsight;
   facts: ReturnType<typeof buildInsightFacts>;
@@ -792,7 +723,6 @@ function InsightCard({
 
 export function InsightsPanel({
   course,
-  onNavigate,
 }: {
   course: Course;
   onNavigate?: ((tab: WorkspaceTab) => void) | undefined;
