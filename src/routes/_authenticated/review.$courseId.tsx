@@ -106,7 +106,7 @@ function ReviewExtractionScreen() {
   const [newImportantDate, setNewImportantDate] = useState({ label: "", date: "" });
   const [newPolicy, setNewPolicy] = useState("");
 
-  const { data: course, isLoading } = useQuery({
+  const { data: course, isLoading, isError, refetch } = useQuery({
     queryKey: ["course", courseId],
     queryFn: async () => {
       const { data, error: queryError } = await supabase
@@ -261,6 +261,29 @@ function ReviewExtractionScreen() {
     underAllocated.length > 0 ||
     unassignedCount > 0 ||
     scaleErrors.length > 0;
+
+    if (isError) {
+      return (
+        <AppShell user={user}>
+          <div className="mx-auto max-w-md space-y-3 px-4 py-16 text-center">
+            <h1 className="font-display text-xl font-semibold tracking-tight">
+              Something went wrong
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              We couldn't load this course. Check your connection and try again.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Button variant="secondary" onClick={() => refetch()}>
+                Try again
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/dashboard">Back to dashboard</Link>
+              </Button>
+            </div>
+          </div>
+        </AppShell>
+      );
+    }
 
   if (!isLoading && !course) {
     return (

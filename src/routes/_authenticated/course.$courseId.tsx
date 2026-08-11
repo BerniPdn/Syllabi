@@ -63,8 +63,7 @@ function Workspace() {
   const navigate = useNavigate();
   const { user } = Route.useRouteContext();
 
-  const { data: baseCourse, isLoading } = useQuery({
-    queryKey: ["course-workspace", courseId],
+  const { data: baseCourse, isLoading, isError, refetch } = useQuery({    queryKey: ["course-workspace", courseId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")
@@ -118,6 +117,19 @@ function Workspace() {
       </AppShell>
     );
   }
+
+  if (isError) {
+    return (
+      <AppShell user={user}>
+        <EmptyState
+          title="Something went wrong"
+          body="We couldn't load this course. Check your connection and try again."
+          action={<Button onClick={() => refetch()}>Try again</Button>}
+        />
+      </AppShell>
+    );
+  }
+
 
   if (!course) {
     return (

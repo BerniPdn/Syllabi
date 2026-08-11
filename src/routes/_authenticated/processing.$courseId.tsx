@@ -46,8 +46,7 @@ function ProcessingRoute() {
   const [error, setError] = useState<string | null>(null);
   const [discarding, setDiscarding] = useState(false);
 
-  const { data: course, isLoading } = useQuery({
-    queryKey: ["course", courseId],
+  const { data: course, isLoading, isError, refetch } = useQuery({queryKey: ["course", courseId],
     queryFn: async () => {
       const { data, error: queryError } = await supabase
         .from("courses")
@@ -60,7 +59,7 @@ function ProcessingRoute() {
   });
 
   useEffect(() => {
-    if (isLoading || !course || started.current) return;
+    if (isLoading || isError || !course || started.current) return;
     started.current = true;
 
     if (course.extraction_error && !course.extracted) {
@@ -123,6 +122,34 @@ function ProcessingRoute() {
           <div className="card-surface p-7 text-center">
             <Loader2 className="mx-auto size-6 animate-spin text-primary" />
             <p className="mt-4 text-sm text-muted-foreground">Loading course status…</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-hero px-5">
+        <div className="w-full max-w-md">
+          <div className="card-surface p-7 text-center">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-warning-soft text-warning">
+              <AlertTriangle className="size-6" />
+            </div>
+            <h1 className="mt-4 font-display text-lg font-semibold tracking-tight">
+              Couldn't load this course
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              Check your connection and try again.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Button size="lg" className="flex-1" onClick={() => refetch()}>
+                Try again
+              </Button>
+              <Button size="lg" variant="outline" className="flex-1" asChild>
+                <Link to="/dashboard">Back to dashboard</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
