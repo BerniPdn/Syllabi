@@ -241,12 +241,9 @@ function DashboardCard({ course }: { course: Course }) {
 }
 
 function Dashboard() {
-  const { data: courses = [], isLoading, isFetching, isPending } = useCourses();
+  const { data: courses = [], isPending } = useCourses();
 
-  const { user } = Route.useRouteContext();
-
-  const isDataLoading = isLoading || isFetching || isPending || !courses;
-
+  const isDataLoading = isPending;
   const upcoming = courses
     .flatMap((course) =>
       course.assignments
@@ -255,6 +252,8 @@ function Dashboard() {
     )
     .sort((a, b) => a.days - b.days)
     .slice(0, 6);
+
+    const { user } = Route.useRouteContext();
 
   return (
     <AppShell user={user}>
