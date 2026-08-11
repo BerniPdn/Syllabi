@@ -87,6 +87,7 @@ function ReviewExtractionScreen() {
   const [policiesExpanded, setPoliciesExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
+  const { user } = Route.useRouteContext();
 
   // Modales de creación con formulario
   const [activeModal, setActiveModal] = useState<
@@ -263,7 +264,7 @@ function ReviewExtractionScreen() {
 
   if (!isLoading && !course) {
     return (
-      <AppShell>
+      <AppShell user={user}>
         <div className="mx-auto max-w-md space-y-3 px-4 py-16 text-center">
           <h1 className="font-display text-xl font-semibold tracking-tight">
             We couldn't find that course
@@ -281,7 +282,7 @@ function ReviewExtractionScreen() {
 
   if (isLoading || !draft) {
     return (
-      <AppShell>
+      <AppShell user={user}>
         <div className="flex min-h-[50vh] items-center justify-center">
           <Loader2 className="size-6 animate-spin text-primary" />
         </div>
@@ -431,7 +432,7 @@ function ReviewExtractionScreen() {
   }
 
   return (
-    <AppShell>
+    <AppShell user={user}>
       <div className="mx-auto max-w-3xl space-y-6 overflow-x-hidden px-3 sm:px-0">
         <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card px-4 py-5 shadow-sm sm:px-7 sm:py-7">
           <div className="pointer-events-none absolute -right-12 -top-12 size-32 rounded-full bg-primary/5 blur-2xl" />
@@ -446,8 +447,8 @@ function ReviewExtractionScreen() {
                 </h1>
                 <p className="mt-2 max-w-2xl text-xs leading-5 text-muted-foreground sm:text-[15px] sm:leading-6">
                   {isEditing
-                    ? "Everything CoursePilot found is organized below. Make any changes you need, then save your updates."
-                    : "CoursePilot turned your syllabus into a ready-to-use course workspace — assignments, grading, dates, and more, all in one place."}
+                    ? "Everything Syllabi found is organized below. Make any changes you need, then save your updates."
+                    : "Syllabi turned your syllabus into a ready-to-use course workspace — assignments, grading, dates, and more, all in one place."}
                 </p>
               </div>
             </div>
@@ -492,7 +493,7 @@ function ReviewExtractionScreen() {
         </div>
 
         <SectionCard>
-          <SectionHeading title="Your course" hint="The basics CoursePilot found in your syllabus" />
+          <SectionHeading title="Your course" hint="The basics Syllabi found in your syllabus" />
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
               label="Course name"
@@ -607,7 +608,7 @@ function ReviewExtractionScreen() {
         <SectionCard>
           <SectionHeading
             title="Your grade, broken down"
-            hint="The weighting CoursePilot found in your syllabus"
+            hint="The weighting Syllabi found in your syllabus"
           />
           <div className="space-y-2">
             {draft.grading_components.map((component, index) => (

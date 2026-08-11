@@ -7,6 +7,7 @@ import { useTheme } from "@/components/app/theme";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useCourses } from "@/lib/use-courses";
+import type { User } from "@supabase/supabase-js";
 import {
   Sheet,
   SheetClose,
@@ -34,12 +35,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, user }: { children: ReactNode; user: User | null }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
   const [isSignOutDialogOpen, setIsSignOutDialogOpen] = useState(false);
+  const displayName = user?.user_metadata?.["full_name"]?.trim() || user?.email?.split("@")[0] || "Account";
+  const initial = displayName.charAt(0).toUpperCase() || "?";
 
   useTheme();
 
@@ -55,8 +58,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           
-          {/* Lado Izquierdo: Menú Hamburguesa + Divisor + Logo Syllabi */}
-          <div className="flex items-center gap-3">
+        {/* Left side: hamburger menu + divider + Syllabi logo */}
+        <div className="flex items-center gap-3">
             <Sheet>
               <SheetTrigger asChild>
                 <button
@@ -75,7 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </SheetTitle>
                 </SheetHeader>
 
-                {/* Navegación lateral enfocada únicamente en contenidos */}
+                {/* Sidebar navigation focused purely on content */}
                 <nav className="flex-1 space-y-6 overflow-y-auto p-4">
                   <SheetClose asChild>
                     <Link
@@ -94,7 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
                   <div>
                     <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                      Cursos
+                      Courses
                     </p>
                     <div className="space-y-1">
                       {coursesLoading ? (
@@ -104,7 +107,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         </>
                       ) : courses.length === 0 ? (
                         <p className="px-3 py-1 text-xs text-muted-foreground">
-                          No tienes cursos aún
+                          No courses yet
                         </p>
                       ) : (
                         courses.map((course) => (
@@ -138,22 +141,22 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           </div>
 
-          {/* Lado Derecho: Menú de Usuario con Avatar */}
+          {/* Right side: user menu with avatar */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label="Menú de usuario"
+                aria-label="User menu"
                 className="focus-ring flex size-8 items-center justify-center rounded-full bg-primary/10 font-display text-xs font-bold text-primary ring-1 ring-primary/20 transition-all hover:bg-primary/20 hover:ring-primary/40 active:scale-95"
               >
-                B
+                {initial}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="z-50 w-48">
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-xs font-semibold leading-none text-foreground">Bernarda</p>
-                  <p className="text-[11px] leading-none text-muted-foreground">Estudiante</p>
+                  <p className="text-xs font-semibold leading-none text-foreground">{displayName}</p>
+                  <p className="text-[11px] leading-none text-muted-foreground">{user?.email ?? ""}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -170,12 +173,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* Contenido principal */}
+      {/* Main Content */}
       <div className="mx-auto max-w-6xl px-4 pb-12 pt-6 sm:px-6">
         <main className="min-w-0 flex-1">{children}</main>
       </div>
 
-      {/* Modal de confirmación para Sign Out */}
+      {/* Confirmation modal for sign out */}
       <AlertDialog open={isSignOutDialogOpen} onOpenChange={setIsSignOutDialogOpen}>
         <AlertDialogContent className="z-50 max-w-[92vw] rounded-2xl sm:max-w-lg">
           <AlertDialogHeader>

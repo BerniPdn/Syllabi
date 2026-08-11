@@ -243,6 +243,8 @@ function DashboardCard({ course }: { course: Course }) {
 function Dashboard() {
   const { data: courses = [], isLoading, isFetching, isPending } = useCourses();
 
+  const { user } = Route.useRouteContext();
+
   const isDataLoading = isLoading || isFetching || isPending || !courses;
 
   const upcoming = courses
@@ -255,7 +257,7 @@ function Dashboard() {
     .slice(0, 6);
 
   return (
-    <AppShell>
+    <AppShell user={user}>
       <div className="w-full max-w-full space-y-5 sm:space-y-6 pb-8">
         {isDataLoading ? (
           <div className="flex min-h-[30vh] sm:min-h-[40vh] items-center justify-center">

@@ -103,7 +103,7 @@ function UploadScreen() {
   }
 
   return (
-    <AppShell>
+    <AppShell user={user}>
       <div className="mx-auto max-w-2xl space-y-6">
         <Link
           to="/dashboard"
