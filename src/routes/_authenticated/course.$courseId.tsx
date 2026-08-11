@@ -9,23 +9,10 @@ import {
   Lightbulb,
   ListChecks,
   Loader2,
-  Pencil,
-  Trash2,
 } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
 import { EmptyState, GradeBadge } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import {
   AssignmentsPanel,
   InsightsPanel,
@@ -75,20 +62,6 @@ function Workspace() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user } = Route.useRouteContext();
-
-  const deleteMutation = useMutation({
-    mutationFn: () => deleteCourse(courseId),
-    onSuccess: async () => {
-      queryClient.removeQueries({ queryKey: ["course-workspace", courseId] });
-      queryClient.removeQueries({ queryKey: ["course-grades", courseId] });
-      await queryClient.invalidateQueries({ queryKey: coursesQueryKey });
-      toast.success("Course deleted.");
-      navigate({ to: "/dashboard" });
-    },
-    onError: (error: unknown) => {
-      toast.error(error instanceof Error ? error.message : "Could not delete this course.");
-    },
-  });
 
   const { data: baseCourse, isLoading } = useQuery({
     queryKey: ["course-workspace", courseId],
@@ -179,50 +152,6 @@ function Workspace() {
               <p className="mt-1 text-sm text-muted-foreground">{course.professor}</p>
             ) : null}
           </div>
-          {/* <div className="flex items-center gap-3">
-            <Button asChild variant="secondary" size="sm">
-              <Link to="/review/$courseId" params={{ courseId }}>
-                <Pencil className="size-4" />
-                Edit course
-              </Link>
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  disabled={deleteMutation.isPending}
-                >
-                  {deleteMutation.isPending ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="size-4" />
-                  )}
-                  Delete Course
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete {course.name}?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This permanently removes the course and everything tied to it: its
-                    assignments, saved grades, the extracted syllabus data, and the uploaded
-                    syllabus file. This cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Keep course</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => deleteMutation.mutate()}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete course
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div> */}
         </div>
 
         <div className="-mx-4 border-b border-border px-4 sm:mx-0 sm:px-0">
