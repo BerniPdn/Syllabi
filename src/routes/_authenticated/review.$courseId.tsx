@@ -423,16 +423,16 @@ function ReviewExtractionScreen() {
     setSaving(true);
     setError(null);
 
-    if (!isEditing && !options?.skipDuplicateCheck) {
-      const matches = await findDuplicateCourses(courseId, draft);
-      if (matches.length > 0) {
-        setDuplicates(matches);
-        setSaving(false);
-        return;
-      }
-    }
-
     try {
+      if (!isEditing && !options?.skipDuplicateCheck) {
+        const matches = await findDuplicateCourses(courseId, draft);
+        if (matches.length > 0) {
+          setDuplicates(matches);
+          setSaving(false);
+          return;
+        }
+      }
+
       await save({
         data: {
           courseId,
