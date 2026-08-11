@@ -260,7 +260,7 @@ export function hasInsightData(facts: InsightFacts) {
 export function insightsSignature(facts: InsightFacts) {
   return JSON.stringify({
     // Bumped when the insight contract changes so stale cached rows are ignored.
-    version: "v2-4cat",
+    version: "v3-plain",
     target: [facts.course.targetGrade, facts.course.targetLetter],
     components: facts.components,
     graded: facts.graded.map((item) => [item.name, item.component, item.score, item.weightPercent]),
