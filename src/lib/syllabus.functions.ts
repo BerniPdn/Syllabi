@@ -43,18 +43,56 @@ export const extractSyllabus = createServerFn({ method: "POST" })
     const supabase = context.supabase;
 
     const { data: course, error: courseError } = await supabase
+    .from("courses")
+    .select("id, title, file_path, extracted")
+    .eq("id", data.courseId)
+    .maybeSingle();
+  if (courseError) throw new Error(courseError.message);
+  if (!course?.file_path) return { ok: false, error: "We couldn't find that syllabus file." };
+
+  if (course.extracted) {
+    return { ok: true, data: course.extracted as ExtractedSyllabus };
+  }
+
+  // Atomic claim: only succeeds if this row is still "processing". Two tabs
+  // racing here will both pass the checks above, but only one UPDATE can
+  // win this WHERE clause — Postgres locks the row and re-checks the
+  // condition against the committed value, so the loser sees 0 rows back.
+  const { data: claimed, error: claimError } = await supabase
+    .from("courses")
+    .update({ status: "extracting" })
+    .eq("id", data.courseId)
+    .eq("status", "processing")
+    .select("id");
+  if (claimError) throw new Error(claimError.message);
+
+  if (!claimed || claimed.length === 0) {
+    // Lost the race (or this course isn't in a state that should be
+    // (re-)extracted). Report whatever is actually true right now instead
+    // of kicking off a second, duplicate extraction.
+    const { data: current, error: currentError } = await supabase
       .from("courses")
-      .select("id, title, file_path, extracted")
+      .select("status, extracted, extraction_error")
       .eq("id", data.courseId)
       .maybeSingle();
-    if (courseError) throw new Error(courseError.message);
-    if (!course?.file_path) return { ok: false, error: "We couldn't find that syllabus file." };
+    if (currentError) throw new Error(currentError.message);
 
-    if (course.extracted) {
-      return { ok: true, data: course.extracted as ExtractedSyllabus };
+    if (current?.extracted) {
+      return { ok: true, data: current.extracted as ExtractedSyllabus };
     }
+    if (current?.status === "failed") {
+      return {
+        ok: false,
+        error: current.extraction_error ?? "We couldn't analyze that syllabus.",
+      };
+    }
+    return {
+      ok: false,
+      error: "This syllabus is already being analyzed in another tab. Give it a moment and refresh.",
+    };
+  }
 
-    const download = await supabase.storage.from("syllabi").download(course.file_path);
+  const download = await supabase.storage.from("syllabi").download(course.file_path);
     if (download.error || !download.data) {
       return { ok: false, error: "We couldn't open that syllabus file. Try uploading it again." };
     }
