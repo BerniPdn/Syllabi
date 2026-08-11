@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { daysUntil, letterFor } from "@/lib/grade-engine";
 import type { GradeScaleStep } from "@/lib/types";
+import { TriangleAlert } from "lucide-react";
 
 type Tone = "positive" | "neutral" | "attention";
 
@@ -128,6 +129,18 @@ export function GradeStat({
       </p>
       {sub ? <p className="mt-1 text-xs text-muted-foreground">{sub}</p> : null}
     </div>
+  );
+}
+
+export function WeightWarning({ totalWeight }: { totalWeight: number }) {
+  return (
+    <p
+      role="alert"
+      className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-warning"
+    >
+      <TriangleAlert className="size-3.5 shrink-0" />
+      Weights add up to {totalWeight}%, not 100% — this grade may not reflect your final score.
+    </p>
   );
 }
 

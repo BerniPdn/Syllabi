@@ -34,6 +34,7 @@ import {
   ProgressRing,
   SectionCard,
   SectionHeading,
+  WeightWarning,
   formatDate,
 } from "@/components/app/primitives";
 import {
@@ -89,6 +90,9 @@ export function OverviewPanel({ course }: { course: Course }) {
               <p className="text-xs text-muted-foreground mt-1">
                 {snapshot.currentGrade === null ? "Nothing graded yet" : `Scale: ${letterFor(snapshot.currentGrade, course.scale)}`}
               </p>
+              {!snapshot.weightsValid ? (
+                <WeightWarning totalWeight={snapshot.totalWeight} />
+              ) : null}
             </div>
             <div className="shrink-0">
               <ProgressRing value={snapshot.completion} label="graded" />
@@ -357,6 +361,9 @@ export function AssignmentsPanel({
             ))}
           </div>
         </div>
+        {!snapshot.weightsValid ? (
+          <WeightWarning totalWeight={snapshot.totalWeight} />
+        ) : null}
       </SectionCard>
 
       {course.categories.map((category) => {
