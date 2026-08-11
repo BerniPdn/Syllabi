@@ -111,10 +111,30 @@ export function OverviewPanel({ course }: { course: Course }) {
             <div className="rounded-xl border border-border/60 bg-muted/30 p-3">
               <GradeStat
                 label="Needed on Rest"
-                value={snapshot.neededOnRemaining?.toFixed(1) ?? "—"}
+                value={
+                  snapshot.neededOnRemaining === null
+                    ? "—"
+                    : snapshot.neededOnRemaining <= 0
+                      ? "0.0"
+                      : snapshot.neededOnRemaining.toFixed(1)
+                }
                 suffix="%"
-                sub={snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining > 100 ? "Out of reach" : "Avg remaining"}
-                tone={snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining > 100 ? "attention" : undefined}
+                sub={
+                  snapshot.neededOnRemaining === null
+                    ? "Avg remaining"
+                    : snapshot.neededOnRemaining <= 0
+                      ? "Target already met"
+                      : snapshot.neededOnRemaining > 100
+                        ? "Out of reach"
+                        : "Avg remaining"
+                }
+                tone={
+                  snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining <= 0
+                    ? "positive"
+                    : snapshot.neededOnRemaining !== null && snapshot.neededOnRemaining > 100
+                      ? "attention"
+                      : undefined
+                }
               />
             </div>
           </div>

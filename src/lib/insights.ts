@@ -200,13 +200,15 @@ export function buildInsightFacts(course: Course, now = new Date()) {
     targetFeasibility:
       needed === null
         ? "no_remaining_work"
-        : needed > 100
-          ? "impossible"
-          : needed >= 93
-            ? "very_hard"
-            : needed >= 80
-              ? "demanding"
-              : "comfortable",
+        : needed <= 0
+          ? "already_met"
+          : needed > 100
+            ? "impossible"
+            : needed >= 93
+              ? "very_hard"
+              : needed >= 80
+                ? "demanding"
+                : "comfortable",
     weakHighWeightComponents,
     gapToTarget:
       snapshot.currentGrade === null ? null : round(snapshot.currentGrade - course.targetGrade),
@@ -225,8 +227,7 @@ export function buildInsightFacts(course: Course, now = new Date()) {
       currentGrade: snapshot.currentGrade,
       currentLetter:
         snapshot.currentGrade === null ? null : letterFor(snapshot.currentGrade, course.scale),
-      projectedGrade: snapshot.projectedGrade,
-      neededAverageOnRemaining: snapshot.neededOnRemaining,
+        projectedGrade: snapshot.currentGrade === null ? null : snapshot.projectedGrade, neededAverageOnRemaining: snapshot.neededOnRemaining,
       gradedWeightPercent: snapshot.gradedWeight,
       remainingWeightPercent: snapshot.remainingWeight,
       completionPercent: round(snapshot.completion * 100),
