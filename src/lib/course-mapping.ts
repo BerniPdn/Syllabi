@@ -40,25 +40,35 @@ export function courseFromRow(row: {
     extracted.assignments ?? [],
   );
 
-  const assignments: Assignment[] = weighted.map((assignment, index) => {
+  const UNASSIGNED_CATEGORY_ID = "unassigned";
 
-    const matched = assignment.component
-      ? allCategories.find(
-          (category) =>
-            category.name.toLowerCase() === assignment.component!.trim().toLowerCase() ||
-            category.id === slug(assignment.component!, ""),
-        )
+  const assignments: Assignment[] = weighted.map((assignment, index) => {
+    const componentName = assignment.component?.trim();
+    // Same rule the review screen uses: an assignment belongs to a component
+    // only on an exact (trimmed) name match. Anything else — including a
+    // near-miss from case, punctuation, or a renamed/deleted component — is
+    // genuinely unassigned, not silently folded into an arbitrary category.
+    const matched = componentName
+      ? allCategories.find((category) => category.name.trim() === componentName)
       : undefined;
+  
     return {
       id: `a-${index}`,
-      categoryId: (matched ?? allCategories[0])!.id,
+      categoryId: matched ? matched.id : UNASSIGNED_CATEGORY_ID,
       name: assignment.name || `Assignment ${index + 1}`,
       weight: assignment.weight ?? null,
       dueDate: assignment.due_date ?? null,
       score: null,
     };
   });
-
+  
+  // If anything landed in Unassigned, surface it as a real category with
+  // weight 0 — visible in the workspace, but contributing nothing to the
+  // grade math (no skew, unlike falling into allCategories[0]).
+  if (assignments.some((a) => a.categoryId === UNASSIGNED_CATEGORY_ID)) {
+    allCategories.push({ id: UNASSIGNED_CATEGORY_ID, name: "Unassigned", weight: 0 });
+  }
+  
   // Grading components with a weight but no listed assignments (Participation,
   // Attendance, Discussion, ...) are still part of the final grade, so they get a
   // single gradable row of their own. Stable id so saved grades keep matching.
