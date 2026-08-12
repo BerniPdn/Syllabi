@@ -191,6 +191,9 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
     z
       .object({
         courseId: z.string().uuid(),
+        // Student-chosen target. Required and re-validated here so the course
+        // can never reach "ready" without one, even if the client is bypassed.
+        targetGrade: z.number().finite().min(0).max(100),
         extracted: z.object({
           course_name: z.string().nullable(),
           course_code: z.string().nullable(),
@@ -224,6 +227,7 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
       .from("courses")
       .update({
         extracted: data.extracted,
+        target_grade: data.targetGrade,
         status: "ready",
         extraction_error: null,
         title: data.extracted.course_name?.trim() || "Untitled course",
