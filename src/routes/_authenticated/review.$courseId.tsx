@@ -111,7 +111,7 @@ function ReviewExtractionScreen() {
     queryFn: async () => {
       const { data, error: queryError } = await supabase
         .from("courses")
-        .select("id, title, status, extracted, extraction_error")
+        .select("id, title, status, extracted, extraction_error, target_grade")
         .eq("id", courseId)
         .maybeSingle();
       if (queryError) throw queryError;
