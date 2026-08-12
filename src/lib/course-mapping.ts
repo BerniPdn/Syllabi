@@ -18,6 +18,7 @@ export function courseFromRow(row: {
   id: string;
   title: string | null;
   extracted: unknown;
+  target_grade?: number | string | null;
 }): Course {
   const extracted: ExtractedSyllabus = {
     ...emptyExtraction(),
