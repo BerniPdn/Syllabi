@@ -15,7 +15,7 @@ export function useCourses() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, title, extracted, status, updated_at")
+        .select("id, title, extracted, status, updated_at, target_grade")
         .eq("status", "ready")
         .order("created_at", { ascending: false });
       if (error) throw error;

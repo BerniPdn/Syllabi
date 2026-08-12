@@ -18,6 +18,7 @@ export function courseFromRow(row: {
   id: string;
   title: string | null;
   extracted: unknown;
+  target_grade?: number | string | null;
 }): Course {
   const extracted: ExtractedSyllabus = {
     ...emptyExtraction(),
@@ -90,7 +91,9 @@ export function courseFromRow(row: {
     code: extracted.course_code?.trim() || "",
     professor: extracted.professor?.trim() || "",
     semester: extracted.semester?.trim() || "",
-    targetGrade: 90,
+    // Persisted, student-chosen target. The fallback only covers legacy rows
+    // fetched without the column (numeric comes back as a string from PostgREST).
+    targetGrade: Number.isFinite(Number(row.target_grade)) ? Number(row.target_grade) : 90,
     scale: normalizeScale(extracted.grade_scale),
     categories: allCategories,
     assignments,

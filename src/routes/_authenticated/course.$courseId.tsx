@@ -64,7 +64,7 @@ function Workspace() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, title, extracted")
+        .select("id, title, extracted, target_grade")
         .eq("id", courseId)
         .maybeSingle();
       if (error) throw error;
