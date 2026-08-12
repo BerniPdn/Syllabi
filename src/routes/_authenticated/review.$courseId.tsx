@@ -11,6 +11,7 @@ import {
   Plus,
   Wand2,
   Sparkles,
+  Target,
   Trash2,
 } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
@@ -87,6 +88,11 @@ function ReviewExtractionScreen() {
   const [policiesExpanded, setPoliciesExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
+  // Student-set target grade. `null` = not initialised yet; "" = intentionally
+  // empty for a new course (never prefilled with the DB default).
+  const [targetInput, setTargetInput] = useState<string | null>(null);
+  const [targetTouched, setTargetTouched] = useState(false);
+  const [saveAttempted, setSaveAttempted] = useState(false);
   const { user } = Route.useRouteContext();
 
   // Modales de creación con formulario
@@ -136,6 +142,16 @@ function ReviewExtractionScreen() {
     setDraft({ ...base, assignments });
     setInferredKeys(new Set(inferredIndexes.map((index) => assignmentKey(assignments[index]!))));
   }, [course, draft]);
+
+  useEffect(() => {
+    if (targetInput !== null || !course) return;
+    // Only an already-ready course has a target the student actually chose.
+    setTargetInput(
+      course.status === "ready" && Number.isFinite(Number(course.target_grade))
+        ? String(Number(course.target_grade))
+        : "",
+    );
+  }, [course, targetInput]);
 
   useEffect(() => {
     if (!missingExtraction) return;
@@ -214,6 +230,11 @@ function ReviewExtractionScreen() {
 
   const scaleErrors = useMemo(() => validateScaleOrder(draft?.grade_scale), [draft]);
 
+  const targetRaw = (targetInput ?? "").trim();
+  const targetValue = targetRaw === "" ? Number.NaN : Number(targetRaw);
+  const targetValid = Number.isFinite(targetValue) && targetValue >= 0 && targetValue <= 100;
+  const showTargetError = !targetValid && (targetTouched || saveAttempted);
+
   const groupedAssignments = useMemo(() => {
     if (!draft) return [];
 
@@ -260,7 +281,8 @@ function ReviewExtractionScreen() {
     overAllocated.length > 0 ||
     underAllocated.length > 0 ||
     unassignedCount > 0 ||
-    scaleErrors.length > 0;
+    scaleErrors.length > 0 ||
+    !targetValid;
 
     if (isError) {
       return (
@@ -419,7 +441,8 @@ function ReviewExtractionScreen() {
   };
 
   async function handleSave(options?: { skipDuplicateCheck?: boolean }) {
-    if (!draft || blockedFromSaving) return;
+    setSaveAttempted(true);
+    if (!draft || blockedFromSaving || !targetValid) return;
     setSaving(true);
     setError(null);
 
@@ -436,6 +459,7 @@ function ReviewExtractionScreen() {
       await save({
         data: {
           courseId,
+          targetGrade: targetValue,
           extracted: {
             ...draft,
             course_name: draft.course_name?.trim() || null,
@@ -629,6 +653,44 @@ function ReviewExtractionScreen() {
             <Plus className="size-3.5" />
             Add cutoff
           </Button>
+        </SectionCard>
+
+        {/* SECTION: Target grade (student-set) */}
+        <SectionCard className={cn(showTargetError && "border-destructive/60")}>
+          <SectionHeading
+            title="What grade are you aiming for?"
+            hint="This is yours to set — Syllabi can't read it off the syllabus. It drives your on-track badge and how much you need on what's left."
+          />
+          <div className="space-y-2">
+            <Label htmlFor="target-grade" className="text-xs text-muted-foreground">
+              Target grade <span className="text-destructive">*</span> (required)
+            </Label>
+            <div className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 sm:px-3.5 sm:py-2.5">
+              <Target className="size-4 shrink-0 text-primary" />
+              <Input
+                id="target-grade"
+                type="number"
+                min={0}
+                max={100}
+                inputMode="decimal"
+                placeholder="e.g. 85"
+                value={targetInput ?? ""}
+                onChange={(event) => {
+                  setTargetTouched(true);
+                  setTargetInput(event.target.value);
+                }}
+                onBlur={() => setTargetTouched(true)}
+                aria-invalid={showTargetError}
+                className="numeric h-8 w-24 text-right"
+              />
+              <span className="shrink-0 text-xs text-muted-foreground">%</span>
+            </div>
+            {showTargetError ? (
+              <p role="alert" className="text-sm text-destructive">
+                Set a target grade to continue — it's required to save this course.
+              </p>
+            ) : null}
+          </div>
         </SectionCard>
 
         {/* SECTION: Grading Components */}
@@ -1082,7 +1144,9 @@ function ReviewExtractionScreen() {
         {/* ERROR / BLOCKED WARNINGS */}
         {blockedFromSaving ? (
           <p role="alert" className="px-1 text-sm font-medium text-destructive">
-            {scaleErrors.length > 0
+            {!targetValid
+              ? "Set a target grade to continue — it's required to save this course."
+              : scaleErrors.length > 0
               ? "Fix the grading scale order before saving — higher letter grades must have equal or higher percentage cutoffs."
               : !balanced
               ? `Your course components do not add up to 100% (currently ${Math.round(total * 10) / 10}%). Please edit this before saving so your grade calculations work properly.`
