@@ -92,6 +92,8 @@ function ReviewExtractionScreen() {
   // empty for a new course (never prefilled with the DB default).
   const [targetInput, setTargetInput] = useState<string | null>(null);
   const [targetTouched, setTargetTouched] = useState(false);
+  const [identityTouched, setIdentityTouched] = useState(false);
+
   const [saveAttempted, setSaveAttempted] = useState(false);
   const { user } = Route.useRouteContext();
 
