@@ -547,14 +547,21 @@ function ReviewExtractionScreen() {
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
               label="Course name"
+              required
               value={draft.course_name ?? ""}
               onChange={(value) => patch({ course_name: value })}
+              onBlur={() => setIdentityTouched(true)}
+              error={showNameError ? "Course name is required to save this course." : null}
             />
             <Field
               label="Course code"
+              required
               value={draft.course_code ?? ""}
               onChange={(value) => patch({ course_code: value })}
+              onBlur={() => setIdentityTouched(true)}
+              error={showCodeError ? "Course code is required to save this course." : null}
             />
+
             <Field
               label="Professor"
               value={draft.professor ?? ""}
