@@ -464,9 +464,8 @@ function ReviewExtractionScreen() {
             ...draft,
             course_name: draft.course_name?.trim() || null,
             policies: draft.policies.map((policy) => policy.trim()).filter(Boolean),
-            grade_scale: draft.grade_scale
-              .filter((step) => step.letter.trim() && step.min !== null)
-              .map((step) => ({ letter: step.letter.trim(), min: step.min })),
+            grade_scale: scaleForSaving(draft.grade_scale),
+
           },
         },
       });
