@@ -137,7 +137,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      grade_scale_is_unique: { Args: { extracted: Json }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

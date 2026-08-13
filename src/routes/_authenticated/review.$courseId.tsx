@@ -58,7 +58,7 @@ import {
 } from "@/lib/syllabus-extraction";
 import { INFERRED_WEIGHT_NOTE, inferAssignmentWeights } from "@/lib/assignment-weights";
 import { findDuplicateCourses, type DuplicateCandidate } from "@/lib/duplicate-course";
-import { scaleForEditing, validateScaleOrder } from "@/lib/grade-scale";
+import { scaleForEditing, scaleForSaving, validateScaleOrder } from "@/lib/grade-scale";
 import { saveExtractedCourse } from "@/lib/syllabus.functions";
 import { coursesQueryKey } from "@/lib/use-courses";
 import { cn } from "@/lib/utils";
@@ -464,9 +464,8 @@ function ReviewExtractionScreen() {
             ...draft,
             course_name: draft.course_name?.trim() || null,
             policies: draft.policies.map((policy) => policy.trim()).filter(Boolean),
-            grade_scale: draft.grade_scale
-              .filter((step) => step.letter.trim() && step.min !== null)
-              .map((step) => ({ letter: step.letter.trim(), min: step.min })),
+            grade_scale: scaleForSaving(draft.grade_scale),
+
           },
         },
       });

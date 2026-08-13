@@ -7,6 +7,7 @@ import {
   type ExtractedSyllabus,
   type ExtractionResult,
 } from "@/lib/syllabus-extraction";
+import { scaleForSaving } from "@/lib/grade-scale";
 
 const PROMPT = `You are extracting structured data from a university course syllabus PDF.
 
@@ -165,7 +166,9 @@ export const extractSyllabus = createServerFn({ method: "POST" })
       semester: parsed.semester ?? null,
       description: parsed.description ?? null,
       grading_components: parsed.grading_components ?? [],
-      grade_scale: parsed.grade_scale ?? [],
+      // Deduped at the source: a model can repeat a cutoff, and reprocessing
+      // must never accumulate duplicate scale rows.
+      grade_scale: scaleForSaving(parsed.grade_scale ?? []),
       assignments: parsed.assignments ?? [],
       important_dates: parsed.important_dates ?? [],
       policies: parsed.policies ?? [],
@@ -226,7 +229,10 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("courses")
       .update({
-        extracted: data.extracted,
+        extracted: {
+          ...data.extracted,
+          grade_scale: scaleForSaving(data.extracted.grade_scale),
+        },
         target_grade: data.targetGrade,
         status: "ready",
         extraction_error: null,
