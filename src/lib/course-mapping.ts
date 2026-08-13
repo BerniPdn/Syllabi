@@ -43,6 +43,19 @@ export function courseFromRow(row: {
 
   const UNASSIGNED_CATEGORY_ID = "unassigned";
 
+  // Stable across edits (adding/removing/reordering assignments), unlike a
+  // position-based id — otherwise deleting one assignment shifts every
+  // later assignment's id and silently reattaches saved grades to the
+  // wrong assignment. Keyed by component+name; a counter breaks ties for
+  // genuine duplicates (e.g. two assignments both named "Quiz").
+  const seenAssignmentKeys = new Map<string, number>();
+  const stableAssignmentId = (name: string, component: string | null) => {
+    const base = `${(component ?? "").trim().toLowerCase()}::${name.trim().toLowerCase()}`;
+    const occurrence = seenAssignmentKeys.get(base) ?? 0;
+    seenAssignmentKeys.set(base, occurrence + 1);
+    return occurrence === 0 ? base : `${base}#${occurrence}`;
+  };
+
   const assignments: Assignment[] = weighted.map((assignment, index) => {
     const componentName = assignment.component?.trim();
     // Same rule the review screen uses: an assignment belongs to a component
@@ -52,11 +65,12 @@ export function courseFromRow(row: {
     const matched = componentName
       ? allCategories.find((category) => category.name.trim() === componentName)
       : undefined;
-  
+    const name = assignment.name || `Assignment ${index + 1}`;
+
     return {
-      id: `a-${index}`,
+      id: stableAssignmentId(name, assignment.component ?? null),
       categoryId: matched ? matched.id : UNASSIGNED_CATEGORY_ID,
-      name: assignment.name || `Assignment ${index + 1}`,
+      name,
       weight: assignment.weight ?? null,
       dueDate: assignment.due_date ?? null,
       score: null,
