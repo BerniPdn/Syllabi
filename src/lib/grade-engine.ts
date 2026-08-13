@@ -54,9 +54,12 @@ export const isValidScoreInput = (raw: string) => {
 };
 
 export function letterFor(score: number, scale: GradeScaleStep[]): string {
-  const ordered = [...scale].sort((a, b) => b.min - a.min);
+  // Deduped + deterministically ordered so duplicate cutoffs can never make the
+  // resolved letter depend on the order rows came back from the database.
+  const ordered = dedupeScaleSteps([...scale]).sort(compareScaleSteps);
   return ordered.find((step) => score >= step.min)?.letter ?? ordered.at(-1)?.letter ?? "—";
 }
+
 
 export function minScoreForLetter(letter: string, scale: GradeScaleStep[]): number {
   return scale.find((step) => step.letter === letter)?.min ?? 0;
