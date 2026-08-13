@@ -1,4 +1,6 @@
 import type { Assignment, Category, Course, GradeScaleStep } from "./types";
+import { compareScaleSteps, dedupeScaleSteps } from "./grade-scale";
+
 
 /**
  * Deterministic grade engine. No AI, no network, no side effects.
