@@ -235,6 +235,12 @@ function ReviewExtractionScreen() {
   const targetValid = Number.isFinite(targetValue) && targetValue >= 0 && targetValue <= 100;
   const showTargetError = !targetValid && (targetTouched || saveAttempted);
 
+  const nameValid = Boolean((draft?.course_name ?? "").trim());
+  const codeValid = Boolean((draft?.course_code ?? "").trim());
+  const showNameError = !nameValid && (identityTouched || saveAttempted);
+  const showCodeError = !codeValid && (identityTouched || saveAttempted);
+
+
   const groupedAssignments = useMemo(() => {
     if (!draft) return [];
 
