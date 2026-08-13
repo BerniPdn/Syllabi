@@ -1161,7 +1161,9 @@ function ReviewExtractionScreen() {
         {/* ERROR / BLOCKED WARNINGS */}
         {blockedFromSaving ? (
           <p role="alert" className="px-1 text-sm font-medium text-destructive">
-            {!targetValid
+            {!nameValid || !codeValid
+              ? "Add a course name and course code to continue — both are required to save this course."
+              : !targetValid
               ? "Set a target grade to continue — it's required to save this course."
               : scaleErrors.length > 0
               ? "Fix the grading scale order before saving — higher letter grades must have equal or higher percentage cutoffs."
