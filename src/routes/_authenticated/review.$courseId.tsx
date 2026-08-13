@@ -92,6 +92,8 @@ function ReviewExtractionScreen() {
   // empty for a new course (never prefilled with the DB default).
   const [targetInput, setTargetInput] = useState<string | null>(null);
   const [targetTouched, setTargetTouched] = useState(false);
+  const [identityTouched, setIdentityTouched] = useState(false);
+
   const [saveAttempted, setSaveAttempted] = useState(false);
   const { user } = Route.useRouteContext();
 
@@ -235,6 +237,12 @@ function ReviewExtractionScreen() {
   const targetValid = Number.isFinite(targetValue) && targetValue >= 0 && targetValue <= 100;
   const showTargetError = !targetValid && (targetTouched || saveAttempted);
 
+  const nameValid = Boolean((draft?.course_name ?? "").trim());
+  const codeValid = Boolean((draft?.course_code ?? "").trim());
+  const showNameError = !nameValid && (identityTouched || saveAttempted);
+  const showCodeError = !codeValid && (identityTouched || saveAttempted);
+
+
   const groupedAssignments = useMemo(() => {
     if (!draft) return [];
 
@@ -282,7 +290,10 @@ function ReviewExtractionScreen() {
     underAllocated.length > 0 ||
     unassignedCount > 0 ||
     scaleErrors.length > 0 ||
+    !nameValid ||
+    !codeValid ||
     !targetValid;
+
 
     if (isError) {
       return (
@@ -547,14 +558,21 @@ function ReviewExtractionScreen() {
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
               label="Course name"
+              required
               value={draft.course_name ?? ""}
               onChange={(value) => patch({ course_name: value })}
+              onBlur={() => setIdentityTouched(true)}
+              error={showNameError ? "Course name is required to save this course." : null}
             />
             <Field
               label="Course code"
+              required
               value={draft.course_code ?? ""}
               onChange={(value) => patch({ course_code: value })}
+              onBlur={() => setIdentityTouched(true)}
+              error={showCodeError ? "Course code is required to save this course." : null}
             />
+
             <Field
               label="Professor"
               value={draft.professor ?? ""}
@@ -1143,7 +1161,9 @@ function ReviewExtractionScreen() {
         {/* ERROR / BLOCKED WARNINGS */}
         {blockedFromSaving ? (
           <p role="alert" className="px-1 text-sm font-medium text-destructive">
-            {!targetValid
+            {!nameValid || !codeValid
+              ? "Add a course name and course code to continue — both are required to save this course."
+              : !targetValid
               ? "Set a target grade to continue — it's required to save this course."
               : scaleErrors.length > 0
               ? "Fix the grading scale order before saving — higher letter grades must have equal or higher percentage cutoffs."
@@ -1513,21 +1533,38 @@ function Field({
   label,
   value,
   onChange,
+  required,
+  error,
+  onBlur,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  required?: boolean;
+  error?: string | null;
+  onBlur?: () => void;
 }) {
   const id = label.toLowerCase().replace(/\s+/g, "-");
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {required ? <span className="ml-0.5 text-destructive">*</span> : null}
+      </Label>
       <Input
         id={id}
         value={value}
-        placeholder="Not stated in the syllabus"
+        aria-invalid={error ? true : undefined}
+        className={error ? "border-destructive focus-visible:ring-destructive/30" : undefined}
+        placeholder={required ? `Add a ${label.toLowerCase()}` : "Not stated in the syllabus"}
         onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
       />
+      {error ? (
+        <p role="alert" className="text-xs font-medium text-destructive">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
