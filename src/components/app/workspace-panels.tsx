@@ -15,11 +15,6 @@ import {
   TriangleAlert,
 } from "lucide-react";
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { MessageResponse } from "@/components/ai-elements/message";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Button } from "@/components/ui/button";
@@ -238,37 +233,41 @@ function CoursePoliciesList({ policies }: { policies: string[] }) {
     );
   }
 
+  const hasMore = policies.length > 3;
+  const visible = expanded ? policies : policies.slice(0, 3);
+
   return (
-    <Collapsible open={expanded} onOpenChange={setExpanded}>
-      <CollapsibleContent asChild>
-        <ul className="space-y-2">
-          {policies.map((policy) => (
-            <li
-              key={policy}
-              className="flex gap-2.5 rounded-xl border border-border/60 bg-muted/30 p-2.5 text-xs text-muted-foreground"
-            >
-              <Info className="mt-0.5 size-3.5 shrink-0 text-primary" />
-              <span className="leading-relaxed">{policy}</span>
-            </li>
-          ))}
-        </ul>
-      </CollapsibleContent>
-      {policies.length > 3 ? (
-        <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm" className="mt-2.5 w-full gap-1 text-xs text-muted-foreground h-8">
-            {expanded ? (
-              <>
-                Show fewer <ChevronDown className="size-3.5 rotate-180" />
-              </>
-            ) : (
-              <>
-                Show all {policies.length} policies <ChevronDown className="size-3.5" />
-              </>
-            )}
-          </Button>
-        </CollapsibleTrigger>
+    <div>
+      <ul className="space-y-2">
+        {visible.map((policy) => (
+          <li
+            key={policy}
+            className="flex gap-2.5 rounded-xl border border-border/60 bg-muted/30 p-2.5 text-xs text-muted-foreground"
+          >
+            <Info className="mt-0.5 size-3.5 shrink-0 text-primary" />
+            <span className="leading-relaxed">{policy}</span>
+          </li>
+        ))}
+      </ul>
+      {hasMore ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-2.5 w-full gap-1 text-xs text-muted-foreground h-8"
+          onClick={() => setExpanded((prev) => !prev)}
+        >
+          {expanded ? (
+            <>
+              Show fewer <ChevronDown className="size-3.5 rotate-180" />
+            </>
+          ) : (
+            <>
+              Show all {policies.length} policies <ChevronDown className="size-3.5" />
+            </>
+          )}
+        </Button>
       ) : null}
-    </Collapsible>
+    </div>
   );
 }
 

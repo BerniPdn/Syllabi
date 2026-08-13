@@ -17,11 +17,6 @@ import {
 import { AppShell } from "@/components/app/app-shell";
 import { SectionCard, SectionHeading } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -1097,56 +1092,59 @@ function ReviewExtractionScreen() {
         <SectionCard>
           <SectionHeading title="The fine print" hint="Course policies saved as context" />
           {draft.policies.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No policies were stated.</p>
-          ) : (
-            <Collapsible open={policiesExpanded} onOpenChange={setPoliciesExpanded}>
-              <CollapsibleContent asChild>
-                <div className="space-y-2">
-                  {draft.policies.map((policy, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <Textarea
-                        aria-label="Policy"
-                        rows={2}
-                        value={policy}
-                        onChange={(event) => {
-                          const next = [...draft.policies];
-                          next[index] = event.target.value;
-                          patch({ policies: next });
-                        }}
-                        className="min-w-0 flex-1"
-                      />
-                      <button
-                        type="button"
-                        aria-label="Remove policy"
-                        onClick={() =>
-                          patch({ policies: draft.policies.filter((_, i) => i !== index) })
-                        }
-                        className="focus-ring mt-1 shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleContent>
-              {draft.policies.length > 3 ? (
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="mt-3 gap-1.5">
-                    {policiesExpanded ? (
-                      <>
-                        Show fewer <ChevronDown className="size-3.5 rotate-180" />
-                      </>
-                    ) : (
-                      <>
-                        Show all {draft.policies.length} policies{" "}
-                        <ChevronDown className="size-3.5" />
-                      </>
-                    )}
-                  </Button>
-                </CollapsibleTrigger>
-              ) : null}
-            </Collapsible>
-          )}
+  <p className="text-sm text-muted-foreground">No policies were stated.</p>
+) : (
+  <>
+    <div className="space-y-2">
+      {(policiesExpanded ? draft.policies : draft.policies.slice(0, 3)).map(
+        (policy, index) => (
+          <div key={index} className="flex items-start gap-2">
+            <Textarea
+              aria-label="Policy"
+              rows={2}
+              value={policy}
+              onChange={(event) => {
+                const next = [...draft.policies];
+                next[index] = event.target.value;
+                patch({ policies: next });
+              }}
+              className="min-w-0 flex-1"
+            />
+            <button
+              type="button"
+              aria-label="Remove policy"
+              onClick={() =>
+                patch({ policies: draft.policies.filter((_, i) => i !== index) })
+              }
+              className="focus-ring mt-1 shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          </div>
+        ),
+      )}
+    </div>
+    {draft.policies.length > 3 ? (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mt-3 gap-1.5"
+        onClick={() => setPoliciesExpanded((prev) => !prev)}
+      >
+        {policiesExpanded ? (
+          <>
+            Show fewer <ChevronDown className="size-3.5 rotate-180" />
+          </>
+        ) : (
+          <>
+            Show all {draft.policies.length} policies{" "}
+            <ChevronDown className="size-3.5" />
+          </>
+        )}
+      </Button>
+    ) : null}
+  </>
+)}
           <Button
             variant="outline"
             size="sm"
