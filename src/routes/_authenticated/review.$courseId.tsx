@@ -1513,21 +1513,38 @@ function Field({
   label,
   value,
   onChange,
+  required,
+  error,
+  onBlur,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  required?: boolean;
+  error?: string | null;
+  onBlur?: () => void;
 }) {
   const id = label.toLowerCase().replace(/\s+/g, "-");
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {required ? <span className="ml-0.5 text-destructive">*</span> : null}
+      </Label>
       <Input
         id={id}
         value={value}
-        placeholder="Not stated in the syllabus"
+        aria-invalid={error ? true : undefined}
+        className={error ? "border-destructive focus-visible:ring-destructive/30" : undefined}
+        placeholder={required ? `Add a ${label.toLowerCase()}` : "Not stated in the syllabus"}
         onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
       />
+      {error ? (
+        <p role="alert" className="text-xs font-medium text-destructive">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
