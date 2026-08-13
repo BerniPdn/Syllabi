@@ -290,7 +290,10 @@ function ReviewExtractionScreen() {
     underAllocated.length > 0 ||
     unassignedCount > 0 ||
     scaleErrors.length > 0 ||
+    !nameValid ||
+    !codeValid ||
     !targetValid;
+
 
     if (isError) {
       return (
