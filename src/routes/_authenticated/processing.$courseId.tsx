@@ -58,12 +58,29 @@ function ProcessingRoute() {
     },
   });
 
+  // A course that can't reach `ready` must not survive in the database.
+  const failFlow = useCallback(
+    async (message: string) => {
+      setError(message);
+      try {
+        await discardDraftCourse(courseId);
+        queryClient.invalidateQueries({ queryKey: coursesQueryKey });
+      } catch (cause) {
+        console.error("[processing] failed to discard course", cause);
+        setCleanupError(
+          "We couldn't fully clean up this upload. Refresh and try again — nothing was added to your workspace.",
+        );
+      }
+    },
+    [courseId, queryClient],
+  );
+
   useEffect(() => {
     if (isLoading || isError || !course || started.current) return;
     started.current = true;
 
     if (course.extraction_error && !course.extracted) {
-      setError(course.extraction_error);
+      void failFlow(course.extraction_error);
       return;
     }
     if (course.extracted) {
@@ -84,17 +101,17 @@ function ProcessingRoute() {
         if (result.ok) {
           await goToReview();
         } else {
-          setError(result.error);
+          await failFlow(result.error);
         }
       })
-      .catch((cause: unknown) => {
-        setError(
+      .catch(async (cause: unknown) => {
+        await failFlow(
           cause instanceof Error
             ? cause.message
             : "We couldn't analyze that syllabus. Please try again.",
         );
       });
-  }, [course, courseId, isLoading, navigate, queryClient, runExtraction]);
+  }, [course, courseId, failFlow, isLoading, isError, navigate, queryClient, runExtraction]);
 
   useEffect(() => {
     if (error) return;
@@ -105,13 +122,24 @@ function ProcessingRoute() {
 
   async function uploadAnother() {
     setDiscarding(true);
+    setCleanupError(null);
     try {
-      await removeCourse({ data: { courseId } });
-    } catch {
-      // even if cleanup fails, let the user retry
+      // Idempotent: the failure path may already have removed this row.
+      await discardDraftCourse(courseId);
+      queryClient.invalidateQueries({ queryKey: coursesQueryKey });
+    } catch (cause) {
+      console.error("[processing] failed to discard course", cause);
+      setCleanupError(
+        cause instanceof Error
+          ? `We couldn't remove the previous upload: ${cause.message}`
+          : "We couldn't remove the previous upload. Please try again.",
+      );
+      setDiscarding(false);
+      return;
     }
     navigate({ to: "/upload", replace: true });
   }
+
 
   const fileName = course?.title ? `${course.title}.pdf` : "syllabus.pdf";
 
