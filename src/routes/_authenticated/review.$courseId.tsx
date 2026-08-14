@@ -161,18 +161,19 @@ function ReviewExtractionScreen() {
 
   // Abandoning Review (sidebar link, back button, tab close) must not leave a
   // non-ready course behind. Editing a ready course is untouched by this.
-  const isReadyCourse = course?.status === "ready";
-  useEffect(() => {
-    if (isReadyCourse || !course) return;
-    return () => {
-      if (completedRef.current) return;
+  const inReviewRef = useRef(false);
+  if (course && course.status !== "ready") inReviewRef.current = true;
+  useEffect(
+    () => () => {
+      if (completedRef.current || !inReviewRef.current) return;
       void discardDraftCourse(courseId)
         .then(() => queryClient.invalidateQueries({ queryKey: coursesQueryKey }))
         .catch((cause: unknown) => {
           console.error("[review] failed to discard abandoned course", cause);
         });
-    };
-  }, [course, courseId, isReadyCourse, queryClient]);
+    },
+    [courseId, queryClient],
+  );
 
   const total = useMemo(
     () =>
