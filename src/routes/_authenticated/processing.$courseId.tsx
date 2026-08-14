@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -13,7 +13,9 @@ const SYLLABUS_STAGES: string[] = [
   "Finding assignments and dates",
   "Preparing your workspace",
 ];
-import { deleteCourse, extractSyllabus } from "@/lib/syllabus.functions";
+import { extractSyllabus } from "@/lib/syllabus.functions";
+import { discardDraftCourse } from "@/lib/discard-course";
+import { coursesQueryKey } from "@/lib/use-courses";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/processing/$courseId")({
@@ -40,11 +42,11 @@ function ProcessingRoute() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runExtraction = useServerFn(extractSyllabus);
-  const removeCourse = useServerFn(deleteCourse);
   const started = useRef(false);
   const [stage, setStage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [discarding, setDiscarding] = useState(false);
+  const [cleanupError, setCleanupError] = useState<string | null>(null);
 
   const { data: course, isLoading, isError, refetch } = useQuery({queryKey: ["course", courseId],
     queryFn: async () => {
@@ -196,6 +198,11 @@ function ProcessingRoute() {
               We need a course syllabus
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">{error}</p>
+            {cleanupError ? (
+              <p role="alert" className="mt-3 text-sm text-destructive">
+                {cleanupError}
+              </p>
+            ) : null}
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Button size="lg" className="flex-1" disabled={discarding} onClick={uploadAnother}>
