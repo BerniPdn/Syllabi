@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, FileText, Loader2, UploadCloud, X } from "lucide-react";
 import { AppShell } from "@/components/app/app-shell";
 import { SectionCard } from "@/components/app/primitives";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { sweepAbandonedCourses } from "@/lib/discard-course";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/upload")({
@@ -37,6 +38,14 @@ function UploadScreen() {
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+
+  // Reaching this screen means the student is not inside an active flow, so
+  // any leftover non-ready course from an abandoned attempt is swept away.
+  useEffect(() => {
+    void sweepAbandonedCourses().catch((cause: unknown) => {
+      console.error("[upload] failed to sweep abandoned courses", cause);
+    });
+  }, []);
 
   const pick = (picked: File | undefined) => {
     if (!picked) return;
@@ -85,7 +94,12 @@ function UploadScreen() {
         })
         .select("id")
         .single();
-      if (insertError) throw insertError;
+      if (insertError) {
+        // No course row exists, so the stored PDF must not linger either.
+        const { error: removeError } = await supabase.storage.from("syllabi").remove([path]);
+        if (removeError) console.error("[upload] failed to remove orphaned file", removeError);
+        throw insertError;
+      }
 
       setProgress(100);
       navigate({ to: "/processing/$courseId", params: { courseId: data.id } });
