@@ -242,6 +242,17 @@ function DashboardCard({ course }: { course: Course }) {
 
 function Dashboard() {
   const { data: courses = [], isPending } = useCourses();
+  const queryClient = useQueryClient();
+
+  // The dashboard is outside the upload flow, so any leftover non-ready course
+  // from an abandoned or crashed attempt is removed here.
+  useEffect(() => {
+    void sweepAbandonedCourses()
+      .then(() => queryClient.invalidateQueries({ queryKey: coursesQueryKey }))
+      .catch((cause: unknown) => {
+        console.error("[dashboard] failed to sweep abandoned courses", cause);
+      });
+  }, [queryClient]);
 
   const isDataLoading = isPending;
   const upcoming = courses
