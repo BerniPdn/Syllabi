@@ -15,15 +15,23 @@ export async function fetchStoredInsights(courseId: string): Promise<StoredInsig
     .eq("course_id", courseId)
     .maybeSingle();
 
-  if (error || !data) return null;
-  const body = data.body as unknown;
-  if (!Array.isArray(body)) return null;
-
-  return {
-    insights: body as CourseInsight[],
-    signature: data.signature,
-    generatedAt: data.generated_at,
-  };
+    if (error) {
+      console.error("[insights-store] failed to fetch stored insights", error);
+      return null;
+    }
+    if (!data) return null;
+  
+    const body = data.body as unknown;
+    if (!Array.isArray(body)) {
+      console.error("[insights-store] stored insights body is not an array", { courseId, body });
+      return null;
+    }
+  
+    return {
+      insights: body as CourseInsight[],
+      signature: data.signature,
+      generatedAt: data.generated_at,
+    };
 }
 
 /** Persists the latest insights for a course, replacing any previous row. */
