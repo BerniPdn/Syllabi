@@ -89,6 +89,7 @@ function ReviewExtractionScreen() {
   // empty for a new course (never prefilled with the DB default).
   const [targetInput, setTargetInput] = useState<string | null>(null);
   const [targetTouched, setTargetTouched] = useState(false);
+  const [targetGradeModalOpen, setTargetGradeModalOpen] = useState(false);
   const [identityTouched, setIdentityTouched] = useState(false);
 
   const [saveAttempted, setSaveAttempted] = useState(false);
@@ -171,6 +172,12 @@ function ReviewExtractionScreen() {
         : "",
     );
   }, [course, targetInput]);
+
+  useEffect(() => {
+    if (!course || course.status === "ready") return;
+  
+    setTargetGradeModalOpen(true);
+  }, [course]);
 
   useEffect(() => {
     if (!missingExtraction) return;
@@ -565,7 +572,69 @@ function ReviewExtractionScreen() {
   }
 
   return (
-    <AppShell user={user}>
+    <>
+      <Dialog
+        open={targetGradeModalOpen}
+        onOpenChange={() => {}}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Target className="size-5 text-primary" />
+              What is your target grade?
+            </DialogTitle>
+  
+            <DialogDescription>
+              Tell us what grade you're aiming for so we can personalize your course.
+            </DialogDescription>
+          </DialogHeader>
+  
+          <div className="space-y-2">
+            <Label htmlFor="target-grade-modal">
+              Target grade
+            </Label>
+  
+            <div className="relative">
+              <Input
+                id="target-grade-modal"
+                type="number"
+                min={0}
+                max={100}
+                step="0.1"
+                placeholder="90"
+                autoFocus
+                value={targetInput ?? ""}
+                onChange={(event) => setTargetInput(event.target.value)}
+                className="pr-8"
+              />
+  
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                %
+              </span>
+            </div>
+          </div>
+  
+          <DialogFooter>
+            <Button
+              type="button"
+              disabled={
+                targetInput === null ||
+                targetInput === "" ||
+                Number(targetInput) < 0 ||
+                Number(targetInput) > 100
+              }
+              onClick={() => {
+                setTargetTouched(true);
+                setTargetGradeModalOpen(false);
+              }}
+            >
+              Continue to review
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+  
+      <AppShell user={user}>
       <div className="mx-auto max-w-3xl space-y-6 overflow-x-hidden px-3 sm:px-0">
         <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-card px-4 py-5 shadow-sm sm:px-7 sm:py-7">
           <div className="pointer-events-none absolute -right-12 -top-12 size-32 rounded-full bg-primary/5 blur-2xl" />
@@ -1607,6 +1676,7 @@ function ReviewExtractionScreen() {
         </AlertDialog>
       </div>
     </AppShell>
+    </>
   );
 }
 
