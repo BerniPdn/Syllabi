@@ -529,6 +529,8 @@ function ReviewExtractionScreen() {
     if (!draft || blockedFromSaving || !targetValid) return;
     setSaving(true);
     setError(null);
+  
+    completedRef.current = true;
     let persistedCourseId: string | null = null;
   
     try {
@@ -536,11 +538,10 @@ function ReviewExtractionScreen() {
         const matches = await findDuplicateCourses(courseId, draft);
         if (matches.length > 0) {
           setDuplicates(matches);
-          setSaving(false);
           return;
         }
       }
-
+  
       const savedCourse = await save({
         data: {
           courseId,
@@ -548,9 +549,8 @@ function ReviewExtractionScreen() {
           extracted: {
             ...draft,
             course_name: draft.course_name?.trim() ?? "",
-            policies: draft.policies.map((policy) => policy.trim()).filter(Boolean),
+            policies: draft.policies.map((p) => p.trim()).filter(Boolean),
             grade_scale: scaleForSaving(draft.grade_scale),
-  
           },
         },
       });
@@ -558,9 +558,7 @@ function ReviewExtractionScreen() {
       if (persistedCourseId !== courseId) {
         throw new Error("We saved this course under an unexpected ID. Please refresh and try again.");
       }
-
-      completedRef.current = true;
-
+  
       await queryClient.invalidateQueries({ queryKey: ["course-workspace", persistedCourseId] });
       await queryClient.invalidateQueries({ queryKey: ["course", persistedCourseId] });
       await queryClient.invalidateQueries({ queryKey: coursesQueryKey });
@@ -574,6 +572,7 @@ function ReviewExtractionScreen() {
             ? "Your course was saved, but we couldn't open it. You can find it in your dashboard."
             : "We couldn't save this course. Try again.",
       );
+    } finally {
       setSaving(false);
     }
   }
