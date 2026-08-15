@@ -246,6 +246,15 @@ function Dashboard() {
   const { data: courses = [], isPending, isError, refetch } = useCourses();
   const queryClient = useQueryClient();
 
+  // Safety net: remove upload rows abandoned in a previous session so they
+  // never linger in the database (a course only exists once it reaches ready).
+  useEffect(() => {
+    void sweepAbandonedCourses()
+      .then(() => queryClient.invalidateQueries({ queryKey: coursesQueryKey }))
+      .catch((cause: unknown) => console.error("[dashboard] sweep failed", cause));
+  }, [queryClient]);
+
+
   const isDataLoading = isPending;
   const upcoming = courses
     .flatMap((course) =>
