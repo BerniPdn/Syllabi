@@ -43,18 +43,13 @@ export function courseFromRow(row: {
 
   const UNASSIGNED_CATEGORY_ID = "unassigned";
 
-  // Stable across edits (adding/removing/reordering assignments), unlike a
-  // position-based id — otherwise deleting one assignment shifts every
-  // later assignment's id and silently reattaches saved grades to the
-  // wrong assignment. Keyed by component+name; a counter breaks ties for
-  // genuine duplicates (e.g. two assignments both named "Quiz").
+  // Legacy fallback only: assignments saved before immutable ids existed
+  // don't have `assignment.id`, so we recompute the old component+name key
+  // to keep matching their already-saved grade. A counter breaks ties for
+  // genuine duplicates (e.g. two assignments both named "Quiz"). Once such
+  // an assignment is re-saved (via review.$courseId.tsx), it gets this same
+  // value written into `id` permanently and never falls back to this again.
   const seenAssignmentKeys = new Map<string, number>();
-  const stableAssignmentId = (name: string, component: string | null) => {
-    const base = `${(component ?? "").trim().toLowerCase()}::${name.trim().toLowerCase()}`;
-    const occurrence = seenAssignmentKeys.get(base) ?? 0;
-    seenAssignmentKeys.set(base, occurrence + 1);
-    return occurrence === 0 ? base : `${base}#${occurrence}`;
-  };
 
   const assignments: Assignment[] = weighted.map((assignment, index) => {
     const componentName = assignment.component?.trim();
@@ -68,7 +63,9 @@ export function courseFromRow(row: {
     const name = assignment.name || `Assignment ${index + 1}`;
 
     return {
-      id: stableAssignmentId(name, assignment.component ?? null),
+      id:
+        assignment.id?.trim() ||
+        deriveLegacyAssignmentId(name, assignment.component ?? null, seenAssignmentKeys),
       categoryId: matched ? matched.id : UNASSIGNED_CATEGORY_ID,
       name,
       weight: assignment.weight ?? null,
@@ -113,4 +110,22 @@ export function courseFromRow(row: {
     assignments,
     policies: extracted.policies ?? [],
   };
+}
+
+/**
+ * Derives the pre-immutable-id assignment key: `component::name`
+ * (lowercased, trimmed), with a `#n` suffix for duplicates. Used only as a
+ * fallback for assignments saved before immutable ids existed, and by
+ * review.$courseId.tsx to backfill that same id on first edit — so an old
+ * course's already-saved grade keeps matching after the backfill.
+ */
+export function deriveLegacyAssignmentId(
+  name: string,
+  component: string | null,
+  seen: Map<string, number>,
+): string {
+  const base = `${(component ?? "").trim().toLowerCase()}::${name.trim().toLowerCase()}`;
+  const occurrence = seen.get(base) ?? 0;
+  seen.set(base, occurrence + 1);
+  return occurrence === 0 ? base : `${base}#${occurrence}`;
 }

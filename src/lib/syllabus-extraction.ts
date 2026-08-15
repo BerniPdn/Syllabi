@@ -8,6 +8,13 @@ export type ExtractedComponent = {
 };
 
 export type ExtractedAssignment = {
+  // Immutable once set: assigned at creation (new assignment) or backfilled
+  // on first edit (older rows). Renaming the assignment or its component
+  // afterwards never changes this id, so the saved grade stays attached.
+  // Optional/nullable only because rows saved before this field existed
+  // don't have it yet — course-mapping.ts falls back to the legacy derived
+  // id for those until they're re-saved.
+  id?: string | null;
   name: string;
   component: string | null;
   due_date: string | null;

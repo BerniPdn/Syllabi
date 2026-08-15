@@ -58,6 +58,7 @@ import { scaleForEditing, scaleForSaving, validateScaleOrder } from "@/lib/grade
 import { saveExtractedCourse } from "@/lib/syllabus.functions";
 import { coursesQueryKey } from "@/lib/use-courses";
 import { cn } from "@/lib/utils";
+import { deriveLegacyAssignmentId } from "@/lib/course-mapping";
 
 export const Route = createFileRoute("/_authenticated/review/$courseId")({
   head: () => ({
@@ -140,7 +141,24 @@ function ReviewExtractionScreen() {
       base.grading_components,
       base.assignments,
     );
-    setDraft({ ...base, assignments });
+
+    // Backfill an id for anything that doesn't have one yet: a fresh AI
+    // extraction never sets one, and older saved courses predate this
+    // field. Reuse the exact legacy derivation so this matches whatever
+    // course-mapping.ts already computed for an existing grade — the
+    // backfill itself never orphans anything. Once this draft is saved,
+    // that id is permanent and future renames won't touch it.
+    const seenLegacyKeys = new Map<string, number>();
+    const withIds = assignments.map((assignment, index) => {
+      if (assignment.id) return assignment;
+      const name = assignment.name || `Assignment ${index + 1}`;
+      return {
+        ...assignment,
+        id: deriveLegacyAssignmentId(name, assignment.component ?? null, seenLegacyKeys),
+      };
+    });
+
+    setDraft({ ...base, assignments: withIds });
     setInferredKeys(new Set(inferredIndexes.map((index) => assignmentKey(assignments[index]!))));
   }, [course, draft]);
 
@@ -400,6 +418,9 @@ function ReviewExtractionScreen() {
       assignments: [
         ...draft.assignments,
         {
+          // Brand new assignment, no grade could exist for it yet — safe to
+          // assign a real permanent id right away instead of deriving one.
+          id: crypto.randomUUID(),
           name: newAssignment.name.trim(),
           component: newAssignment.component.trim() || null,
           due_date: newAssignment.due_date || null,
