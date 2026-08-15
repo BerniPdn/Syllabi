@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useCourses, coursesQueryKey } from "@/lib/use-courses";
 import { deleteCourse } from "@/lib/delete-course";
+import { sweepAbandonedCourses } from "@/lib/discard-course";
 import { computeGrades, daysUntil } from "@/lib/grade-engine";
 import type { Course } from "@/lib/types";
 

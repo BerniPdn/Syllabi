@@ -66,6 +66,8 @@ function Workspace() {
         .from("courses")
         .select("id, title, extracted, target_grade")
         .eq("id", courseId)
+        // Only a completed (ready) course is a real course.
+        .eq("status", "ready")
         .maybeSingle();
       if (error) throw error;
       return data ? courseFromRow(data) : null;

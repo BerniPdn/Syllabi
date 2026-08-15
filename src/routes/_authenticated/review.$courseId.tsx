@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -52,6 +52,7 @@ import {
   type ExtractedSyllabus,
 } from "@/lib/syllabus-extraction";
 import { INFERRED_WEIGHT_NOTE, inferAssignmentWeights } from "@/lib/assignment-weights";
+import { discardDraftCourse } from "@/lib/discard-course";
 import { findDuplicateCourses, type DuplicateCandidate } from "@/lib/duplicate-course";
 import { scaleForEditing, scaleForSaving, validateScaleOrder } from "@/lib/grade-scale";
 import { saveExtractedCourse } from "@/lib/syllabus.functions";
@@ -90,6 +91,9 @@ function ReviewExtractionScreen() {
   const [identityTouched, setIdentityTouched] = useState(false);
 
   const [saveAttempted, setSaveAttempted] = useState(false);
+  // Tracks whether Review completed. If the student leaves without completing
+  // it, the course never becomes real and its row is removed.
+  const completedRef = useRef(false);
   const { user } = Route.useRouteContext();
 
   // Modales de creación con formulario
@@ -154,6 +158,22 @@ function ReviewExtractionScreen() {
     if (!missingExtraction) return;
     navigate({ to: "/processing/$courseId", params: { courseId }, replace: true });
   }, [courseId, missingExtraction, navigate]);
+
+  // Abandoning Review (sidebar link, back button, tab close) must not leave a
+  // non-ready course behind. Editing a ready course is untouched by this.
+  const inReviewRef = useRef(false);
+  if (course && course.status !== "ready") inReviewRef.current = true;
+  useEffect(
+    () => () => {
+      if (completedRef.current || !inReviewRef.current) return;
+      void discardDraftCourse(courseId)
+        .then(() => queryClient.invalidateQueries({ queryKey: coursesQueryKey }))
+        .catch((cause: unknown) => {
+          console.error("[review] failed to discard abandoned course", cause);
+        });
+    },
+    [courseId, queryClient],
+  );
 
   const total = useMemo(
     () =>
@@ -478,6 +498,7 @@ function ReviewExtractionScreen() {
       await queryClient.invalidateQueries({ queryKey: ["course-workspace", courseId] });
       await queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       queryClient.invalidateQueries({ queryKey: coursesQueryKey });
+      completedRef.current = true;
       navigate({ to: "/course/$courseId", params: { courseId } });
     } catch (cause) {
       setError(

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -13,7 +13,9 @@ const SYLLABUS_STAGES: string[] = [
   "Finding assignments and dates",
   "Preparing your workspace",
 ];
-import { deleteCourse, extractSyllabus } from "@/lib/syllabus.functions";
+import { extractSyllabus } from "@/lib/syllabus.functions";
+import { discardDraftCourse } from "@/lib/discard-course";
+import { coursesQueryKey } from "@/lib/use-courses";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/processing/$courseId")({
@@ -40,11 +42,11 @@ function ProcessingRoute() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runExtraction = useServerFn(extractSyllabus);
-  const removeCourse = useServerFn(deleteCourse);
   const started = useRef(false);
   const [stage, setStage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [discarding, setDiscarding] = useState(false);
+  const [cleanupError, setCleanupError] = useState<string | null>(null);
 
   const { data: course, isLoading, isError, refetch } = useQuery({queryKey: ["course", courseId],
     queryFn: async () => {
@@ -58,12 +60,29 @@ function ProcessingRoute() {
     },
   });
 
+  // A course that can't reach `ready` must not survive in the database.
+  const failFlow = useCallback(
+    async (message: string) => {
+      setError(message);
+      try {
+        await discardDraftCourse(courseId);
+        queryClient.invalidateQueries({ queryKey: coursesQueryKey });
+      } catch (cause) {
+        console.error("[processing] failed to discard course", cause);
+        setCleanupError(
+          "We couldn't fully clean up this upload. Refresh and try again — nothing was added to your workspace.",
+        );
+      }
+    },
+    [courseId, queryClient],
+  );
+
   useEffect(() => {
     if (isLoading || isError || !course || started.current) return;
     started.current = true;
 
     if (course.extraction_error && !course.extracted) {
-      setError(course.extraction_error);
+      void failFlow(course.extraction_error);
       return;
     }
     if (course.extracted) {
@@ -84,17 +103,17 @@ function ProcessingRoute() {
         if (result.ok) {
           await goToReview();
         } else {
-          setError(result.error);
+          await failFlow(result.error);
         }
       })
-      .catch((cause: unknown) => {
-        setError(
+      .catch(async (cause: unknown) => {
+        await failFlow(
           cause instanceof Error
             ? cause.message
             : "We couldn't analyze that syllabus. Please try again.",
         );
       });
-  }, [course, courseId, isLoading, navigate, queryClient, runExtraction]);
+  }, [course, courseId, failFlow, isLoading, isError, navigate, queryClient, runExtraction]);
 
   useEffect(() => {
     if (error) return;
@@ -105,13 +124,24 @@ function ProcessingRoute() {
 
   async function uploadAnother() {
     setDiscarding(true);
+    setCleanupError(null);
     try {
-      await removeCourse({ data: { courseId } });
-    } catch {
-      // even if cleanup fails, let the user retry
+      // Idempotent: the failure path may already have removed this row.
+      await discardDraftCourse(courseId);
+      queryClient.invalidateQueries({ queryKey: coursesQueryKey });
+    } catch (cause) {
+      console.error("[processing] failed to discard course", cause);
+      setCleanupError(
+        cause instanceof Error
+          ? `We couldn't remove the previous upload: ${cause.message}`
+          : "We couldn't remove the previous upload. Please try again.",
+      );
+      setDiscarding(false);
+      return;
     }
     navigate({ to: "/upload", replace: true });
   }
+
 
   const fileName = course?.title ? `${course.title}.pdf` : "syllabus.pdf";
 
@@ -168,6 +198,11 @@ function ProcessingRoute() {
               We need a course syllabus
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">{error}</p>
+            {cleanupError ? (
+              <p role="alert" className="mt-3 text-sm text-destructive">
+                {cleanupError}
+              </p>
+            ) : null}
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Button size="lg" className="flex-1" disabled={discarding} onClick={uploadAnother}>
