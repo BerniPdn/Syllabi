@@ -72,7 +72,11 @@ function Workspace() {
     },
   });
 
-  const { data: grades } = useQuery({
+  const {
+    data: grades,
+    isError: isGradesError,
+    refetch: refetchGrades,
+  } = useQuery({
     queryKey: ["course-grades", courseId],
     queryFn: () => fetchGrades(courseId),
   });
@@ -139,6 +143,18 @@ function Workspace() {
               <Link to="/dashboard">Back to dashboard</Link>
             </Button>
           }
+        />
+      </AppShell>
+    );
+  }
+
+  if (isGradesError) {
+    return (
+      <AppShell user={user}>
+        <EmptyState
+          title="Couldn't load your grades"
+          body="We loaded the course, but couldn't fetch your saved scores. Check your connection and try again."
+          action={<Button onClick={() => refetchGrades()}>Try again</Button>}
         />
       </AppShell>
     );

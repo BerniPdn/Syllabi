@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
+  AlertTriangle,
   CalendarClock,
   CheckCircle2,
   FileText,
@@ -241,7 +242,8 @@ function DashboardCard({ course }: { course: Course }) {
 }
 
 function Dashboard() {
-  const { data: courses = [], isPending } = useCourses();
+  const { data: courses = [], isPending, isError, refetch } = useCourses();
+  const queryClient = useQueryClient();
 
   const isDataLoading = isPending;
   const upcoming = courses
@@ -258,10 +260,23 @@ function Dashboard() {
   return (
     <AppShell user={user}>
       <div className="w-full max-w-full space-y-5 sm:space-y-6 pb-8">
-        {isDataLoading ? (
+      {isDataLoading ? (
           <div className="flex min-h-[30vh] sm:min-h-[40vh] items-center justify-center">
             <Loader2 className="size-7 animate-spin text-primary" />
           </div>
+        ) : isError ? (
+          <SectionCard className="border-dashed p-4 sm:p-6">
+            <EmptyState
+              icon={<AlertTriangle className="size-6 text-destructive" />}
+              title="Couldn't load your courses"
+              body="Something went wrong loading your dashboard. Check your connection and try again."
+              action={
+                <Button size="lg" className="mt-2 w-full sm:w-auto" onClick={() => refetch()}>
+                  Try again
+                </Button>
+              }
+            />
+          </SectionCard>
         ) : courses.length === 0 ? (
           <SectionCard className="border-dashed p-4 sm:p-6">
             <EmptyState
