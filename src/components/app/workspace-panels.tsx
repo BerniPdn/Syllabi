@@ -745,7 +745,7 @@ export function InsightsPanel({
       }
 
       try {
-        const fresh = await generate({ data: { facts } });
+        const fresh = await generate({ data: { courseId: course.id } });
         if (fresh.length > 0) await saveStoredInsights(course.id, signature, fresh);
         return fresh;
       } catch (error) {

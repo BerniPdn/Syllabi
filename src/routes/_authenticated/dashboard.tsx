@@ -353,7 +353,7 @@ function Dashboard() {
                 <div className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 pt-1">
                   {upcoming.map(({ course, assignment }) => (
                     <div
-                      key={assignment.id}
+                      key={`${course.id}:${assignment.id}`}
                       className="group flex w-[220px] shrink-0 snap-start flex-col justify-between rounded-xl border border-border/80 bg-card p-3.5 shadow-xs transition-all active:scale-[0.98]"
                     >
                       <div>
