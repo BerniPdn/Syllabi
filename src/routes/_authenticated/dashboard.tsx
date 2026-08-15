@@ -246,6 +246,15 @@ function Dashboard() {
   const { data: courses = [], isPending, isError, refetch } = useCourses();
   const queryClient = useQueryClient();
 
+  // Safety net: remove upload rows abandoned in a previous session so they
+  // never linger in the database (a course only exists once it reaches ready).
+  useEffect(() => {
+    void sweepAbandonedCourses()
+      .then(() => queryClient.invalidateQueries({ queryKey: coursesQueryKey }))
+      .catch((cause: unknown) => console.error("[dashboard] sweep failed", cause));
+  }, [queryClient]);
+
+
   const isDataLoading = isPending;
   const upcoming = courses
     .flatMap((course) =>
@@ -344,7 +353,7 @@ function Dashboard() {
                 <div className="no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 pt-1">
                   {upcoming.map(({ course, assignment }) => (
                     <div
-                      key={assignment.id}
+                      key={`${course.id}:${assignment.id}`}
                       className="group flex w-[220px] shrink-0 snap-start flex-col justify-between rounded-xl border border-border/80 bg-card p-3.5 shadow-xs transition-all active:scale-[0.98]"
                     >
                       <div>

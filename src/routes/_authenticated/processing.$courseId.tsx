@@ -58,6 +58,14 @@ function ProcessingRoute() {
       if (queryError) throw queryError;
       return data;
     },
+    // While an extraction is already running (e.g. this page was refreshed
+    // mid-flight), watch the row instead of starting a second extraction.
+    refetchInterval: (query) => {
+      const row = query.state.data;
+      if (!row) return false;
+      if (row.extracted || row.extraction_error) return false;
+      return row.status === "extracting" ? 2000 : false;
+    },
   });
 
   // A course that can't reach `ready` must not survive in the database.
@@ -78,17 +86,23 @@ function ProcessingRoute() {
   );
 
   useEffect(() => {
-    if (isLoading || isError || !course || started.current) return;
-    started.current = true;
+    if (isLoading || isError || !course) return;
 
-    if (course.extraction_error && !course.extracted) {
-      void failFlow(course.extraction_error);
-      return;
-    }
     if (course.extracted) {
       navigate({ to: "/review/$courseId", params: { courseId }, replace: true });
       return;
     }
+    if (course.extraction_error) {
+      void failFlow(course.extraction_error);
+      return;
+    }
+    // Another mount (or another tab) already claimed this row. Never start a
+    // second extraction — the polling query above will pick up the result, and
+    // deleting the row here would destroy the in-flight extraction.
+    if (course.status === "extracting") return;
+    if (started.current) return;
+    started.current = true;
+
 
     const goToReview = async () => {
       // Refresh the shared course cache so the review screen sees the stored

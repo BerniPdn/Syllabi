@@ -235,11 +235,11 @@ function ReviewExtractionScreen() {
   );
 
   const componentUsage = useMemo(() => {
-    const usage = new Map<string, { used: number; limit: number }>();
+    const usage = new Map<string, { used: number; limit: number; count: number }>();
     for (const component of draft?.grading_components ?? []) {
       const name = component.name.trim();
       if (!name) continue;
-      usage.set(name, { used: 0, limit: component.weight ?? 0 });
+      usage.set(name, { used: 0, limit: component.weight ?? 0, count: 0 });
     }
     for (const assignment of draft?.assignments ?? []) {
       const name = assignment.component?.trim();
@@ -247,6 +247,7 @@ function ReviewExtractionScreen() {
       const entry = usage.get(name);
       if (!entry) continue;
       entry.used += assignment.weight ?? 0;
+      entry.count += 1;
     }
     return usage;
   }, [draft]);
@@ -259,10 +260,18 @@ function ReviewExtractionScreen() {
     [componentUsage],
   );
 
+  // A component with no listed assignments (Participation, Attendance, ...) is
+  // graded at the component level — the workspace creates a single row for it —
+  // so it must never be treated as under-allocated. Only components that DO
+  // list assignments have to add up to their own weight.
   const underAllocated = useMemo(
     () =>
       [...componentUsage.entries()]
-        .filter(([, entry]) => Math.round(entry.used * 10) / 10 < Math.round(entry.limit * 10) / 10)
+        .filter(
+          ([, entry]) =>
+            entry.count > 0 &&
+            Math.round(entry.used * 10) / 10 < Math.round(entry.limit * 10) / 10,
+        )
         .map(([name, entry]) => ({ name, ...entry })),
     [componentUsage],
   );
