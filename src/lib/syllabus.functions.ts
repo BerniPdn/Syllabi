@@ -198,8 +198,8 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
         // can never reach "ready" without one, even if the client is bypassed.
         targetGrade: z.number().finite().min(0).max(100),
         extracted: z.object({
-          course_name: z.string().nullable(),
-          course_code: z.string().nullable(),
+          course_name: z.string().trim().min(1, "Course name is required"),
+          course_code: z.string().trim().min(1, "Course code is required"),
           professor: z.string().nullable(),
           semester: z.string().nullable(),
           description: z.string().nullable(),

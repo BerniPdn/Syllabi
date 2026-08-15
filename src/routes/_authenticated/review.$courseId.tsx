@@ -523,7 +523,7 @@ function ReviewExtractionScreen() {
           targetGrade: targetValue,
           extracted: {
             ...draft,
-            course_name: draft.course_name?.trim() || null,
+            course_name: draft.course_name?.trim() ?? "",
             policies: draft.policies.map((policy) => policy.trim()).filter(Boolean),
             grade_scale: scaleForSaving(draft.grade_scale),
 
