@@ -187,10 +187,17 @@ function ReviewExtractionScreen() {
   // Abandoning Review (sidebar link, back button, tab close) must not leave a
   // non-ready course behind. Editing a ready course is untouched by this.
   const inReviewRef = useRef(false);
-  if (course && course.status !== "ready") inReviewRef.current = true;
+
+  useEffect(() => {
+    if (!course) return;
+
+    inReviewRef.current = course.status !== "ready";
+  }, [course?.status]);
+
   useEffect(
     () => () => {
       if (completedRef.current || !inReviewRef.current) return;
+  
       void discardDraftCourse(courseId)
         .then(() => queryClient.invalidateQueries({ queryKey: coursesQueryKey }))
         .catch((cause: unknown) => {
