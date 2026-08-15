@@ -814,9 +814,22 @@ export function InsightsPanel({
           />
         ) : insights.length === 0 ? (
           <EmptyState
-            icon={<Lightbulb className="size-5" />}
-            title="Not enough data yet"
-            body="Enter a few scores to generate personalized insights."
+            icon={<TriangleAlert className="size-5" />}
+            title="Insights aren't available right now"
+            body="We have your course data, but couldn't generate insights this time. Try regenerating."
+            action={
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={query.isFetching}
+                onClick={() => {
+                  forceRef.current = true;
+                  query.refetch();
+                }}
+              >
+                Regenerate
+              </Button>
+            }
           />
         ) : (
           <div className="mt-3 space-y-2.5">
