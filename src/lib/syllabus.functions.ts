@@ -209,14 +209,19 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
           grade_scale: z
             .array(z.object({ letter: z.string(), min: z.number().nullable() }))
             .default([]),
-          assignments: z.array(
-            z.object({
-              name: z.string(),
-              component: z.string().nullable(),
-              due_date: z.string().nullable(),
-              weight: z.number().nullable(),
-            }),
-          ),
+            assignments: z.array(
+              z.object({
+                // Present once an assignment has been backfilled or created
+                // client-side (see review.$courseId.tsx); absent only for
+                // rows saved before this field existed. Must stay declared
+                // here or Zod silently strips it before it reaches the DB.
+                id: z.string().nullable().optional(),
+                name: z.string(),
+                component: z.string().nullable(),
+                due_date: z.string().nullable(),
+                weight: z.number().nullable(),
+              }),
+            ),
           important_dates: z.array(
             z.object({ label: z.string(), date: z.string().nullable() }),
           ),
