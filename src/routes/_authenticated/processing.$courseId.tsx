@@ -186,6 +186,31 @@ function ProcessingRoute() {
     );
   }
 
+  if (!isLoading && !isError && !course) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-hero px-5">
+        <div className="w-full max-w-md">
+          <div className="card-surface p-7 text-center">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-warning-soft text-warning">
+              <AlertTriangle className="size-6" />
+            </div>
+            <h1 className="mt-4 font-display text-lg font-semibold tracking-tight">
+              We couldn't find that course
+            </h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              It may have been deleted, or the link is out of date.
+            </p>
+            <div className="mt-6">
+              <Button size="lg" className="w-full" asChild>
+                <Link to="/dashboard">Back to dashboard</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-hero px-5">
