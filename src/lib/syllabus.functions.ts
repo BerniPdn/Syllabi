@@ -204,7 +204,7 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
           semester: z.string().nullable(),
           description: z.string().nullable(),
           grading_components: z.array(
-            z.object({ name: z.string(), weight: z.number().nullable() }),
+            z.object({ name: z.string(), weight: z.number().min(0).max(100).nullable() }),
           ),
           grade_scale: z
             .array(z.object({ letter: z.string(), min: z.number().nullable() }))
@@ -219,7 +219,7 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
                 name: z.string(),
                 component: z.string().nullable(),
                 due_date: z.string().nullable(),
-                weight: z.number().nullable(),
+                weight: z.number().min(0).max(100).nullable(),
               }),
             ),
           important_dates: z.array(

@@ -205,6 +205,19 @@ function ReviewExtractionScreen() {
   const balanced = Math.round(total * 10) / 10 === 100;
   const componentsOverflow = total > 100;
 
+  // Independiente de si el total cierra en 100%: un peso negativo en un
+  // componente puede compensarse con otro > 100% y pasar desapercibido.
+  const invalidWeights = useMemo(
+    () =>
+      (draft?.grading_components ?? []).some(
+        (c) => c.weight !== null && (c.weight < 0 || c.weight > 100),
+      ) ||
+      (draft?.assignments ?? []).some(
+        (a) => a.weight !== null && (a.weight < 0 || a.weight > 100),
+      ),
+    [draft],
+  );
+
   const componentOptions = useMemo(
     () =>
       (draft?.grading_components ?? [])
@@ -317,15 +330,16 @@ function ReviewExtractionScreen() {
   }, [draft, componentOptions]);
 
   const blockedFromSaving =
-    componentsOverflow ||
-    !balanced ||
-    overAllocated.length > 0 ||
-    underAllocated.length > 0 ||
-    unassignedCount > 0 ||
-    scaleErrors.length > 0 ||
-    !nameValid ||
-    !codeValid ||
-    !targetValid;
+  invalidWeights ||
+  componentsOverflow ||
+  !balanced ||
+  overAllocated.length > 0 ||
+  underAllocated.length > 0 ||
+  unassignedCount > 0 ||
+  scaleErrors.length > 0 ||
+  !nameValid ||
+  !codeValid ||
+  !targetValid;
 
 
     if (isError) {
@@ -769,9 +783,11 @@ function ReviewExtractionScreen() {
                   }}
                   className="h-8 min-w-0 flex-1"
                 />
-                <Input
+               <Input
                   type="number"
                   aria-label="Weight"
+                  min={0}
+                  max={100}
                   value={component.weight ?? ""}
                   onChange={(event) => {
                     const next = [...draft.grading_components];
@@ -996,10 +1012,12 @@ function ReviewExtractionScreen() {
                                 Weight
                               </Label>
                               <div className="flex items-center gap-1">
-                                <Input
+                              <Input
                                   type="number"
                                   aria-label="Weight"
                                   placeholder="0"
+                                  min={0}
+                                  max={100}
                                   value={assignment.weight ?? ""}
                                   onChange={(event) => {
                                     const next = [...draft.assignments];
@@ -1205,6 +1223,8 @@ function ReviewExtractionScreen() {
               ? "Add a course name and course code to continue — both are required to save this course."
               : !targetValid
               ? "Set a target grade to continue — it's required to save this course."
+              : invalidWeights
+              ? "Weights must be between 0% and 100%. Fix any negative or out-of-range weight before saving."
               : scaleErrors.length > 0
               ? "Fix the grading scale order before saving — higher letter grades must have equal or higher percentage cutoffs."
               : !balanced
@@ -1320,6 +1340,8 @@ function ReviewExtractionScreen() {
                     id="new-assignment-weight"
                     type="number"
                     placeholder="e.g. 15"
+                    min={0}
+                    max={100}
                     value={newAssignment.weight}
                     onChange={(e) =>
                       setNewAssignment({ ...newAssignment, weight: e.target.value })
@@ -1375,6 +1397,8 @@ function ReviewExtractionScreen() {
                   id="new-comp-weight"
                   type="number"
                   placeholder="e.g. 20"
+                  min={0}
+                  max={100}
                   value={newComponent.weight}
                   onChange={(e) => setNewComponent({ ...newComponent, weight: e.target.value })}
                 />
