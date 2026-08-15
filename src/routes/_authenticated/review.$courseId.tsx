@@ -515,7 +515,7 @@ function ReviewExtractionScreen() {
     if (!draft || blockedFromSaving || !targetValid) return;
     setSaving(true);
     setError(null);
-
+  
     try {
       if (!isEditing && !options?.skipDuplicateCheck) {
         const matches = await findDuplicateCourses(courseId, draft);
@@ -525,7 +525,13 @@ function ReviewExtractionScreen() {
           return;
         }
       }
-
+  
+      // Se marca ANTES del request, no después. El guardado puede tardar,
+      // y el sidebar sigue clickeable todo ese tiempo. Si el usuario se va
+      // a mitad de camino, este componente se desmonta y el cleanup de
+      // abajo borraría el curso justo cuando se estaba por confirmar.
+      completedRef.current = true;
+  
       await save({
         data: {
           courseId,
@@ -535,16 +541,18 @@ function ReviewExtractionScreen() {
             course_name: draft.course_name?.trim() ?? "",
             policies: draft.policies.map((policy) => policy.trim()).filter(Boolean),
             grade_scale: scaleForSaving(draft.grade_scale),
-
+  
           },
         },
       });
       await queryClient.invalidateQueries({ queryKey: ["course-workspace", courseId] });
       await queryClient.invalidateQueries({ queryKey: ["course", courseId] });
       queryClient.invalidateQueries({ queryKey: coursesQueryKey });
-      completedRef.current = true;
       navigate({ to: "/course/$courseId", params: { courseId } });
     } catch (cause) {
+      // El guardado falló de verdad — restauramos el comportamiento normal
+      // de "si te vas, se borra el draft", para no dejar cursos rotos colgados.
+      completedRef.current = false;
       setError(
         cause instanceof Error ? cause.message : "We couldn't save this course. Try again.",
       );
