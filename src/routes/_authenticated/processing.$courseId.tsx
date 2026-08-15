@@ -58,6 +58,14 @@ function ProcessingRoute() {
       if (queryError) throw queryError;
       return data;
     },
+    // While an extraction is already running (e.g. this page was refreshed
+    // mid-flight), watch the row instead of starting a second extraction.
+    refetchInterval: (query) => {
+      const row = query.state.data;
+      if (!row) return false;
+      if (row.extracted || row.extraction_error) return false;
+      return row.status === "extracting" ? 2000 : false;
+    },
   });
 
   // A course that can't reach `ready` must not survive in the database.
