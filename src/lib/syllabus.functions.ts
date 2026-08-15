@@ -231,7 +231,34 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: updatedCourse, error } = await context.supabase
+    const supabase = context.supabase;
+  
+    console.log("[saveExtractedCourse] courseId:", data.courseId);
+  
+    // 1. Verify that the course exists and is accessible BEFORE updating it.
+    const { data: existingCourse, error: existingCourseError } = await supabase
+      .from("courses")
+      .select("id, status, user_id")
+      .eq("id", data.courseId)
+      .maybeSingle();
+  
+    console.log("[saveExtractedCourse] existing course:", existingCourse);
+    console.log("[saveExtractedCourse] existing course error:", existingCourseError);
+  
+    if (existingCourseError) {
+      throw new Error(
+        `[saveExtractedCourse] Failed to read course ${data.courseId}: ${existingCourseError.message}`,
+      );
+    }
+  
+    if (!existingCourse) {
+      throw new Error(
+        `[saveExtractedCourse] COURSE DOES NOT EXIST OR IS NOT ACCESSIBLE. courseId=${data.courseId}`,
+      );
+    }
+  
+    // 2. Save the reviewed course.
+    const { data: updatedCourse, error } = await supabase
       .from("courses")
       .update({
         extracted: {
@@ -246,18 +273,33 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
       .eq("id", data.courseId)
       .select("id, status")
       .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!updatedCourse) {
+  
+    console.log("[saveExtractedCourse] updated course:", updatedCourse);
+    console.log("[saveExtractedCourse] update error:", error);
+  
+    if (error) {
       throw new Error(
-        "We couldn't save this course because it no longer exists or is no longer accessible.",
+        `[saveExtractedCourse] UPDATE failed: ${error.message}`,
       );
     }
+  
+    if (!updatedCourse) {
+      throw new Error(
+        `[saveExtractedCourse] UPDATE returned no row. courseId=${data.courseId}`,
+      );
+    }
+  
     if (updatedCourse.status !== "ready") {
       throw new Error(
         `We couldn't finish saving this course. Its status is "${updatedCourse.status}" instead of "ready".`,
       );
     }
-    return { ok: true as const, courseId: updatedCourse.id, status: updatedCourse.status };
+  
+    return {
+      ok: true as const,
+      courseId: updatedCourse.id,
+      status: updatedCourse.status,
+    };
   });
 
 export const deleteCourse = createServerFn({ method: "POST" })
