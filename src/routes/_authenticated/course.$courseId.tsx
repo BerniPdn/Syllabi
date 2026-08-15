@@ -60,17 +60,20 @@ function Workspace() {
   const queryClient = useQueryClient();
   const { user } = Route.useRouteContext();
 
-  const { data: baseCourse, isLoading, isError, refetch } = useQuery({    queryKey: ["course-workspace", courseId],
+  const { data: workspaceResult, isLoading, isError, refetch } = useQuery({
+    queryKey: ["course-workspace", courseId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, title, extracted, target_grade")
+        .select("id, title, extracted, target_grade, status")
         .eq("id", courseId)
-        // Only a completed (ready) course is a real course.
-        .eq("status", "ready")
         .maybeSingle();
       if (error) throw error;
-      return data ? courseFromRow(data) : null;
+      if (!data) return { state: "missing" as const };
+      if (data.status !== "ready") {
+        return { state: "not-ready" as const, status: data.status };
+      }
+      return { state: "ready" as const, course: courseFromRow(data) };
     },
   });
 
@@ -100,7 +103,8 @@ function Workspace() {
   });
 
   const course = useMemo(() => {
-    if (!baseCourse) return null;
+    if (workspaceResult?.state !== "ready") return null;
+    const baseCourse = workspaceResult.course;
     if (!grades) return baseCourse;
     return {
       ...baseCourse,
@@ -109,7 +113,7 @@ function Workspace() {
         score: grades[assignment.id] ?? null,
       })),
     };
-  }, [baseCourse, grades]);
+  }, [grades, workspaceResult]);
 
   if (isLoading) {
     return (
@@ -135,11 +139,16 @@ function Workspace() {
 
 
   if (!course) {
+    const existsButNotReady = workspaceResult?.state === "not-ready";
     return (
       <AppShell user={user}>
         <EmptyState
-          title="Course not found"
-          body="This course no longer exists, or it belongs to another account."
+          title={existsButNotReady ? "Course not ready yet" : "Course not found"}
+          body={
+            existsButNotReady
+              ? `This course exists, but it is still in "${workspaceResult.status}" status and can't open in the workspace yet.`
+              : "This course no longer exists, or it belongs to another account."
+          }
           action={
             <Button asChild>
               <Link to="/dashboard">Back to dashboard</Link>

@@ -17,17 +17,9 @@ export async function discardDraftCourse(courseId: string): Promise<void> {
   const userId = userData.user?.id;
   if (!userId) return; // signed out: RLS would reject anyway, nothing to clean.
 
-  const { data: course, error: fetchError } = await supabase
-    .from("courses")
-    .select("id, status, file_path")
-    .eq("id", courseId)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (fetchError) throw fetchError;
-  if (!course) return; // already gone
-  if (course.status === "ready") return; // a real course, never auto-deleted
-
-  await removeCourseRow(userId, course);
+  const deletedCourse = await deleteDraftCourseRow(userId, courseId);
+  if (!deletedCourse) return;
+  await removeDeletedCourseArtifacts(userId, deletedCourse);
 }
 
 /**
@@ -45,23 +37,38 @@ export async function sweepAbandonedCourses(minAgeMs = 3 * 60 * 1000): Promise<v
   const cutoff = new Date(Date.now() - minAgeMs).toISOString();
   const { data: rows, error } = await supabase
     .from("courses")
-    .select("id, status, file_path")
+    .select("id")
     .eq("user_id", userId)
     .neq("status", "ready")
     .lt("updated_at", cutoff);
   if (error) throw error;
 
   for (const row of rows ?? []) {
-    await removeCourseRow(userId, row);
+    const deletedCourse = await deleteDraftCourseRow(userId, row.id);
+    if (!deletedCourse) continue;
+    await removeDeletedCourseArtifacts(userId, deletedCourse);
   }
 }
 
-async function removeCourseRow(
+async function deleteDraftCourseRow(userId: string, courseId: string) {
+  const { data, error } = await supabase
+    .from("courses")
+    .delete()
+    .eq("id", courseId)
+    .eq("user_id", userId)
+    .neq("status", "ready")
+    .select("id, file_path")
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function removeDeletedCourseArtifacts(
   userId: string,
-  course: { id: string; status: string; file_path: string | null },
+  course: { id: string; file_path: string | null },
 ) {
-  // Grades/insights can't exist before `ready`, but delete them explicitly so
-  // cleanup stays correct even if that ever changes.
+  // Only clean up dependent rows/files after the course row was actually
+  // deleted; otherwise a concurrent save could win the race and make it ready.
   const { error: gradesError } = await supabase
     .from("grades")
     .delete()
@@ -83,12 +90,4 @@ async function removeCourseRow(
     // A missing object is fine (idempotent re-runs); anything else is real.
     if (storageError && !/not found/i.test(storageError.message)) throw storageError;
   }
-
-  const { error: deleteError } = await supabase
-    .from("courses")
-    .delete()
-    .eq("id", course.id)
-    .eq("user_id", userId)
-    .neq("status", "ready");
-  if (deleteError) throw deleteError;
 }

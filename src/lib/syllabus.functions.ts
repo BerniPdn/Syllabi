@@ -231,7 +231,7 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const { data: updatedCourse, error } = await context.supabase
       .from("courses")
       .update({
         extracted: {
@@ -243,19 +243,43 @@ export const saveExtractedCourse = createServerFn({ method: "POST" })
         extraction_error: null,
         title: data.extracted.course_name?.trim() || "Untitled course",
       })
-      .eq("id", data.courseId);
+      .eq("id", data.courseId)
+      .select("id, status")
+      .maybeSingle();
     if (error) throw new Error(error.message);
-    return { ok: true as const };
+    if (!updatedCourse) {
+      throw new Error(
+        "We couldn't save this course because it no longer exists or is no longer accessible.",
+      );
+    }
+    if (updatedCourse.status !== "ready") {
+      throw new Error(
+        `We couldn't finish saving this course. Its status is "${updatedCourse.status}" instead of "ready".`,
+      );
+    }
+    return { ok: true as const, courseId: updatedCourse.id, status: updatedCourse.status };
   });
 
 export const deleteCourse = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ courseId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const { data: updatedCourse, error } = await context.supabase
       .from("courses")
       .delete()
-      .eq("id", data.courseId);
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
-  });
+      .eq("id", data.courseId)
+      .select("id, status")
+      .maybeSingle();    
+      if (error) throw new Error(error.message);
+      if (!updatedCourse) {
+        throw new Error(
+          "We couldn't save this course because it no longer exists or is no longer accessible.",
+        );
+      }
+      if (updatedCourse.status !== "ready") {
+        throw new Error(
+          `We couldn't finish saving this course. Its status is "${updatedCourse.status}" instead of "ready".`,
+        );
+      }
+      return { ok: true as const, courseId: updatedCourse.id, status: updatedCourse.status };
+      });

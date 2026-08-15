@@ -515,6 +515,7 @@ function ReviewExtractionScreen() {
     if (!draft || blockedFromSaving || !targetValid) return;
     setSaving(true);
     setError(null);
+    let persistedCourseId: string | null = null;
   
     try {
       if (!isEditing && !options?.skipDuplicateCheck) {
@@ -525,14 +526,8 @@ function ReviewExtractionScreen() {
           return;
         }
       }
-  
-      // Se marca ANTES del request, no después. El guardado puede tardar,
-      // y el sidebar sigue clickeable todo ese tiempo. Si el usuario se va
-      // a mitad de camino, este componente se desmonta y el cleanup de
-      // abajo borraría el curso justo cuando se estaba por confirmar.
-      completedRef.current = true;
-  
-      await save({
+
+      const savedCourse = await save({
         data: {
           courseId,
           targetGrade: targetValue,
@@ -545,16 +540,25 @@ function ReviewExtractionScreen() {
           },
         },
       });
-      await queryClient.invalidateQueries({ queryKey: ["course-workspace", courseId] });
-      await queryClient.invalidateQueries({ queryKey: ["course", courseId] });
-      queryClient.invalidateQueries({ queryKey: coursesQueryKey });
-      navigate({ to: "/course/$courseId", params: { courseId } });
+      persistedCourseId = savedCourse.courseId;
+      if (persistedCourseId !== courseId) {
+        throw new Error("We saved this course under an unexpected ID. Please refresh and try again.");
+      }
+
+      completedRef.current = true;
+
+      await queryClient.invalidateQueries({ queryKey: ["course-workspace", persistedCourseId] });
+      await queryClient.invalidateQueries({ queryKey: ["course", persistedCourseId] });
+      await queryClient.invalidateQueries({ queryKey: coursesQueryKey });
+      navigate({ to: "/course/$courseId", params: { courseId: persistedCourseId } });
     } catch (cause) {
-      // El guardado falló de verdad — restauramos el comportamiento normal
-      // de "si te vas, se borra el draft", para no dejar cursos rotos colgados.
-      completedRef.current = false;
+      if (!persistedCourseId) completedRef.current = false;
       setError(
-        cause instanceof Error ? cause.message : "We couldn't save this course. Try again.",
+        cause instanceof Error
+          ? cause.message
+          : persistedCourseId
+            ? "Your course was saved, but we couldn't open it. You can find it in your dashboard."
+            : "We couldn't save this course. Try again.",
       );
       setSaving(false);
     }
