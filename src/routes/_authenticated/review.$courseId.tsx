@@ -184,28 +184,25 @@ function ReviewExtractionScreen() {
     navigate({ to: "/processing/$courseId", params: { courseId }, replace: true });
   }, [courseId, missingExtraction, navigate]);
 
-  // Abandoning Review (sidebar link, back button, tab close) must not leave a
-  // non-ready course behind. Editing a ready course is untouched by this.
-  const inReviewRef = useRef(false);
+  // NOTE: Review must never delete the course on unmount. A successful save
+  // navigates away, which unmounts this component; any unmount-time discard is
+  // racy (it can also fire on a remount caused by a router/auth invalidation)
+  // and was destroying rows that were about to be — or had just been — saved.
+  // Abandoned drafts are cleaned up by the explicit "Start over" action below
+  // and by `sweepAbandonedCourses()` on Upload/Dashboard, which only touches
+  // non-ready rows that are demonstrably stale.
+  async function startOver() {
+    if (isEditing) return;
+    completedRef.current = true; // no unmount cleanup should race this
+    try {
+      await discardDraftCourse(courseId);
+      await queryClient.invalidateQueries({ queryKey: coursesQueryKey });
+    } catch (cause) {
+      console.error("[review] failed to discard abandoned course", cause);
+    }
+    navigate({ to: "/upload", replace: true });
+  }
 
-  useEffect(() => {
-    if (!course) return;
-
-    inReviewRef.current = course.status !== "ready";
-  }, [course?.status]);
-
-  useEffect(
-    () => () => {
-      if (completedRef.current || !inReviewRef.current) return;
-  
-      void discardDraftCourse(courseId)
-        .then(() => queryClient.invalidateQueries({ queryKey: coursesQueryKey }))
-        .catch((cause: unknown) => {
-          console.error("[review] failed to discard abandoned course", cause);
-        });
-    },
-    [courseId, queryClient],
-  );
 
   const total = useMemo(
     () =>
