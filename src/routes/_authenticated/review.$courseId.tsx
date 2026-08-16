@@ -1347,15 +1347,22 @@ function ReviewExtractionScreen() {
         ) : null}
 
         <div className="flex flex-col-reverse gap-3 pb-6 sm:flex-row sm:justify-end">
-          <Button variant="ghost" className="w-full sm:w-auto" asChild>
-            {isEditing ? (
+          {isEditing ? (
+            <Button variant="ghost" className="w-full sm:w-auto" asChild>
               <Link to="/course/$courseId" params={{ courseId }}>
                 Cancel
               </Link>
-            ) : (
-              <Link to="/upload">Start over</Link>
-            )}
-          </Button>
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              className="w-full sm:w-auto"
+              onClick={() => void startOver()}
+            >
+              Start over
+            </Button>
+          )}
+
           <Button
             size="lg"
             className="w-full sm:w-auto"
