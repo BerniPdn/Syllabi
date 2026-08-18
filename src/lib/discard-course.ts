@@ -25,10 +25,13 @@ export async function discardDraftCourse(courseId: string): Promise<void> {
 /**
  * Safety net for rows that escaped the flow (closed tab, crash, older builds).
  * Runs when the student is demonstrably not inside the upload flow, and only
- * touches rows older than `minAgeMs` so a live extraction in another tab is
- * never destroyed mid-flight.
+ * touches rows older than `minAgeMs` so neither a live extraction nor an open
+ * Review Sheet in another tab is ever destroyed mid-flight. The window is
+ * deliberately generous: reviewing a syllabus legitimately takes many minutes,
+ * and deleting a draft out from under an open Review Sheet is far worse than
+ * letting an invisible abandoned row live a few hours longer.
  */
-export async function sweepAbandonedCourses(minAgeMs = 3 * 60 * 1000): Promise<void> {
+export async function sweepAbandonedCourses(minAgeMs = 6 * 60 * 60 * 1000): Promise<void> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) throw userError;
   const userId = userData.user?.id;
