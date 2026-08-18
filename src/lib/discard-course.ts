@@ -28,7 +28,7 @@ export async function discardDraftCourse(courseId: string): Promise<void> {
  * touches rows older than `minAgeMs` so a live extraction in another tab is
  * never destroyed mid-flight.
  */
-export async function sweepAbandonedCourses(minAgeMs = 3 * 60 * 1000): Promise<void> {
+export async function sweepAbandonedCourses(minAgeMs = 6 * 60 * 60 * 1000): Promise<void> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError) throw userError;
   const userId = userData.user?.id;
