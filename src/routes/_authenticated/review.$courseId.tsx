@@ -54,7 +54,16 @@ import {
 import { INFERRED_WEIGHT_NOTE, inferAssignmentWeights } from "@/lib/assignment-weights";
 import { discardDraftCourse } from "@/lib/discard-course";
 import { findDuplicateCourses, type DuplicateCandidate } from "@/lib/duplicate-course";
-import { scaleForEditing, scaleForSaving, validateScaleOrder } from "@/lib/grade-scale";
+import {
+  letterForTargetPercent,
+  minPercentForLetter,
+  scaleForEditing,
+  scaleForSaving,
+  targetLetterOptions,
+  validateScaleOrder,
+} from "@/lib/grade-scale";
+import { DateField } from "@/components/app/date-field";
+
 import { saveExtractedCourse } from "@/lib/syllabus.functions";
 import { coursesQueryKey } from "@/lib/use-courses";
 import { cn } from "@/lib/utils";
@@ -85,9 +94,14 @@ function ReviewExtractionScreen() {
   const [policiesExpanded, setPoliciesExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
-  // Student-set target grade. `null` = not initialised yet; "" = intentionally
-  // empty for a new course (never prefilled with the DB default).
-  const [targetInput, setTargetInput] = useState<string | null>(null);
+  // Student-set target grade, chosen as a LETTER. `null` = not initialised yet;
+  // "" = intentionally empty for a new course (never prefilled with a default).
+  const [targetLetter, setTargetLetter] = useState<string | null>(null);
+  // Percentage already stored for an existing course, kept as-is unless the
+  // student picks a different letter (so re-saving never silently shifts it).
+  const [storedTargetPercent, setStoredTargetPercent] = useState<number | null>(null);
+  const [initialTargetLetter, setInitialTargetLetter] = useState<string | null>(null);
+
   const [targetTouched, setTargetTouched] = useState(false);
   const [targetGradeModalOpen, setTargetGradeModalOpen] = useState(false);
   const [identityTouched, setIdentityTouched] = useState(false);
@@ -164,14 +178,22 @@ function ReviewExtractionScreen() {
   }, [course, draft]);
 
   useEffect(() => {
-    if (targetInput !== null || !course) return;
+    if (targetLetter !== null || !course) return;
     // Only an already-ready course has a target the student actually chose.
-    setTargetInput(
-      course.status === "ready" && Number.isFinite(Number(course.target_grade))
-        ? String(Number(course.target_grade))
-        : "",
-    );
-  }, [course, targetInput]);
+    const storedPercent = Number(course.target_grade);
+    if (course.status === "ready" && Number.isFinite(storedPercent)) {
+      const scaleSource =
+        (course.extracted as { grade_scale?: { letter: string; min: number | null }[] } | null)
+          ?.grade_scale ?? null;
+      const letter = letterForTargetPercent(storedPercent, scaleSource);
+      setStoredTargetPercent(storedPercent);
+      setInitialTargetLetter(letter ?? "");
+      setTargetLetter(letter ?? "");
+      return;
+    }
+    setTargetLetter("");
+  }, [course, targetLetter]);
+
 
   useEffect(() => {
     if (!course || course.status === "ready") return;
@@ -298,10 +320,29 @@ function ReviewExtractionScreen() {
 
   const scaleErrors = useMemo(() => validateScaleOrder(draft?.grade_scale), [draft]);
 
-  const targetRaw = (targetInput ?? "").trim();
-  const targetValue = targetRaw === "" ? Number.NaN : Number(targetRaw);
-  const targetValid = Number.isFinite(targetValue) && targetValue >= 0 && targetValue <= 100;
+  // Letter options come from THIS course's scale (edited or extracted).
+  const letterOptions = useMemo(
+    () => targetLetterOptions(draft?.grade_scale),
+    [draft],
+  );
+
+  const targetLetterValue = (targetLetter ?? "").trim();
+  const letterMinPercent = useMemo(
+    () => (targetLetterValue ? minPercentForLetter(targetLetterValue, draft?.grade_scale) : null),
+    [targetLetterValue, draft],
+  );
+  // Keep the exact stored percentage when the student hasn't changed the letter.
+  const targetValue =
+    targetLetterValue !== "" &&
+    initialTargetLetter !== null &&
+    targetLetterValue === initialTargetLetter.trim() &&
+    storedTargetPercent !== null
+      ? storedTargetPercent
+      : (letterMinPercent ?? Number.NaN);
+  const targetValid =
+    targetLetterValue !== "" && Number.isFinite(targetValue) && targetValue >= 0 && targetValue <= 100;
   const showTargetError = !targetValid && (targetTouched || saveAttempted);
+
 
   const nameValid = Boolean((draft?.course_name ?? "").trim());
   const codeValid = Boolean((draft?.course_code ?? "").trim());
@@ -594,38 +635,39 @@ function ReviewExtractionScreen() {
   
           <div className="space-y-2">
             <Label htmlFor="target-grade-modal">
-              Target grade
+              What grade are you aiming for?
             </Label>
-  
-            <div className="relative">
-              <Input
-                id="target-grade-modal"
-                type="number"
-                min={0}
-                max={100}
-                step="0.1"
-                placeholder="90"
-                autoFocus
-                value={targetInput ?? ""}
-                onChange={(event) => setTargetInput(event.target.value)}
-                className="pr-8"
-              />
-  
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                %
-              </span>
-            </div>
+
+            <Select
+              value={targetLetterValue}
+              onValueChange={(value) => {
+                setTargetTouched(true);
+                setTargetLetter(value);
+              }}
+            >
+              <SelectTrigger id="target-grade-modal" className="w-full">
+                <SelectValue placeholder="Select a letter grade" />
+              </SelectTrigger>
+              <SelectContent>
+                {letterOptions.map((step) => (
+                  <SelectItem key={step.letter} value={step.letter}>
+                    {step.letter}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {targetLetterValue && letterMinPercent !== null ? (
+              <p className="text-xs text-muted-foreground">
+                On this course's scale, {targetLetterValue} starts at {letterMinPercent}%.
+              </p>
+            ) : null}
           </div>
   
           <DialogFooter>
             <Button
               type="button"
-              disabled={
-                targetInput === null ||
-                targetInput === "" ||
-                Number(targetInput) < 0 ||
-                Number(targetInput) > 100
-              }
+              disabled={!targetValid}
               onClick={() => {
                 setTargetTouched(true);
                 setTargetGradeModalOpen(false);
@@ -633,6 +675,7 @@ function ReviewExtractionScreen() {
             >
               Continue to review
             </Button>
+
           </DialogFooter>
         </DialogContent>
       </Dialog>
