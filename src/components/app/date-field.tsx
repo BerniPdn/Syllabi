@@ -66,8 +66,8 @@ export function DateField({
       <PopoverContent align="start" className="w-auto p-0">
         <Calendar
           mode="single"
-          selected={selected}
-          {...(selected ? { defaultMonth: selected } : {})}
+          {...(selected ? { selected, defaultMonth: selected } : {})}
+
           captionLayout="dropdown"
           startMonth={new Date(new Date().getFullYear() - 5, 0)}
           endMonth={new Date(new Date().getFullYear() + 5, 11)}
