@@ -94,9 +94,14 @@ function ReviewExtractionScreen() {
   const [policiesExpanded, setPoliciesExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[]>([]);
-  // Student-set target grade. `null` = not initialised yet; "" = intentionally
-  // empty for a new course (never prefilled with the DB default).
-  const [targetInput, setTargetInput] = useState<string | null>(null);
+  // Student-set target grade, chosen as a LETTER. `null` = not initialised yet;
+  // "" = intentionally empty for a new course (never prefilled with a default).
+  const [targetLetter, setTargetLetter] = useState<string | null>(null);
+  // Percentage already stored for an existing course, kept as-is unless the
+  // student picks a different letter (so re-saving never silently shifts it).
+  const [storedTargetPercent, setStoredTargetPercent] = useState<number | null>(null);
+  const [initialTargetLetter, setInitialTargetLetter] = useState<string | null>(null);
+
   const [targetTouched, setTargetTouched] = useState(false);
   const [targetGradeModalOpen, setTargetGradeModalOpen] = useState(false);
   const [identityTouched, setIdentityTouched] = useState(false);
