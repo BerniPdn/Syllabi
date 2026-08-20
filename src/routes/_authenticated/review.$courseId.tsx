@@ -320,10 +320,29 @@ function ReviewExtractionScreen() {
 
   const scaleErrors = useMemo(() => validateScaleOrder(draft?.grade_scale), [draft]);
 
-  const targetRaw = (targetInput ?? "").trim();
-  const targetValue = targetRaw === "" ? Number.NaN : Number(targetRaw);
-  const targetValid = Number.isFinite(targetValue) && targetValue >= 0 && targetValue <= 100;
+  // Letter options come from THIS course's scale (edited or extracted).
+  const letterOptions = useMemo(
+    () => targetLetterOptions(draft?.grade_scale),
+    [draft],
+  );
+
+  const targetLetterValue = (targetLetter ?? "").trim();
+  const letterMinPercent = useMemo(
+    () => (targetLetterValue ? minPercentForLetter(targetLetterValue, draft?.grade_scale) : null),
+    [targetLetterValue, draft],
+  );
+  // Keep the exact stored percentage when the student hasn't changed the letter.
+  const targetValue =
+    targetLetterValue !== "" &&
+    initialTargetLetter !== null &&
+    targetLetterValue === initialTargetLetter.trim() &&
+    storedTargetPercent !== null
+      ? storedTargetPercent
+      : (letterMinPercent ?? Number.NaN);
+  const targetValid =
+    targetLetterValue !== "" && Number.isFinite(targetValue) && targetValue >= 0 && targetValue <= 100;
   const showTargetError = !targetValid && (targetTouched || saveAttempted);
+
 
   const nameValid = Boolean((draft?.course_name ?? "").trim());
   const codeValid = Boolean((draft?.course_code ?? "").trim());
