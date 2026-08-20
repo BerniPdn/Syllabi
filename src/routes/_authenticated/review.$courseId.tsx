@@ -635,38 +635,39 @@ function ReviewExtractionScreen() {
   
           <div className="space-y-2">
             <Label htmlFor="target-grade-modal">
-              Target grade
+              What grade are you aiming for?
             </Label>
-  
-            <div className="relative">
-              <Input
-                id="target-grade-modal"
-                type="number"
-                min={0}
-                max={100}
-                step="0.1"
-                placeholder="90"
-                autoFocus
-                value={targetInput ?? ""}
-                onChange={(event) => setTargetInput(event.target.value)}
-                className="pr-8"
-              />
-  
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                %
-              </span>
-            </div>
+
+            <Select
+              value={targetLetterValue}
+              onValueChange={(value) => {
+                setTargetTouched(true);
+                setTargetLetter(value);
+              }}
+            >
+              <SelectTrigger id="target-grade-modal" className="w-full">
+                <SelectValue placeholder="Select a letter grade" />
+              </SelectTrigger>
+              <SelectContent>
+                {letterOptions.map((step) => (
+                  <SelectItem key={step.letter} value={step.letter}>
+                    {step.letter}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {targetLetterValue && letterMinPercent !== null ? (
+              <p className="text-xs text-muted-foreground">
+                On this course's scale, {targetLetterValue} starts at {letterMinPercent}%.
+              </p>
+            ) : null}
           </div>
   
           <DialogFooter>
             <Button
               type="button"
-              disabled={
-                targetInput === null ||
-                targetInput === "" ||
-                Number(targetInput) < 0 ||
-                Number(targetInput) > 100
-              }
+              disabled={!targetValid}
               onClick={() => {
                 setTargetTouched(true);
                 setTargetGradeModalOpen(false);
@@ -674,6 +675,7 @@ function ReviewExtractionScreen() {
             >
               Continue to review
             </Button>
+
           </DialogFooter>
         </DialogContent>
       </Dialog>
