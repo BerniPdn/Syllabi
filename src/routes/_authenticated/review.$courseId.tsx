@@ -54,7 +54,16 @@ import {
 import { INFERRED_WEIGHT_NOTE, inferAssignmentWeights } from "@/lib/assignment-weights";
 import { discardDraftCourse } from "@/lib/discard-course";
 import { findDuplicateCourses, type DuplicateCandidate } from "@/lib/duplicate-course";
-import { scaleForEditing, scaleForSaving, validateScaleOrder } from "@/lib/grade-scale";
+import {
+  letterForTargetPercent,
+  minPercentForLetter,
+  scaleForEditing,
+  scaleForSaving,
+  targetLetterOptions,
+  validateScaleOrder,
+} from "@/lib/grade-scale";
+import { DateField } from "@/components/app/date-field";
+
 import { saveExtractedCourse } from "@/lib/syllabus.functions";
 import { coursesQueryKey } from "@/lib/use-courses";
 import { cn } from "@/lib/utils";
