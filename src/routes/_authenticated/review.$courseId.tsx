@@ -178,14 +178,22 @@ function ReviewExtractionScreen() {
   }, [course, draft]);
 
   useEffect(() => {
-    if (targetInput !== null || !course) return;
+    if (targetLetter !== null || !course) return;
     // Only an already-ready course has a target the student actually chose.
-    setTargetInput(
-      course.status === "ready" && Number.isFinite(Number(course.target_grade))
-        ? String(Number(course.target_grade))
-        : "",
-    );
-  }, [course, targetInput]);
+    const storedPercent = Number(course.target_grade);
+    if (course.status === "ready" && Number.isFinite(storedPercent)) {
+      const scaleSource =
+        (course.extracted as { grade_scale?: { letter: string; min: number | null }[] } | null)
+          ?.grade_scale ?? null;
+      const letter = letterForTargetPercent(storedPercent, scaleSource);
+      setStoredTargetPercent(storedPercent);
+      setInitialTargetLetter(letter ?? "");
+      setTargetLetter(letter ?? "");
+      return;
+    }
+    setTargetLetter("");
+  }, [course, targetLetter]);
+
 
   useEffect(() => {
     if (!course || course.status === "ready") return;
