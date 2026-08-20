@@ -67,7 +67,7 @@ export function DateField({
         <Calendar
           mode="single"
           selected={selected}
-          defaultMonth={selected}
+          {...(selected ? { defaultMonth: selected } : {})}
           captionLayout="dropdown"
           startMonth={new Date(new Date().getFullYear() - 5, 0)}
           endMonth={new Date(new Date().getFullYear() + 5, 11)}
