@@ -170,3 +170,47 @@ export function validateScaleOrder(
 
   return errors;
 }
+
+/**
+ * Target grades are chosen as a LETTER by the student; the app stores and
+ * calculates with the minimum percentage that letter requires on THIS course's
+ * scale. Letters come from the course's own extracted scale (default scale only
+ * as a fallback when the syllabus had none).
+ */
+export function targetLetterOptions(
+  steps: { letter: string; min: number | null }[] | null | undefined,
+): GradeScaleStep[] {
+  const usable = normalizeScale(
+    (steps ?? []).filter(
+      (step): step is { letter: string; min: number } =>
+        typeof step.min === "number" && Number.isFinite(step.min),
+    ),
+  );
+  return usable;
+}
+
+/** Minimum percentage required for `letter` on the given scale. */
+export function minPercentForLetter(
+  letter: string,
+  steps: { letter: string; min: number | null }[] | null | undefined,
+): number | null {
+  const key = letter.trim().toUpperCase().replace(/\s+/g, "");
+  const match = targetLetterOptions(steps).find(
+    (step) => step.letter.trim().toUpperCase().replace(/\s+/g, "") === key,
+  );
+  return match ? match.min : null;
+}
+
+/**
+ * Backwards compatibility: existing courses store a raw percentage. Resolve it
+ * to the letter that percentage earns on the course's scale so the UI can show
+ * a letter without a second stored value.
+ */
+export function letterForTargetPercent(
+  percent: number,
+  steps: { letter: string; min: number | null }[] | null | undefined,
+): string | null {
+  const options = targetLetterOptions(steps);
+  const match = options.find((step) => percent >= step.min);
+  return match?.letter ?? options.at(-1)?.letter ?? null;
+}
